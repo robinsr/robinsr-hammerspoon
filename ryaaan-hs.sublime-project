@@ -1,0 +1,25 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "LSP": {
+      "LSP-lua": {
+        "settings": {
+          "Lua.codeLens.enable": true,
+          "Lua.workspace.library": [
+            "./Spoons"
+          ],
+          "Lua.diagnostics.disable": [
+            "missing-return"
+          ],
+          "Lua.diagnostics.globals": [
+            // "hs"
+          ]
+        }
+      }
+    }
+  }
+}
