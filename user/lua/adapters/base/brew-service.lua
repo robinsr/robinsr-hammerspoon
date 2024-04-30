@@ -37,7 +37,7 @@ function BrewService:initialize(name)
   ---@cast brewinfo -nil
   self.service_name = util.default(brewinfo['service_name'], 'unknown') --[[@as string]]
   self.running = util.default(brewinfo['running'], false) --[[@as boolean]]
-  self.status = util.default(brewinfo['status'], nil) --[[@as string?]]
+  self._status = util.default(brewinfo['status'], nil) --[[@as string?]]
   self.pid = util.default(brewinfo['pid'], nil) --[[@as number?]]
   self.plist = util.default(brewinfo['file'], nil) --[[@as string?]]
 end

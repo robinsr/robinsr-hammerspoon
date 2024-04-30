@@ -1,15 +1,18 @@
 local M      = require 'moses' -- 1.6.1 only
 local fmt    = require 'user.lua.util.fmt'
 local json   = require 'user.lua.util.json'
-local logger = require 'user.lua.util.logger'
+local tc     = require 'user.lua.util.typecheck'
 
-local log = logger.new('util', 'debug')
+-- local log = logger.new('util', 'debug')
 
 local utils = {}
 
-utils.log = logger.log
+utils.log = require('user.lua.util.logger').log
 utils.fmt = fmt
 utils.json = json
+utils.notNil = tc.notNil
+utils.isString = tc.isString
+utils.isTable = tc.isTable
 
 --[[
   LuaLSP types:
@@ -38,29 +41,6 @@ end
 utils.pick = utils.default
 
 
--- A very explicit null check
----@param i any|nil Possibly a nil value
----@return boolean # true when param nil
-function utils.notNil(i)
-  if (type(i) ~= 'nil') then return true else return false end
-end
-
--- Type-check is string
----@param i any|nil Possibly a nil value
----@return boolean # true when param is a string
-function utils.isString(i)
-  if (type(i) == 'string') then return true else return false end
-end
-
--- Type-check is table
----@param i any|nil Possibly a nil value
----@return boolean # true when param is a table
-function utils.isTable(i)
-  if (type(i) == 'table') then return true else return false end
-end
-
-
-
 -- Returns a list of table's keys
 ---@param tabl table
 ---@return table # list of keys
@@ -70,13 +50,6 @@ function utils.keys(tabl)
     table.insert(keys, key)
   end
   return keys
-end
-
-
--- Logs result of hs.inspect()
----@deprecated
-function utils.inspect_item(item)
-  log.d(hs.inspect.inspect(item))
 end
 
 
@@ -136,11 +109,18 @@ end
 ---@param ... string A vararg list of keys
 ---@return any # a value or nil
 function utils.path(tabl, ...)
-  local value, path = tabl, {...}
+  local value, found, path = tabl, false, {...}
+  -- local value, path = nil, {...}
   for i, p in ipairs(path) do
     if (value[p] == nil) then return end
     value = value[p]
+    found = true
   end
+
+  if (not found) then
+    return nil
+  end
+
   return value
 end
 

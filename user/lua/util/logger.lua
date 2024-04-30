@@ -1,3 +1,10 @@
+local tc = require 'user.lua.util.typecheck'
+
+local isNil, isTable = tc.isNil, tc.isTable
+
+---@class ProxyLogger : hs.logger
+---@field inspect fun(...): nil prints a thing nice
+
 
 local levels_config = {
   -- ['init.lua'] = 'error',
@@ -6,27 +13,44 @@ local levels_config = {
 }
 
 
----@class ProxyLogger : hs.logger
----@field inspect fun(...): nil prints a thing nice
-
+local DEBUG_WARNING = '>>> DEBUG >>>  (warning! hs.inspect is slow)  '
 
 local ProxyLogger = {}
 
 function ProxyLogger:new(log_name, level)
 
-  local o = hs.logger.new(log_name, level)
+  local log = hs.logger.new(log_name, level)
 
-  setmetatable(o, self)
+  setmetatable(log, self)
   self.__index = self
 
+  function getEntryFromEnd(tabl, pos)
+    local count = tabl and #tabl or false
 
+    if (count and (count - pos > 0)) then
+        return tabl[count - pos];
+    end
 
-  ---@cast o ProxyLogger
-  o.inspect = function (...)
-    o.i(hs.inspect(table.unpack({...})))
+    return false;
   end
 
-  return o
+  ---@cast log ProxyLogger
+  log.inspect = function (...)
+    if (log:getLogLevel() > 3) then
+      local args = table.pack(...)
+      local lastarg = getEntryFromEnd(args, 0)
+
+      -- Prevents unintentionally bogging down HS with huge objects
+      -- Add { depth = N } as last argument to override
+      if (lastarg and isTable(lastarg) and isNil(lastarg.depth)) then
+        table.insert(args, { depth = 1 })
+      end
+
+      log.d(DEBUG_WARNING..hs.inspect(table.unpack(args)))
+    end
+  end
+
+  return log
 end
 
 local function newLogger(log_name, level)

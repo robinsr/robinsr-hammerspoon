@@ -1,9 +1,8 @@
 local util = require 'user.lua.util'
-local cmds = require 'user.lua.commands'
-local M = require 'moses'
 
 local log = hs.logger.new('hotkeys.lua', 'debug')
 
+--- Uncomment to inspect system keycodes
 -- log.i(hs.inspect(hs.keycodes.map))
 
 local mods = {
@@ -12,21 +11,40 @@ local mods = {
   bar   = {          "alt", "ctrl", "cmd" },
   modA  = { "shift", "alt"                },
   modB  = { "shift", "alt", "ctrl"        },
+  shift = { "shift"                       },
+  alt   = {          "alt"                },
+  ctrl  = {                 "ctrl"        },
+  cmd   = {                         "cmd" },
 }
 
 local HotKeys = {
+
+  ---@param cmds Command[]
+  ---@return hs.hotkey[]
   bindall = function(cmds)
-    return M(cmds)
-      :filter(function(i, cmd) 
-        return type(cmd.hotkey) ~= 'nil'
-      end)
-      :map(function(i, cmd) 
-        local mod = cmd.hotkey[1]
-        local key = cmd.hotkey[2]
-        
-        return hs.hotkey.bind(util.path(mods, mod), key, cmd.title, cmd.fn)    
-      end)
-      :value()
+    local bound = {}
+
+    for i, cmd in ipairs(cmds) do
+      local hk = cmd.hotkey
+
+      if (hk ~= nil) then
+        local title = (hk.message == 'title' and cmd.title) or hk.message
+
+        local function fn()
+          cmd.fn({ trigger = 'hotkey' }, {})
+        end
+
+        local pressedfn = (util.contains(hk.on, 'pressed') and fn) or nil
+        local releasedfn = (util.contains(hk.on, 'released') and fn) or nil
+        local repeatfn = (util.contains(hk.on, 'repeat') and fn) or nil
+
+        local bind = hs.hotkey.bind(mods[hk.mods], hk.key, title, pressedfn, releasedfn, repeatfn)
+
+        table.insert(bound, bind)
+      end
+    end
+
+    return bound
   end,
 }
 

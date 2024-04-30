@@ -14,32 +14,30 @@ console.setDarkMode(true)
 local globalstate = require 'user.lua.state'
 local commands = require 'user.lua.commands'
 
-log.i(hs.inspect(commands))
+-- log.inspect(commands)
 
 log.i("Setting global hotkeys")
-require('user.lua.interface.hotkeys').bindall(commands)
+KittySupreme.boundkeys = require('user.lua.interface.hotkeys').bindall(commands)
 
 log.i("Setting up url handlers")
-require('user.lua.interface.url-handler').bindall(commands)
+KittySupreme.urlhanders = require('user.lua.interface.url-handler').bindall(commands)
 
 log.i("Creating menubar item")
-require('user.lua.interface.menubar').installMenuBar(commands)
-
-
--- todo; Is there an event dispatcher to listen on, some sort `loaded` event maybe
-require('user.lua.adapters.sketchybar').update()
+KittySupreme.menbar = require('user.lua.interface.menubar').installMenuBar(commands)
 
 log.i('Running onLoad commands')
 
-local onLoad = commands:find('onLoad')
+local onLoad = commands:findById('onLoad')
 
 local onLoadErr, onLoadR = pcall(onLoad.fn)
 
-log.i(hs.inspect(onLoadErr))
-log.i(hs.inspect(onLoadR))
+log.inspect(onLoadErr)
+log.inspect(onLoadR)
 
 
 log.i('Init complete')
+
+log.inspect(KittySupreme, { depth = 3 })
 
 
 --- init_d app container WIP

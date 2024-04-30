@@ -5,6 +5,7 @@ local log = util.log('adpt:service', 'warning')
 
 local Service = class('Service')
 
+---@class Service
 function Service:initialize(name)
   log.f("New service [%s]", name)
   self.name = name or "unknown"

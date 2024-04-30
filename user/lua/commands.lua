@@ -1,5 +1,6 @@
 local M      = require 'moses'
 local yabai  = require 'user.lua.adapters.yabai'
+local List   = require 'user.lua.lib.list'
 local spaces = require 'user.lua.modules.spaces'
 local apps   = require 'user.lua.modules.apps'
 local ui     = require 'user.lua.ui'
@@ -7,48 +8,47 @@ local util   = require 'user.lua.util'
 
 local log = util.log('user:commands', 'debug')
 
+---@class HasId
+---@field id string
 
----@class FilterList
-local FilterList = {}
+---@class CommandCtx
+---@field trigger 'hotkey'|'menubar' Source invoking the command
 
+---@class CommandHotKey
+---@field mods "hyper" | "meh" | "bar" | "modA" | "modB" | "shift" | "alt" | "ctrl" | "cmd"
+---@field key string
+---@field message? string Alert message to show. Passing an empty string will just show keys, "title" will copy command title as message, nil will disable message
+---@field on? ("pressed" | "released" | "repeat")[]
 
----@param list Command[] List of commands to search
-function FilterList:new(list)
-  o = list or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+---@param params table
+---@return CommandHotKey
+local function hotkey(params)
+  return {
+    mods = params[1],
+    key = params[2],
+    message = params[3],
+    on = util.default(params[4], { "pressed" })
+  }
 end
 
 
---
--- Does this filter commands?
--- todo; figure out how generics are annotated
---
----@param id string String to match against command's id field
----@return Command|nil
-function FilterList:find(id)
-  for k, cmd in ipairs(self) do
-    if (cmd.id == id) then
-      return cmd
-    end
-  end
-
-  return nil
-end
-
-
-
-
----@class Command: FilterList
+---@class Command
 ---@field id string Unique string to identify command
----@field title? string
----@field menubar? table
----@field hotkey? table
 ---@field fn fun(ctx: table, params: table): nil A callback function for the command
+---@field title? string
+---@field menubar? { [1]: string, [2]: string|nil, [3]: hs.image|nil }
+---@field hotkey? CommandHotKey
+---@field url? string A hammerspoon url to bind to
 
 ---@type Command[]
 local command_list = {
+  {
+    id = 'onLoad',
+    fn = function(ctx, params)
+      apps.onLoad()
+      KittySupreme.services.sketchybar.onLoad('Hammerspoon loaded!')
+    end,
+  },
   { 
     id = 'show-console',
     title = "Show console",
@@ -61,7 +61,7 @@ local command_list = {
     id = 'reload',
     title = "Reload KittySupreme",
     menubar = { "general", "w", ui.icons.reload },
-    hotkey = { "bar", "W" },
+    hotkey = hotkey({ "bar", "W", "title" }),
     fn = function(ctx)
       util.delay(0.75, hs.reload)
     end,
@@ -70,7 +70,7 @@ local command_list = {
     id = 'restart-yabai',
     title = "Restarting yabai...",
     menubar = nil,
-    hotkey = { "bar", "Y" },
+    hotkey = hotkey({ "bar", "Y", "title" }),
     fn = function (ctx)
       if (ctx.hotkey) then
         hs.alert.show(ctx.title)
@@ -82,10 +82,9 @@ local command_list = {
     id = 'rename-space',
     title = "Label current space",
     menubar = { "desktop", "L", ui.icons.tag },
-    hotkey = { "bar", "L" },
-    fn = function (ctx)
-      spaces.rename()
-    end,
+    -- hotkey = hotkey({ "bar", "L", "title", { "released"} }),
+    hotkey = hotkey({ "bar", "L", nil, { "released"} }),
+    fn = spaces.rename,
   },
   { 
     id = "float-active",
@@ -126,20 +125,14 @@ local command_list = {
   {
     id = 'show-active-app-shortcuts',
     title = 'Show Keys for active app',
-    menubar = { "general", nil, ui.icons.unknown },
-    hotkey = { "bar", "K" },
+    menubar = { "general", nil, ui.icons.command },
+    hotkey = hotkey({ "bar", "K", "title" }),
     fn = function(ctx, params)
       apps.getMenusForActiveApp()
     end,
   },
-  {
-    id = 'onLoad',
-    fn = function(ctx, params)
-      apps.onLoad()
-    end,
-  }
 }
 
-local Commands = FilterList:new(command_list)
-
-return Commands
+-- local Commands = List:new(command_list)
+-- return Commands
+return List:new(command_list)

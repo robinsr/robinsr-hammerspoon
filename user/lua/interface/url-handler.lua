@@ -1,21 +1,27 @@
-local cmds = require 'user.lua.commands'
-local M = require 'moses'
-
-local log = hs.logger.new('url-handler.lua', 'warning')
+local util = require 'user.lua.util'
+local log = util.log('url-handler.lua', 'debug')
 
 local UrlHandler = {
+  ---@param cmds Command[]
+  ---@return table[]
   bindall = function(cmds)
-    return M.chain(cmds)
-      :filter(function(i, cmd) 
-        return cmd.url ~= nil
-      end)
-      :map(function(i, cmd)
-        return hs.urlevent.bind(cmd.url, function(name, params)
-          log.d("URL-Event callback args:", name, hs.inspect(params))
-          cmd.fn({ type = 'url' }, params)
+    local bound = {}
+
+    for i, cmd in ipairs(cmds) do
+      if (cmd.url ~= nil) then
+        hs.urlevent.bind(cmd.url, function(name, params)
+          if (log.getLogLevel() > 3) then
+            log.d("URL-Event callback args:", name, hs.inspect(params))
+          end
+
+          cmd.fn({ trigger = 'url' }, params)
         end)
-      end)
-      :value()
+
+        table.insert(bound, { id = cmd.id, url = cmd.url })
+      end
+    end
+
+    return bound
   end,
 }
 

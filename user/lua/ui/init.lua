@@ -13,6 +13,7 @@ local icons = {
   reload     = symbols.toIcon("arrow.counterclockwise", 13, colors.black),
   term       = symbols.toIcon("terminal", 13, colors.black),
   code       = symbols.toIcon("htmltag", 14, colors.black),
+  command    = symbols.toIcon("command", 14, colors.black),
   running    = symbols.toIcon("circle.fill", 14, colors.deyork),
   stopped    = symbols.toIcon("circle.fill", 14, colors.carnation),
   unknown    = symbols.toIcon("circle.fill", 14, colors.chateau),

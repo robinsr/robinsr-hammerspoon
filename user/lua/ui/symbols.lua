@@ -171,8 +171,8 @@ end
 ---@param code string|integer Either a string that is a valid key in the Symbols.all table, or the unicode codepoint corresponding to a SF Symbol (integer)
 ---@param textsize integer Desired size of image (literally the font-size to apply to icon)
 ---@param textcolor string|table Either a hex code, or a one of the table structures described in `hs.drawing.color`
----@param asText? boolean Return text instead of image (returns a hs.styledtext object)
----@return hs.image | hs.styledtext # Image or text to use
+---@return hs.image # Image to use
+---@overload fun(code: string|integer, textsize: integer, textcolor: string|table, asText: boolean): hs.styledtext
 local function iconFromSymbol(code, textsize, textcolor, asText)
 
   if (not hs.fnutils.every({ code, textsize, textcolor }, util.notNil)) then
