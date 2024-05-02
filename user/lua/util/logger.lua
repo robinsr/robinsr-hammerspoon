@@ -8,7 +8,7 @@ local isNil, isTable = tc.isNil, tc.isTable
 
 local levels_config = {
   -- ['init.lua'] = 'error',
-  ['shell.lua'] = 'error',
+  ['shell.lua'] = 'info',
   ['menu.lua'] = 'debug',
 }
 

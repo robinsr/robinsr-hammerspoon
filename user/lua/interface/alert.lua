@@ -1,3 +1,5 @@
+local U = require 'user.lua.util'
+
 -- Shows an alert on screen. 
 -- Clears previous alert on subsequenct alert calls, preventing alerts from stacking
 local Alert = {}
@@ -14,6 +16,13 @@ local prev_alert = nil
 function Alert.alert(str, style, screen, seconds, ...)
   hs.alert.closeSpecific(prev_alert, 0)
   prev_alert = hs.alert.show(str, style, screen, seconds, ...)
+end
+
+
+function Alert.showf(fmt_string, fmt_args, style, screen, seconds)
+  hs.alert.closeSpecific(prev_alert, 0)
+  local str = U.fmt(fmt_string, table.unpack(fmt_args))
+  Alert.alert(str, style, screen, seconds)
 end
 
 -- Shows an alert on screen with an image. 

@@ -2,13 +2,15 @@ local class       = require 'middleclass'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
 local isCli       = require 'user.lua.adapters.base.cli-utility'
 local shell       = require 'user.lua.interface.shell'
-local util        = require 'user.lua.util'
+local U           = require 'user.lua.util'
 
 local wrap = shell.wrap
 
 
-local log = util.log('yabai.lua', 'debug')
+local log = U.log('yabai.lua', 'debug')
 
+---@class yabai_api
+---@deprecated
 local yabai_api = {
   service = {
     start   = wrap("yabai --restart-service"),
@@ -16,9 +18,10 @@ local yabai_api = {
     restart = wrap("yabai --restart-service"),
   },
   space = {
-    get_space = wrap("yabai -m query --spaces --space %d"),
-    set_label = wrap("yabai -m space %d --label '%s'"),
-    balance   = wrap("yabai -m space --balance"),
+    get_space  = wrap("yabai -m query --spaces --space %d"),
+    set_label  = wrap("yabai -m space %d --label '%s'"),
+    get_layout = wrap("yabai -m config --space %d layout"),
+    balance    = wrap("yabai -m space --balance"),
   },
   window = {
     get                = wrap("yabai -m query --windows --window %s"),
@@ -62,6 +65,7 @@ local yabai_api = {
   }
 }
 
+---@class Yabai
 local Yabai = class('Yabai', LaunchAgent)
 
 Yabai.static.cmds = yabai_api
@@ -91,7 +95,7 @@ function Yabai:descratchWindow(windowId)
 
 
   if (windowId ~= nil) then
-    local window = util.json(yabai_api.window.get(windowId))
+    local window = U.json(yabai_api.window.get(windowId))
 
     log.d(hs.inspect(window))
 
@@ -103,7 +107,7 @@ end
 
 
 function Yabai:floatActiveWindow()
-  local rules = util.json(yabai_api.rule.list())
+  local rules = U.json(yabai_api.rule.list())
 
   log.d('Yabai Rules:', hs.inspect(rules))
 
@@ -118,12 +122,32 @@ function Yabai:floatActiveWindow()
   log.df('Created label: "%s"', label) 
 end
 
+
+---@return table
 function Yabai:getSpace(num)
-  return shell.runt("yabai -m query --spaces --space %d", num)
+  local space = U.default(num, 'mouse')
+  return shell.runt("yabai -m query --spaces --space %q", space)
 end
 
+
+---@return string
 function Yabai:setSpaceLabel(space, label)
-  return shell.run("yabai -m space %d --label '%s'", space, label)
+  return shell.run("yabai -m space %d --label '%q'", space, label)
+end
+
+
+---@return string
+function Yabai:getLayout(num)
+  local space = U.default(num, 'mouse')
+  local layout = shell.run("yabai -m config --space %q layout", space)
+  log.ef("Current yabai layout: [%s]", layout)
+  return layout
+end
+
+function Yabai:setLayout(layout, num)
+  local space = U.default(num, 'mouse')
+  log.ef("Setting layout for space [%q] to [%q]", space, layout)
+  shell.run("yabai -m space %q --layout %q", space, layout)
 end
 
 

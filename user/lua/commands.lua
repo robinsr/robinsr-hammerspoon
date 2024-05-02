@@ -1,5 +1,6 @@
 local M      = require 'moses'
 local yabai  = require 'user.lua.adapters.yabai'
+local alert  = require 'user.lua.interface.alert'
 local List   = require 'user.lua.lib.list'
 local spaces = require 'user.lua.modules.spaces'
 local apps   = require 'user.lua.modules.apps'
@@ -47,6 +48,17 @@ local command_list = {
     fn = function(ctx, params)
       apps.onLoad()
       KittySupreme.services.sketchybar.onLoad('Hammerspoon loaded!')
+    end,
+  },
+  {
+    id = 'spaces-cycle-layout',
+    title = "Space → Cycle Layout",
+    hotkey = hotkey{ "modA", "space" },
+    menubar = { "general", "y", ui.icons.code },
+    fn = function(ctx)
+      local layout = spaces.cycleLayout()
+
+      alert.showf("Changed layout to %s", { layout })
     end,
   },
   { 

@@ -34,10 +34,7 @@ local onLoadErr, onLoadR = pcall(onLoad.fn)
 log.inspect(onLoadErr)
 log.inspect(onLoadR)
 
-
 log.i('Init complete')
-
-log.inspect(KittySupreme, { depth = 3 })
 
 
 --- init_d app container WIP

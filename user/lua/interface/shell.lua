@@ -2,7 +2,7 @@ local util  = require 'user.lua.util'
 local trim  = require 'string.trim'
 local class = require 'middleclass'
 
-local log   = util.log('shell.lua', 'info')
+local log   = util.log('shell.lua', 'debug')
 
 local Runnable = class('Runnable')
 

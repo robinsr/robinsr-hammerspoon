@@ -1,16 +1,10 @@
 local M     = require 'moses'
 local alert = require 'user.lua.interface.alert'
-local util  = require 'user.lua.util'
+local U     = require 'user.lua.util'
 
-local log   = util.log('mods:apps', 'debug')
+local log   = U.log('mods:apps', 'debug')
 
-local Apps  = {}
-
-function Apps.onLoad()
-  local preload = hs.application.find('hammerspoon')
-  log.df('Pre-loading hs.application; returned %s', hs.inspect(preload, { depth = 2 }))
-end
-
+-- Returns relevant fields from hs.application.menuitem
 --[[
   AXChildren = {...},
   AXEnabled = true,
@@ -21,44 +15,73 @@ end
   AXRole = "AXMenuBarItem",
   AXTitle = "Messages"
 ]]
+local function unpackItem(item)
+  local picked = { "AXTitle", "AXMenuItemCmdModifiers", "AXMenuItemCmdChar", "AXChildren" }
+  return table.unpack(U.pick(item, picked))
+end
 
-local function traverseMenu(bin, items)
+
+
+local function traverseMenu(bin, items, p)
+  local parent = table.concat(p, " - ")
+
   for k, item in ipairs(items) do
-    if (item["AXChildren"]) then
-      bin = traverseMenu(bin, item["AXChildren"][1])
-      -- item["AXChildren"] = nil
-    elseif (item["AXMenuItemCmdChar"] ~= "") then
-      local mods = item["AXMenuItemCmdModifiers"]
+    local title, mods, char, children = unpackItem(item)
+
+    if (U.isTable(children)) then
+      local tail = { table.unpack(p), title }
+
+      bin = traverseMenu(bin, children[1], tail)
+    elseif (char ~= "") then
 
       local bits = {
-        title = util.default(util.path(item, 'AXTitle'), '(AXTitle nil)'),
+        title = U.default(title, '(AXTitle nil)'),
         mods = mods and table.concat(mods, "-"),
-        -- mods = item["AXMenuItemCmdModifiers"],
-        char = item["AXMenuItemCmdChar"],
+        char = char,
+        parent = parent,
       }
 
-      table.insert(bin, bits)
+      table.insert(bin.mapped, bits)
+    elseif (string.match(title, "\t+") ~= nil) then
+      local beforeTabs = string.match(title, "[^\t]*")
+      local afterTabs = string.gsub(title, beforeTabs .. "\t+", "")
+
+      local bits = {
+        title = U.default(beforeTabs, '(AXTitle nil)'),
+        sequence = afterTabs,
+        parent = parent,
+      }
+
+      table.insert(bin.mapped, bits)
     else
-      log.d("No key, no children:", item["AXTitle"], item["AXMenuItemCmdChar"])
+      table.insert(bin.unmapped, U.default(title, '(AXTitle nil)'))
     end
   end
 
   return bin
 end
-function Apps.getMenusForActiveApp()
-  local activeapp = hs.application.frontmostApplication()
 
-  alert.alert(util.fmt("Getting keys for %s...", activeapp:name()), nil, nil, 10)
 
-  util.delay(50, function ()
-    activeapp:getMenuItems(function(menus)
-      -- local slice = { menus[2] }
-      table.insert(menus, 1, {})
-      local items = traverseMenu({}, menus)
-      log.inspect(items, { depth = 3 })
+return {
+  onLoad = function()
+    local preload = hs.application.find('hammerspoon')
+    log.df('Pre-loading hs.application; returned %s', hs.inspect(preload, U.d2))
+  end,
+
+  getMenusForActiveApp = function()
+    local activeapp = hs.application.frontmostApplication()
+
+    alert.alert(U.fmt("Getting keys for %s...", activeapp:name()), nil, nil, 10)
+
+    U.delay(1, function ()
+      activeapp:getMenuItems(function(menus)
+        
+        table.insert(menus, 1, {})
+        
+        local items = traverseMenu({ mapped = {}, unmapped = {} }, { menus[4] }, {})
+        
+        log.inspect(items, U.d3)
+      end)
     end)
-  end)
-
-end
-
-return Apps
+  end,
+}

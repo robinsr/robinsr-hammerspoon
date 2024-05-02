@@ -1,6 +1,6 @@
-local util = require 'user.lua.util'
+local U = require 'user.lua.util'
 
-local log = hs.logger.new('hotkeys.lua', 'debug')
+local log = U.log('hotkeys.lua', 'debug')
 
 --- Uncomment to inspect system keycodes
 -- log.i(hs.inspect(hs.keycodes.map))
@@ -34,9 +34,9 @@ local HotKeys = {
           cmd.fn({ trigger = 'hotkey' }, {})
         end
 
-        local pressedfn = (util.contains(hk.on, 'pressed') and fn) or nil
-        local releasedfn = (util.contains(hk.on, 'released') and fn) or nil
-        local repeatfn = (util.contains(hk.on, 'repeat') and fn) or nil
+        local pressedfn = (U.contains(hk.on, 'pressed') and fn) or nil
+        local releasedfn = (U.contains(hk.on, 'released') and fn) or nil
+        local repeatfn = (U.contains(hk.on, 'repeat') and fn) or nil
 
         local bind = hs.hotkey.bind(mods[hk.mods], hk.key, title, pressedfn, releasedfn, repeatfn)
 

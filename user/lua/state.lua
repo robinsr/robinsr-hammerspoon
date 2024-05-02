@@ -32,8 +32,9 @@ KittySupreme.services = {
 }
 
 for i,v in ipairs(BrewService:list()) do
-  if (KittySupreme.services[v.name]) then break end
-  KittySupreme.services[v.name] = BrewService:new(v.name)
+  if (KittySupreme.services[v.name] == nil) then
+    KittySupreme.services[v.name] = BrewService:new(v.name)
+  end
 end
 
 log.inspect(KittySupreme.services, { depth = 2 })

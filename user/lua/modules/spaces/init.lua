@@ -1,5 +1,5 @@
-local yabai      = require 'user.lua.adapters.yabai'
-local sketchybar = require 'user.lua.adapters.sketchybar'
+-- local yabai      = require 'user.lua.adapters.yabai'
+-- local sketchybar = require 'user.lua.adapters.sketchybar'
 local desktop    = require 'user.lua.interface.desktop'
 local alert      = require 'user.lua.interface.alert'
 local ui         = require 'user.lua.ui'
@@ -9,6 +9,10 @@ local M          = require 'moses'
 local icons      = ui.icons
 
 local log = util.log('mods:spaces', 'info')
+
+---@type Yabai
+local yabai      = KittySupreme.services.yabai
+local sketchybar = KittySupreme.services.sketchybar
 
 
 local Spaces = {}
@@ -89,5 +93,30 @@ function Spaces.onSpaceDestroyed(params)
   log.d("space destroyed:", hs.inspect(params))
 end
 
+
+---@return string
+function Spaces.cycleLayout()
+  local nextlayout
+  local layouts = { "bsp", "float", "stack" }
+
+  local space = yabai:getSpace() --[[@as string]]
+
+  log.i('yabai space:', hs.inspect(space))
+
+  local layout = space.type
+
+  for i, nl in ipairs(layouts) do
+    if nl == layout then
+      log.i(#layouts, i , i % #layouts + 1)
+      nextlayout = layouts[i % #layouts + 1]
+    end
+  end
+
+  log.i('next yabai space:', nextlayout)
+
+  yabai:setLayout(nextlayout)
+
+  return nextlayout
+end
 
 return Spaces
