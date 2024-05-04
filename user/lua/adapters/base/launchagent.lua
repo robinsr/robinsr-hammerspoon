@@ -1,10 +1,14 @@
 local class   = require 'middleclass'
 local Service = require 'user.lua.adapters.base.service'
 local shell   = require 'user.lua.interface.shell'
-local util    = require 'user.lua.util'
+local U       = require 'user.lua.util'
 
-local log = util.log('adpt:launchagent', 'info')
+local log = U.log('LaunchAgent', 'info')
 
+
+---@class LaunchAgent : Service
+---@field new fun(...: any[]): LaunchAgent
+---@field getUID fun(): string
 local LaunchAgent = class('LaunchAgent', Service)
 
 function LaunchAgent.static:getUID()
@@ -21,8 +25,8 @@ function LaunchAgent:initialize(name, servicename)
 
   local uid = LaunchAgent:getUID()
 
-  self.domain_target = util.fmt('gui/%s', uid)
-  self.service_target = util.fmt('gui/%s/%s', uid, self.service_name)
+  self.domain_target = U.fmt('gui/%s', uid)
+  self.service_target = U.fmt('gui/%s/%s', uid, self.service_name)
 
   local launchinfo = shell.run('launchctl print %s', self.service_target)
   

@@ -16,7 +16,8 @@ end
 SketchyBar.update = wrap("sketchybar --update")
 SketchyBar.reload = wrap("sketchybar --reload")
 SketchyBar.trigger = {
-  on_new_label = wrap("sketchybar --trigger ya_new_label YA_SPACE_ID=%d YA_LABEL='%s'"),
+  onNewLabel = wrap("sketchybar --trigger ya_new_label YA_SPACE_ID=%d YA_LABEL='%s'"),
+  onLayoutChange = wrap("sketchybar --trigger ya_layout_change YA_SPACE_ID=$d YA_LAYOUT=$s"),
 }
 SketchyBar.onLoad = wrap("sketchybar --set front_app label='%s'")
 

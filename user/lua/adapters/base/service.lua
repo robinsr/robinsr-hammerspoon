@@ -3,9 +3,10 @@ local util  = require 'user.lua.util'
 
 local log = util.log('adpt:service', 'warning')
 
+---@class Service : MidClassObject
+---@field new fun(): Service
 local Service = class('Service')
 
----@class Service
 function Service:initialize(name)
   log.f("New service [%s]", name)
   self.name = name or "unknown"

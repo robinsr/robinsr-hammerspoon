@@ -4,34 +4,31 @@ local desktop    = require 'user.lua.interface.desktop'
 local alert      = require 'user.lua.interface.alert'
 local ui         = require 'user.lua.ui'
 local text       = require 'user.lua.ui.text'
-local util       = require 'user.lua.util'
+local U          = require 'user.lua.util'
 local M          = require 'moses'
 local icons      = ui.icons
 
-local log = util.log('mods:spaces', 'info')
+local log = U.log('mods:spaces', 'info')
 
 ---@type Yabai
 local yabai      = KittySupreme.services.yabai
 local sketchybar = KittySupreme.services.sketchybar
 
 
-local Spaces = {}
+local Spaces = {
+  cmds = {
+    
+  }
+}
 
 ---
 -- Gets text input via a HS TextInput and applies the resulting
 -- name to the current space as a yabai "label"
 ---
 function Spaces.rename()
-  -- Returns the 'main' screen, i.e. the one containing the currently focused window
-  local screen = desktop.get_screen("mouse"):getUUID()
-  local spaces = {
-    all = hs.spaces.spacesForScreen(screen),
-    active = hs.spaces.activeSpaceOnScreen(screen),
-  }
-
-  -- is there a reason not to just use Yabai for this?
-  local index = hs.fnutils.indexOf(spaces.all, spaces.active)
-  local label = util.path(yabai:getSpace(index), 'label') or util.fmt("Space no %s", tostring(index))
+  local space = yabai:getSpace()
+  local index = tostring(space.index)
+  local label = U.default(space.label, U.fmt("Space #%s", index))
 
   local title = "Rename Space"
   local info = "Input a name for current space"
@@ -40,8 +37,8 @@ function Spaces.rename()
   log.f("RenameSpace - Clicked %s; Value: %s", clicked, input)
 
   if (clicked == ui.btn.confirm) then
-    yabai:setSpaceLabel(index, input)
-    sketchybar.trigger.on_new_label(index, input)
+    yabai:setSpaceLabel(index, U.default(input, index))
+    sketchybar.trigger.onNewLabel(index, input)
   end
 end
 
@@ -51,13 +48,13 @@ function Spaces.onSpaceChange(params)
   local alert_duration = ui.alert.ts.normal
   local screen = desktop.get_screen('active')
 
-  local submsg = util.fmt("(%s - %s)", screen:id(), screen:name())
+  local submsg = U.fmt("(%s - %s)", screen:id(), screen:name())
 
 
   if (
     type(params.to_index) == "string" and
     type(params.from_index == "string")) then
-      message = util.fmt("Moved to space %s", params.to_index)
+      message = U.fmt("Moved to space %s", params.to_index)
 
       local toInd = tonumber(params.to_index)
       local frInd = tonumber(params.from_index)
@@ -94,6 +91,9 @@ function Spaces.onSpaceDestroyed(params)
 end
 
 
+-- 
+-- Cycles current space's Yabai layout from BSP to Float, to Stack and back again
+--
 ---@return string
 function Spaces.cycleLayout()
   local nextlayout
@@ -103,11 +103,10 @@ function Spaces.cycleLayout()
 
   log.i('yabai space:', hs.inspect(space))
 
-  local layout = space.type
+  local layout = U.default(space.type, 'stack')
 
   for i, nl in ipairs(layouts) do
     if nl == layout then
-      log.i(#layouts, i , i % #layouts + 1)
       nextlayout = layouts[i % #layouts + 1]
     end
   end
@@ -115,6 +114,7 @@ function Spaces.cycleLayout()
   log.i('next yabai space:', nextlayout)
 
   yabai:setLayout(nextlayout)
+  sketchybar.trigger.onLayoutChange(space.index, nextlayout)
 
   return nextlayout
 end

@@ -1,7 +1,7 @@
 local M    = require 'moses'
-local util = require 'user.lua.util'
+local U = require 'user.lua.util'
 
-local log = util.log('iface:desktop', 'debug')
+local log = U.log('iface:desktop', 'debug')
 
 
 -- Desktop/environment utilities
@@ -26,13 +26,13 @@ function desktop.get_screen(case)
     largest = main_screen,           -- todo; needed?
   }
 
-  local kscreen_selectors = util.keys(screen_selectors)
+  local kscreen_selectors = U.keys(screen_selectors)
 
   if (type(case) ~= "string") then
     error("No screen selector passed to get_screen_id", 2)
   end
 
-  if (not util.contains(kscreen_selectors, case)) then
+  if (not U.contains(kscreen_selectors, case)) then
     error("Invalid screen selector: "..case, 2)
   end
 

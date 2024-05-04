@@ -1,16 +1,14 @@
 local M      = require 'moses'
 local yabai  = require 'user.lua.adapters.yabai'
 local alert  = require 'user.lua.interface.alert'
-local List   = require 'user.lua.lib.list'
+local Set    = require 'user.lua.lib.set'
 local spaces = require 'user.lua.modules.spaces'
 local apps   = require 'user.lua.modules.apps'
 local ui     = require 'user.lua.ui'
-local util   = require 'user.lua.util'
+local U      = require 'user.lua.util'
 
-local log = util.log('user:commands', 'debug')
+local log = U.log('user:commands', 'debug')
 
----@class HasId
----@field id string
 
 ---@class CommandCtx
 ---@field trigger 'hotkey'|'menubar' Source invoking the command
@@ -28,16 +26,32 @@ local function hotkey(params)
     mods = params[1],
     key = params[2],
     message = params[3],
-    on = util.default(params[4], { "pressed" })
+    on = U.default(params[4], { "pressed" })
+  }
+end
+
+
+---@class CommandMenu
+---@field section string
+---@field key? string
+---@field icon? hs.image
+
+---@param params table
+---@return CommandMenu
+local function menubar(params)
+  return {
+    section = params[1],
+    key = params[2],
+    icon = params[3],
   }
 end
 
 
 ---@class Command
 ---@field id string Unique string to identify command
----@field fn fun(ctx: table, params: table): nil A callback function for the command
+---@field fn fun(ctx: table, params: table): string|nil A callback function for the command, optionally returning an alert string
 ---@field title? string
----@field menubar? { [1]: string, [2]: string|nil, [3]: hs.image|nil }
+---@field menubar? CommandMenu
 ---@field hotkey? CommandHotKey
 ---@field url? string A hammerspoon url to bind to
 
@@ -54,17 +68,17 @@ local command_list = {
     id = 'spaces-cycle-layout',
     title = "Space → Cycle Layout",
     hotkey = hotkey{ "modA", "space" },
-    menubar = { "general", "y", ui.icons.code },
+    menubar = menubar{ "general", "y", ui.icons.code },
     fn = function(ctx)
       local layout = spaces.cycleLayout()
-
-      alert.showf("Changed layout to %s", { layout })
+      return U.fmt("Changed layout to %s", layout)
     end,
   },
   { 
     id = 'show-console',
     title = "Show console",
-    menubar = { "general", "i", ui.icons.code },
+    menubar = menubar{ "general", "i", ui.icons.code },
+    hotkey = hotkey{ "bar", "I" },
     fn = function()
       hs.openConsole(true)
     end,
@@ -72,46 +86,51 @@ local command_list = {
   {
     id = 'reload',
     title = "Reload KittySupreme",
-    menubar = { "general", "w", ui.icons.reload },
-    hotkey = hotkey({ "bar", "W", "title" }),
+    menubar = menubar{ "general", "w", ui.icons.reload },
+    hotkey = hotkey{ "bar", "W", "Reload KittySupreme" },
     fn = function(ctx)
-      util.delay(0.75, hs.reload)
+      U.delay(0.75, hs.reload)
     end,
   },
   {
     id = 'restart-yabai',
-    title = "Restarting yabai...",
+    title = "Restart Yabai",
     menubar = nil,
-    hotkey = hotkey({ "bar", "Y", "title" }),
+    hotkey = hotkey{ "bar", "Y" },
     fn = function (ctx)
-      if (ctx.hotkey) then
-        hs.alert.show(ctx.title)
-      end
       yabai:restart()
+      
+      if (ctx.trigger == 'hotkey') then
+        return U.fmt('%s: %s', ctx.hotkey, ctx.title)
+      end
     end,
   },
   {
     id = 'rename-space',
     title = "Label current space",
-    menubar = { "desktop", "L", ui.icons.tag },
-    -- hotkey = hotkey({ "bar", "L", "title", { "released"} }),
-    hotkey = hotkey({ "bar", "L", nil, { "released"} }),
-    fn = spaces.rename,
+    menubar = menubar{ "desktop", "L", ui.icons.tag },
+    hotkey = hotkey{ "bar", "L" },
+    fn = function(ctx)
+      spaces.rename()
+
+      if (ctx.trigger == 'hotkey') then
+        return U.fmt('%s: %s', ctx.hotkey, ctx.title)
+      end
+    end,
   },
   { 
     id = "float-active",
     title = "Float active window",
-    menubar = { "desktop", nil, ui.icons.float },
-    hotkey = nil,
-    fn = function ()
+    menubar = menubar{ "desktop", nil, ui.icons.float },
+    fn = function (ctx)
       yabai:floatActiveWindow()
+
+      if ctx.hotkey then return ctx.title end
     end
   },
   {
     id = 'space-change',
     url = "spaces.changed",
-    menubar = nil,
-    hotkey = nil,
     fn = function(ctx, params)
       spaces.onSpaceChange(params)
     end,
@@ -119,8 +138,6 @@ local command_list = {
   {
     id = 'space-create',
     url = "spaces.created",
-    menubar = nil,
-    hotkey = nil,
     fn = function(ctx, params)
       spaces.onSpaceCreated(params)
     end,
@@ -128,8 +145,6 @@ local command_list = {
   {
     id = 'space-destroyed',
     url = "spaces.destroyed",
-    menubar = nil,
-    hotkey = nil,
     fn = function(ctx, params)
       spaces.onSpaceDestroyed(params)
     end,
@@ -137,7 +152,7 @@ local command_list = {
   {
     id = 'show-active-app-shortcuts',
     title = 'Show Keys for active app',
-    menubar = { "general", nil, ui.icons.command },
+    menubar = menubar{ "general", nil, ui.icons.command },
     hotkey = hotkey({ "bar", "K", "title" }),
     fn = function(ctx, params)
       apps.getMenusForActiveApp()
@@ -145,6 +160,10 @@ local command_list = {
   },
 }
 
--- local Commands = List:new(command_list)
--- return Commands
-return List:new(command_list)
+return {
+  getCommands = function()
+    return Set:new(command_list)
+    -- return lol
+  end
+} 
+

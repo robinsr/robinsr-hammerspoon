@@ -1,11 +1,11 @@
-local util = require 'user.lua.util'
+local U = require 'user.lua.util'
 
-local log = util.log('ui:color', 'info')
+local log = U.log('ui:color', 'info')
 
 local colorlists = hs.drawing.color.lists()
 
 ---@cast colorlists -nil
-local colorlistkeys = util.keys(colorlists)
+local colorlistkeys = U.keys(colorlists)
 
 log.df("Available color lists: %s", hs.inspect(colorlistkeys))
 
@@ -13,7 +13,7 @@ local systemColors = hs.drawing.color.colorsFor("System")
 
 local function getSystemColor(color_name)
   ---@cast systemColors -nil
-  return util.default(systemColors[color_name], { hex = '#000000' })
+  return U.default(systemColors[color_name], { hex = '#000000' })
 end
 
 

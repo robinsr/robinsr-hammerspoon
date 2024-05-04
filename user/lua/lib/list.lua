@@ -1,74 +1,70 @@
-local util = require 'user.lua.util'
-
----@generic T: any
----@alias PredicateFn fun(i: T): boolean
-
----@class List
 local List = {}
 
----@generic T: any
----@param list T[] List of commands to search
-function List:new(list)
-  o = list or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+--
+-- Iterates over item in a list
+--
+---@generic T : any
+---@param items T[] list-like table
+---@param fn IteratorFn The iteration function
+---@return nil
+function List.forEach(items, fn)
+  for k, v in ipairs(items) do
+    fn(v, k)
+  end
 end
 
+--
+-- Maps item in a list
+--
+---@generic T : any
+---@param items T[] list-like table
+---@param fn MappingFn Mapping function
+---@return T[]
+function List.map(items, fn)
+  local mapped = {}
+
+  for k, v in ipairs(items) do
+    table.insert(mapped, k, fn(v, k))
+  end
+
+  return mapped
+end
 
 --
--- Return item where item.id eq passed parameter
+-- Filters item in a list
 --
----@generic T: HasId
----@param id any String to match against command's id field
----@return T|nil
-function List:findById(id)
-  for k, cmd in ipairs(self) do
-    if (cmd.id == id) then
-      return cmd
+---@generic T : any
+---@param items T[] list-like table
+---@param fn PredicateFn The filter function
+---@return T[] The filtered list
+function List.filter(items, fn)
+  local filtered = {}
+
+  for k, v in ipairs(items) do
+    if (fn(v, k)) then
+      table.insert(filtered, v)
     end
   end
 
-  return nil
-end
-
---
--- Return first item where fn(item) eq true
---
----@generic T: any
----@param fn PredicateFn to match against
----@return T|nil
-function List:find(fn)
-  for k, cmd in ipairs(self) do
-    if (fn(cmd) == true) then
-      return cmd
-    end
-  end
-
-  return nil
+  return filtered
 end
 
 
 --
--- Return first item where item's properties match all of tabl's properties
+-- Reduces items to a single value
 --
----@generic T: any
----@param tabl table Table of key/value pairs to match against
----@return T|nil
-function List:where(tabl)
-  local keys = util.keys(tabl)
-  
-  for k, item in ipairs(self) do
-    for j, key in ipairs(keys) do
-      if (util.path(item, key) == tabl[key]) then
-        return item
-      end
-    end
-  end
+---@generic T : any
+---@generic R : any
+---@param init R Initial value of reduction
+---@param items T[] list-like table
+---@param reducerFn ReducerFn The reducer function
+---@return R The filtered list
+function List.reduce(init, items, reducerFn)
+  List.forEach(items, function(item, i)
+    initial = reducerFn(init, item, i)
+  end)
 
-  return nil
+  return initial
 end
-
-
 
 return List

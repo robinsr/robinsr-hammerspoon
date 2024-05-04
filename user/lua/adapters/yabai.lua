@@ -1,3 +1,6 @@
+local apps        = require 'hs.application'
+local win         = require 'hs.window'
+local winf        = require 'hs.window.filter'
 local class       = require 'middleclass'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
 local isCli       = require 'user.lua.adapters.base.cli-utility'
@@ -65,7 +68,9 @@ local yabai_api = {
   }
 }
 
----@class Yabai
+
+---@class Yabai : LaunchAgent
+---@field new fun(): Yabai
 local Yabai = class('Yabai', LaunchAgent)
 
 Yabai.static.cmds = yabai_api
@@ -87,12 +92,13 @@ function Yabai:scratchWindow(windowId)
   end
 end
 
-
+--
+-- 
+--
 function Yabai:descratchWindow(windowId)
   if (windowId == nil) then
     windowId = hs.window.focusedWindow():id()
   end
-
 
   if (windowId ~= nil) then
     local window = U.json(yabai_api.window.get(windowId))
@@ -122,32 +128,69 @@ function Yabai:floatActiveWindow()
   log.df('Created label: "%s"', label) 
 end
 
+---@class YabaiSpace
+---@field display number
+---@field first-window number
+---@field has-focus boolean
+---@field id number
+---@field index number
+---@field is-native-fullscreen boolean
+---@field is-visible boolean
+---@field label string
+---@field last-window number
+---@field type string The layout type
+---@field uuid string
+---@field windows number[]
 
----@return table
-function Yabai:getSpace(num)
-  local space = U.default(num, 'mouse')
-  return shell.runt("yabai -m query --spaces --space %q", space)
+---@alias YSpaceSelector 'prev' | 'next' | 'first' | 'last' | 'recent' | 'mouse' | string | number
+
+--
+-- Returns a yabai space
+--
+---@param selector? YSpaceSelector Yabai space selector
+---@return YabaiSpace
+function Yabai:getSpace(selector)
+  local space = U.default(selector, 'mouse')
+  return shell.runt("yabai -m query --spaces --space %s", tostring(space))
 end
 
 
+-- Sets the label of a Yabai space
+---@param space YSpaceSelector
+---@param label string Label to apply to space
 ---@return string
 function Yabai:setSpaceLabel(space, label)
-  return shell.run("yabai -m space %d --label '%q'", space, label)
+  log.df("Setting label for space [%s] to [%s]", tostring(space), label)
+  return shell.run("yabai -m space %s --label %q", tostring(space), label)
 end
 
 
+--
+-- Returns the layout value for a specific Yabai space; Deprecated, use Yabai:getSpace(...).type
+--
+---@deprecated
 ---@return string
 function Yabai:getLayout(num)
   local space = U.default(num, 'mouse')
-  local layout = shell.run("yabai -m config --space %q layout", space)
-  log.ef("Current yabai layout: [%s]", layout)
+  local layout = shell.run("yabai -m config --space %s layout", tostring(space))
+  log.df("Current yabai layout: [%s]", layout)
   return layout
 end
 
-function Yabai:setLayout(layout, num)
-  local space = U.default(num, 'mouse')
-  log.ef("Setting layout for space [%q] to [%q]", space, layout)
-  shell.run("yabai -m space %q --layout %q", space, layout)
+
+--
+-- Sets the layout value for a specific Yabai space
+--
+---@param layout string
+---@param selector? YSpaceSelector
+---@return string
+function Yabai:setLayout(layout, selector)
+  local space = U.default(selector, 'mouse')
+  
+  log.df("Setting layout for space [%s] to [%s]", tostring(space), layout)
+  local layout = shell.run("yabai -m space %s --layout %s", tostring(space), layout)
+
+  return layout
 end
 
 

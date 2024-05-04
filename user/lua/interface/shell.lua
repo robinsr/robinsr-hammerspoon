@@ -1,24 +1,7 @@
-local util  = require 'user.lua.util'
-local trim  = require 'string.trim'
-local class = require 'middleclass'
+local U     = require 'user.lua.util'
+local run   = require 'user.lua.interface.runnable'
 
-local log   = util.log('shell.lua', 'debug')
-
-local Runnable = class('Runnable')
-
-function Runnable:initialize(cmd)
-  self.cmds = {}
-  table.insert(self.cmds, cmd)
-end
-
-function Runnable:pipe(cmd)
-  table.insert(self.cmds, cmd)
-end
-
-function Runnable:run()
-  local pipedCmd = ""
-  -- todo
-end
+local log = U.log('Shell', 'warning')
 
 
 local Shell = {}
@@ -30,18 +13,21 @@ function Shell.run(cmd_str, ...)
     log.e('No command passed to utils#run')
   end
 
-  log.f("Running shell command [%s] (%s)", cmd_str, hs.inspect(params))
+  log.logIf('info', function()
+    log.f("Running shell command [%s] (%s)", cmd_str, hs.inspect(params))
+  end)
+
   local cmd = string.format(cmd_str, table.unpack(params))
   log.f("Running shell command [%s]", cmd)
   local output, status, type, rc = hs.execute(cmd, true)
 
   if (status) then
-    local trimmed = trim(output)
+    local trimmed = U.trim(output)
     log.df("Command [%s] completed with result:\n%s", cmd, trimmed)
     return trimmed
   end
 
-  error(string.format([[
+  error(U.fmt([[
     Command '%s' exited with error:
       - code: %s %s
       - stderr: %s
@@ -59,7 +45,7 @@ function Shell.runt(cmd_str, ...)
   end)
 
   if (ok) then
-    return util.json(output)
+    return U.json(output)
   end
 
   error(output)
@@ -77,7 +63,7 @@ function Shell.runtv(cmd_str, key, ...)
   end)
 
   if (ok) then
-    return util.path(output, key) or nil
+    return U.path(output, key) or nil
   end
   
   error(output)
@@ -88,38 +74,28 @@ function Shell.wrap(cmd)
   return function(...)
     
     if (#{...} == 0) then
-      log.d('No-args invocation of command: '..cmd)
+      log.d('No-args invocation of command: ', cmd)
       return Shell.run(cmd)
     end
 
     local args = {...}
     if (type(args[0]) == "boolean" and args[0]) then
-      log.d('Unwrapping command string: '..cmd)
+      log.d('Unwrapping command string: ', cmd)
       return cmd;
     end
 
-    log.d('Invocating command: '..cmd.." with args ", args)
-    return Shell.run(cmd, table.unpack({...}))
+    return Shell.run(cmd, table.unpack{...})
   end
 end
 
 
--- WIP
-function Shell.pipe(cmdfn)
-  local cmdstr = cmdfn(true)
-  return {
-    to = function (next)
-      return {
-        exec = function ()
-        end
-      }    
-    end
-  }
+function Shell.pipe(...)
+  return run:new(table.unpack{...})
 end
 
 
 function Shell.trim(str)
-  return trim(str)
+  return U.trim(str)
 end
 
 return Shell

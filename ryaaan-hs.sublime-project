@@ -1,25 +1,31 @@
 {
-  "folders": [
-    {
-      "path": "."
-    }
-  ],
-  "settings": {
-    "LSP": {
-      "LSP-lua": {
-        "settings": {
-          "Lua.codeLens.enable": true,
-          "Lua.workspace.library": [
-            "./Spoons"
-          ],
-          "Lua.diagnostics.disable": [
-            "missing-return"
-          ],
-          "Lua.diagnostics.globals": [
-            // "hs"
-          ]
-        }
-      }
-    }
-  }
+	"folders":
+	[
+		{
+			"path": ".",
+		},
+		{
+			"path": "/Users/ryan/dotfiles/config/skhd"
+		},
+	],
+	"settings":
+	{
+		"LSP":
+		{
+			"LSP-lua":
+			{
+				"settings":
+				{
+					"Lua.diagnostics.globals":
+					[
+						"lfs"
+					],
+					"Lua.workspace.library":
+					[
+						"${3rd}/lfs/library", "./Spoons"
+					],
+				},
+			},
+		},
+	},
 }

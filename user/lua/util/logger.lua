@@ -1,17 +1,22 @@
-local tc = require 'user.lua.util.typecheck'
+local tc = require 'user.lua.lib.typecheck'
+local L  = require 'user.lua.lib.list'
 
-local isNil, isTable = tc.isNil, tc.isTable
+local isNil, isTable, isString = tc.isNil, tc.isTable, tc.isString
 
 ---@class ProxyLogger : hs.logger
 ---@field inspect fun(...): nil prints a thing nice
+---@field logIf fun(...): nil logs conditionally (prevent unnecessary calls to inspect)
 
 
 local levels_config = {
   -- ['init.lua'] = 'error',
-  ['shell.lua'] = 'info',
-  ['menu.lua'] = 'debug',
+  -- ['shell.lua'] = 'warning',
+  -- ['menu.lua'] = 'debug',
 }
 
+local levels = {
+  "error", "warning", "info", "debug", "verbose"
+}
 
 local DEBUG_WARNING = '>>> DEBUG >>>  (warning! hs.inspect is slow)  '
 
@@ -46,8 +51,20 @@ function ProxyLogger:new(log_name, level)
         table.insert(args, { depth = 1 })
       end
 
-      log.d(DEBUG_WARNING..hs.inspect(table.unpack(args)))
+      local bits = L.map(args, function(bit)
+        if isString(bit) then
+          return bit
+        else
+          return hs.inspect(bit)
+        end
+      end)
+
+      log.d(DEBUG_WARNING, table.unpack(bits))
     end
+  end
+
+  log.logIf = function(level, fn)
+    if (log:getLogLevel() or 0 >= levels[level]) then fn() end
   end
 
   return log

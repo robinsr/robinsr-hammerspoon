@@ -12,7 +12,7 @@ console.configureHSConsole()
 console.setDarkMode(true)
 
 local globalstate = require 'user.lua.state'
-local commands = require 'user.lua.commands'
+local commands = require 'user.lua.commands'.getCommands()
 
 -- log.inspect(commands)
 
@@ -29,10 +29,12 @@ log.i('Running onLoad commands')
 
 local onLoad = commands:findById('onLoad')
 
-local onLoadErr, onLoadR = pcall(onLoad.fn)
+local loadCmdOK, loadCmd = pcall(onLoad.fn)
 
-log.inspect(onLoadErr)
-log.inspect(onLoadR)
+if (not loadCmdOK) then
+  log.e('Onload error')
+  error(loadCmd)
+end
 
 log.i('Init complete')
 
