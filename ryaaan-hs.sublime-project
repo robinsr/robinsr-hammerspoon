@@ -5,7 +5,10 @@
 			"path": ".",
 		},
 		{
-			"path": "/Users/ryan/dotfiles/config/skhd"
+			"path": "/Users/ryan/dotfiles/config/skhd",
+		},
+		{
+			"path": "/Users/ryan/dotfiles/config/yabai"
 		},
 	],
 	"settings":
@@ -18,7 +21,8 @@
 				{
 					"Lua.diagnostics.globals":
 					[
-						"lfs"
+						"lfs",
+						"KittySupreme"
 					],
 					"Lua.workspace.library":
 					[

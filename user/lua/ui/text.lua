@@ -19,4 +19,8 @@ function text.styleText(text, fontSize)
   return hs.styledtext.new(text, style) --[[@as hs.styledtext]]
 end
 
+function text.msgWithSub(msg, sub)
+  return text.styleText(msg, 24)..text.styleText("\n\n"..sub, 12)
+end
+
 return text

@@ -107,15 +107,6 @@ local function optionalOf(val, msg)
 end
 
 
----@type Optional
-local testval = optional:new('my val not nil', 'myVal is important to me')
-
-
-if testval:ispresent() then
-  hs.printf('myVal is present! %s', testval:get())
-end
-
-
 return {
   ---@generic T
   ---@param val T|nil

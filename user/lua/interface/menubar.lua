@@ -1,8 +1,10 @@
 local M       = require 'moses'
 local desktop = require 'user.lua.interface.desktop'
+local alert   = require 'user.lua.interface.alert'
 local ui      = require 'user.lua.ui'
 local symbols = require 'user.lua.ui.symbols'
 local U       = require 'user.lua.util'
+local list    = require 'user.lua.lib.list'
 
 
 
@@ -22,7 +24,7 @@ local U       = require 'user.lua.util'
 ---@field mixedStateImage? hs.image
 
 
-local log = U.log('menubar', 'debug')
+local log = U.log('menubar', 'info')
 
 ---@param text string
 ---@return MenubarItem
@@ -34,61 +36,14 @@ local function textMenuItem(text)
   }
 end
 
----@param service Service
----@return string, string
-local function serviceMenuProps(service)
-  if (service.pid) then
-    return "on" , "("..service.pid..")"
-  else
-    return "off", "(?)"
-  end
-end
 
-
----@param services Service[]
----@return MenubarItem[]
-local function servicesSubmenu(services)
-  local menuitems = U.map(services, function(service)
-    local state, text = serviceMenuProps(service)
-
-    ---@type MenubarItem
-    return {
-      title = U.fmt("%s %s", service.name, text),
-      state = state,
-      onStateImage = ui.icons.running,
-      offStateImage = ui.icons.stopped,
-      mixedStateImage = ui.icons.unknown,
-      menu = {
-        { 
-          title = U.fmt("Start %s", service.name),
-          fn = function() service:start() end,
-        },
-        { 
-          title = U.fmt("Stop %s", service.name),
-          fn = function()  service:stop() end,
-        },
-        { 
-          title = U.fmt("Restart %s", service.name),
-          fn = function() service:restart() end
-        },
-      }
-    }
-  end)
-
-  return {
-    title = "Services",
-    menu = menuitems,
-    image = ui.icons.term,
-  }
-end
-
-
+---@param sections string[]
 ---@param cmds Command[]
 ---@return MenubarItem[]
-local function mapCommands(cmds)
+local function mapCommands(sections, cmds)
 
   ---@type MenubarItem[]
-  local mapped = U.reduce({}, { "desktop", "general"}, function(all, section)
+  local mapped = U.reduce({}, sections, function(all, section)
 
       log.df("Mapping menubar section %s", section)
 
@@ -102,7 +57,11 @@ local function mapCommands(cmds)
           shortcut = cmd.menubar.key or nil,
           image = cmd.menubar.icon or nil,
           fn = function()
-            cmd.fn({ type = 'menuclick' }, {})
+            local result = cmd.fn({ type = 'menuclick' }, {})
+
+            if U.notNil(result) then
+              alert.alert(result)
+            end
           end
         })
       end)
@@ -114,54 +73,99 @@ local function mapCommands(cmds)
 end
 
 
-local MenuBar = {
-
-  --
-  -- Installs the main KS menubar item
-  --
-  ---@param cmds Command[]
-  ---@return nil
-  installMenuBar = function(cmds)
-
-    -- local menuitems = {
-    --   textMenuItem("Just some text"),
-    --   textMenuItem("-"),
-    --   table.unpack(mapCommands(cmds)),
-    --   textMenuItem("-"),
-    --   servicesSubmenu(KittySupreme.services),
-    -- }
-
-    local menuitems = U.reduce({}, {
-      textMenuItem("Just some text"),
-      textMenuItem("-"),
-      mapCommands(cmds),
-      textMenuItem("-"),
-      servicesSubmenu(KittySupreme.services),
-    }, function(all, menus)
-      return U.insert(all, menus)
-    end)
-    -- 
-    -- U.insert(menuitems, )
-    -- U.insert(menuitems, )
-    -- U.insert(menuitems, )
-    -- U.insert(menuitems, )
+---@param service Service
+---@return string, string
+local function serviceMenuProps(service)
+  if (service.pid) then
+    return "on" , U.fmt("(%s)", service.pid)
+  else
+    return "off", ""
+  end
+end
 
 
-    log.logIf('debug', function()
-      log.inspect('KittySupreme menu items:', menuitems, U.d3)
-    end)
+---@param services Service[]
+---@return MenubarItem[]
+local function servicesSubmenu(services)
+  local menuitems = U.map(services, function(service)
+    local state, text = serviceMenuProps(service)
 
-    local KSmenubar = hs.menubar.new(true, "kittysupreme")
+    local subitems = {}
 
-    if (KSmenubar == nil) then
-      error('Could not create menubar')
+    if (service.cmds ~= nil) then
+      list.push(subitems, table.unpack(
+        mapCommands({ service.name }, service.cmds)
+      ))
+      list.push(textMenuItem'-')
     end
 
-    KSmenubar:setMenu(menuitems):setTitle('KS'):setIcon(ui.icons.kitty)
 
-    KittySupreme.menubar = KSmenubar
+    list.push(subitems, { 
+      title = U.fmt("Start %s", service.name),
+      fn = function() service:start() end,
+    },
+    { 
+      title = U.fmt("Stop %s", service.name),
+      fn = function()  service:stop() end,
+    },
+    { 
+      title = U.fmt("Restart %s", service.name),
+      fn = function() service:restart() end
+    })
+
+
+    ---@type MenubarItem
+    return {
+      title = U.fmt("%s %s", service.name, text),
+      state = state,
+      onStateImage = ui.icons.running,
+      offStateImage = ui.icons.stopped,
+      mixedStateImage = ui.icons.unknown,
+      menu = subitems,
+    }
+  end)
+
+  log.inspect(menuitems, { depth = 5 })
+
+  return {
+    title = "Services",
+    menu = menuitems,
+    image = ui.icons.term,
+  }
+end
+
+
+local MenuBar = {}
+
+--
+-- Adds the main KS menu to the menubar
+--
+---@param cmds Command[]
+---@return nil
+function MenuBar.install(cmds)
+  local menuitems = {}
+
+  U.insert(menuitems, textMenuItem("Just some text"))
+  U.insert(menuitems, textMenuItem("-"))
+  U.insert(menuitems, table.unpack(mapCommands({ "desktop", "windows" }, cmds)))
+  U.insert(menuitems, textMenuItem("-"))
+  U.insert(menuitems, servicesSubmenu(U.vals(KittySupreme.services)))
+  U.insert(menuitems, textMenuItem("-"))
+  U.insert(menuitems, table.unpack(mapCommands({ "general" }, cmds)))
+
+  log.logIf('debug', function()
+    log.inspect('KittySupreme menu items:', menuitems, U.d3)
+  end)
+
+  local KSmenubar = hs.menubar.new(true, "kittysupreme")
+
+  if (KSmenubar == nil) then
+    error('Could not create menubar')
   end
 
-}
+  KSmenubar:setMenu(menuitems):setTitle('KS'):setIcon(ui.icons.kitty)
+
+  KittySupreme.menubar = KSmenubar
+end
 
 return MenuBar

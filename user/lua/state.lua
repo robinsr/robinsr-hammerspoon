@@ -13,7 +13,7 @@ ScreenAlert = nil
 ---@field boundkeys hs.hotkey[]
 ---@field urlhanders table[]
 ---@field menubar hs.menubar|nil
----@field services (Service)[]
+---@field services Dict<Service>
 
 ---@type KittySupremeGlobal
 KittySupreme = {

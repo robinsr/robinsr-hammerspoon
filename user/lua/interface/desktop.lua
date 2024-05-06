@@ -1,7 +1,9 @@
-local M    = require 'moses'
-local U = require 'user.lua.util'
+local screen = require 'hs.screen'
+local mouse  = require 'hs.mouse'
+local win    = require 'hs.window'
+local U      = require 'user.lua.util'
 
-local log = U.log('iface:desktop', 'debug')
+local log = U.log('Desktop', 'debug')
 
 
 -- Desktop/environment utilities
@@ -9,37 +11,43 @@ local log = U.log('iface:desktop', 'debug')
 local desktop = {}
 
 
-function desktop.get_screen(case)
-  function mouse_screen()
-    return hs.mouse.getCurrentScreen()
+---@alias ScreenSelector
+---| 'main' # Screen containing the currently focused window / foremost app (the app receiving text input)
+---| 'active' # Alias for the 'main' screen
+---| 'mouse' # The screen containing the pointer
+---| 'primary' # The primary screen contains the menubar and dock
+
+---@type Dict<ScreenSelector, fun(...: any):hs.screen>
+local selectors = {
+  main = screen.mainScreen,
+  mouse = mouse.getCurrentScreen,
+  active = screen.mainScreen,
+  primary = screen.primaryScreen,
+}
+
+--
+-- Gets the relevant hs.screen object from HS
+--
+---@param sel ScreenSelector
+---@return hs.screen
+function desktop.getScreen(sel)
+  if (U.isString(sel) and U.haspath(selectors, sel)) then
+    return selectors[sel]();
+  else
+    error(U.fmt("Invalid screen selector [%q]", sel), 2)
   end
-
-  function main_screen()
-    return hs.screen.mainScreen()
-  end
-
-  local screen_selectors = {
-    main = main_screen,
-    mouse = mouse_screen,
-    -- todo; screen with frontmost app (app receiving text input)
-    active = main_screen,
-    largest = main_screen,           -- todo; needed?
-  }
-
-  local kscreen_selectors = U.keys(screen_selectors)
-
-  if (type(case) ~= "string") then
-    error("No screen selector passed to get_screen_id", 2)
-  end
-
-  if (not U.contains(kscreen_selectors, case)) then
-    error("Invalid screen selector: "..case, 2)
-  end
-
-  return screen_selectors[case]();
 end
 
 
+---@return number windowId The numerical ID of the currently active window, or nil if none exists
+function desktop.activeWindow()
+  return win.focusedWindow():id()
+end
+
+
+--
+-- Not sure what this was supposed to do
+--
 function desktop.bundleIDs()
   local apps = hs.application.runningApplications()
 

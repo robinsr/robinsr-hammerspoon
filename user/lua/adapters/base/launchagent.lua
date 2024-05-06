@@ -5,6 +5,7 @@ local U       = require 'user.lua.util'
 
 local log = U.log('LaunchAgent', 'info')
 
+local PROC_UID = shell.run('id -u')
 
 ---@class LaunchAgent : Service
 ---@field new fun(...: any[]): LaunchAgent
@@ -12,9 +13,7 @@ local log = U.log('LaunchAgent', 'info')
 local LaunchAgent = class('LaunchAgent', Service)
 
 function LaunchAgent.static:getUID()
-  local uid = shell.run('id -u')
-  log.i("User Id from id: ", uid)
-  return uid
+  return PROC_UID
 end
 
 

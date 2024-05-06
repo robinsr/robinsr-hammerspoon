@@ -124,14 +124,16 @@ end
 ---@param msg? string Optional error message when value is nil
 ---@returns nil
 function Tabl.haspath(obj, path, msg)
-  local pathdefined = Tabl.path(obj, path)
+  if tc.isTable(obj) then
+    local pathdefined = Tabl.path(obj, path)
 
-  if (tc.notNil(pathdefined)) then
-    return true
-  end
+    if (tc.notNil(pathdefined)) then
+      return true
+    end
 
-  if (tc.notNil(msg)) then
-    error(msg)
+    if (tc.notNil(msg)) then
+      error(msg)
+    end
   end
 
   return false

@@ -1,3 +1,4 @@
-return function (msg, ...)
-  return string.format(msg, table.unpack({...}))
-end
+-- return function (msg, ...)
+--   return string.format(msg, table.unpack({...}))
+-- end
+return {}

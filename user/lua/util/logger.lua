@@ -1,7 +1,7 @@
 local tc = require 'user.lua.lib.typecheck'
 local L  = require 'user.lua.lib.list'
 
-local isNil, isTable, isString = tc.isNil, tc.isTable, tc.isString
+local is, notNil = tc.is, tc.notNil
 
 ---@class ProxyLogger : hs.logger
 ---@field inspect fun(...): nil prints a thing nice
@@ -15,47 +15,46 @@ local levels_config = {
 }
 
 local levels = {
-  "error", "warning", "info", "debug", "verbose"
+  "error", "warning", "info", "debug", "verbose",
+  error = 1,
+  warning = 2,
+  info = 3,
+  debug = 4,
+  verbose = 5,
 }
 
-local DEBUG_WARNING = '>>> DEBUG >>>  (warning! hs.inspect is slow)  '
+local DEBUG_WARNING = '>>> DEBUG >>>  (warning! hs.inspect is slow)\n'
 
 local ProxyLogger = {}
 
 function ProxyLogger:new(log_name, level)
+
+  level = level or 'error'
 
   local log = hs.logger.new(log_name, level)
 
   setmetatable(log, self)
   self.__index = self
 
-  function getEntryFromEnd(tabl, pos)
-    local count = tabl and #tabl or false
-
-    if (count and (count - pos > 0)) then
-        return tabl[count - pos];
-    end
-
-    return false;
-  end
-
   ---@cast log ProxyLogger
   log.inspect = function (...)
     if (log:getLogLevel() > 3) then
       local args = table.pack(...)
-      local lastarg = getEntryFromEnd(args, 0)
+      local lastarg = args[#args]
 
       -- Prevents unintentionally bogging down HS with huge objects
       -- Add { depth = N } as last argument to override
-      if (lastarg and isTable(lastarg) and isNil(lastarg.depth)) then
-        table.insert(args, { depth = 1 })
+      if (is.tabl(lastarg) and notNil(lastarg.depth)) then
+        L.pop(args)
+      else
+        lastarg = { depth = 1 }
       end
 
       local bits = L.map(args, function(bit)
-        if isString(bit) then
+        if is.strng(bit) then
           return bit
         else
-          return hs.inspect(bit)
+          return hs.inspect(bit, lastarg)
         end
       end)
 
@@ -64,7 +63,7 @@ function ProxyLogger:new(log_name, level)
   end
 
   log.logIf = function(level, fn)
-    if (log:getLogLevel() or 0 >= levels[level]) then fn() end
+    if (log:getLogLevel() >= levels[level]) then fn() end
   end
 
   return log

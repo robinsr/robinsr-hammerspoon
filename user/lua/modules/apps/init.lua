@@ -1,8 +1,10 @@
 local M     = require 'moses'
 local alert = require 'user.lua.interface.alert'
+local cmd   = require 'user.lua.model.command'
+local ui    = require 'user.lua.ui'
 local U     = require 'user.lua.util'
 
-local log   = U.log('mods:apps', 'debug')
+local log   = U.log('ModApps', 'debug')
 
 -- Returns relevant fields from hs.application.menuitem
 --[[
@@ -62,26 +64,39 @@ local function traverseMenu(bin, items, p)
 end
 
 
-return {
-  onLoad = function()
-    local preload = hs.application.find('hammerspoon')
-    log.df('Pre-loading hs.application; returned %s', hs.inspect(preload, U.d2))
-  end,
+local Apps = {}
 
-  getMenusForActiveApp = function()
-    local activeapp = hs.application.frontmostApplication()
+function Apps.onLoad()
+  log.df('Pre-loading hs.application; returned %s', hs.application.find('hammerspoon'))
+end
 
-    alert.alert(U.fmt("Getting keys for %s...", activeapp:name()), nil, nil, 10)
+function Apps.getMenusForActiveApp()
+  local activeapp = hs.application.frontmostApplication()
 
-    U.delay(1, function ()
-      activeapp:getMenuItems(function(menus)
-        
-        table.insert(menus, 1, {})
-        
-        local items = traverseMenu({ mapped = {}, unmapped = {} }, { menus[4] }, {})
-        
-        log.inspect(items, U.d3)
-      end)
+  alert.alert(U.fmt("Getting keys for %s...", activeapp:name()), nil, nil, 10)
+
+  U.delay(1, function ()
+    activeapp:getMenuItems(function(menus)
+      
+      table.insert(menus, 1, {})
+      
+      local items = traverseMenu({ mapped = {}, unmapped = {} }, { menus[4] }, {})
+      
+      log.inspect(items, U.d3)
     end)
-  end,
+  end)
+end
+
+Apps.cmds = {
+  {
+    id = 'Apps.getMenusForActiveApp',
+    title = 'Show Keys for active app',
+    menubar = cmd.menubar{ "general", nil, ui.icons.command },
+    hotkey = cmd.hotkey{ "bar", "K", "title" },
+    fn = function(ctx, params)
+      Apps.getMenusForActiveApp()
+    end,
+  },
 }
+
+return Apps

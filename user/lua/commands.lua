@@ -1,169 +1,76 @@
-local M      = require 'moses'
-local yabai  = require 'user.lua.adapters.yabai'
-local alert  = require 'user.lua.interface.alert'
-local Set    = require 'user.lua.lib.set'
-local spaces = require 'user.lua.modules.spaces'
-local apps   = require 'user.lua.modules.apps'
-local ui     = require 'user.lua.ui'
-local U      = require 'user.lua.util'
-
-local log = U.log('user:commands', 'debug')
+local collect    = require 'user.lua.lib.collection'
+local scan       = require 'user.lua.lib.scan'
+local tabl       = require 'user.lua.lib.table'
+local cmd        = require 'user.lua.model.command'
+local ui         = require 'user.lua.ui'
+local U          = require 'user.lua.util'
 
 
----@class CommandCtx
----@field trigger 'hotkey'|'menubar' Source invoking the command
+local log = U.log('commands', 'debug')
 
----@class CommandHotKey
----@field mods "hyper" | "meh" | "bar" | "modA" | "modB" | "shift" | "alt" | "ctrl" | "cmd"
----@field key string
----@field message? string Alert message to show. Passing an empty string will just show keys, "title" will copy command title as message, nil will disable message
----@field on? ("pressed" | "released" | "repeat")[]
-
----@param params table
----@return CommandHotKey
-local function hotkey(params)
-  return {
-    mods = params[1],
-    key = params[2],
-    message = params[3],
-    on = U.default(params[4], { "pressed" })
-  }
-end
-
-
----@class CommandMenu
----@field section string
----@field key? string
----@field icon? hs.image
-
----@param params table
----@return CommandMenu
-local function menubar(params)
-  return {
-    section = params[1],
-    key = params[2],
-    icon = params[3],
-  }
-end
-
-
----@class Command
----@field id string Unique string to identify command
----@field fn fun(ctx: table, params: table): string|nil A callback function for the command, optionally returning an alert string
----@field title? string
----@field menubar? CommandMenu
----@field hotkey? CommandHotKey
----@field url? string A hammerspoon url to bind to
 
 ---@type Command[]
 local command_list = {
   {
-    id = 'onLoad',
+    id = 'KS.OnLoad',
     fn = function(ctx, params)
-      apps.onLoad()
+      log.i('Running KittySupreme onLoad...')
       KittySupreme.services.sketchybar.onLoad('Hammerspoon loaded!')
     end,
   },
-  {
-    id = 'spaces-cycle-layout',
-    title = "Space → Cycle Layout",
-    hotkey = hotkey{ "modA", "space" },
-    menubar = menubar{ "general", "y", ui.icons.code },
-    fn = function(ctx)
-      local layout = spaces.cycleLayout()
-      return U.fmt("Changed layout to %s", layout)
-    end,
-  },
   { 
-    id = 'show-console',
+    id = 'KS.ShowHSConsole',
     title = "Show console",
-    menubar = menubar{ "general", "i", ui.icons.code },
-    hotkey = hotkey{ "bar", "I" },
+    menubar = cmd.menubar{ "general", "i", ui.icons.code },
+    hotkey = cmd.hotkey{ "bar", "I" },
     fn = function()
       hs.openConsole(true)
     end,
   },
   {
-    id = 'reload',
+    id = 'KS.ReloadConfig',
     title = "Reload KittySupreme",
-    menubar = menubar{ "general", "w", ui.icons.reload },
-    hotkey = hotkey{ "bar", "W", "Reload KittySupreme" },
+    menubar = cmd.menubar{ "general", "w", ui.icons.reload },
+    hotkey = cmd.hotkey{ "bar", "W", "Reload KittySupreme" },
     fn = function(ctx)
       U.delay(0.75, hs.reload)
     end,
   },
   {
-    id = 'restart-yabai',
-    title = "Restart Yabai",
-    menubar = nil,
-    hotkey = hotkey{ "bar", "Y" },
-    fn = function (ctx)
-      yabai:restart()
-      
-      if (ctx.trigger == 'hotkey') then
-        return U.fmt('%s: %s', ctx.hotkey, ctx.title)
-      end
-    end,
-  },
-  {
-    id = 'rename-space',
-    title = "Label current space",
-    menubar = menubar{ "desktop", "L", ui.icons.tag },
-    hotkey = hotkey{ "bar", "L" },
+    id = 'KS.RestartHS',
+    title = "Reload Hammerspoon",
+    menubar = cmd.menubar{ "general", "X", ui.icons.reload },
+    hotkey = cmd.hotkey{ "bar", "X", "Restart Hammerspoon" },
     fn = function(ctx)
-      spaces.rename()
-
-      if (ctx.trigger == 'hotkey') then
-        return U.fmt('%s: %s', ctx.hotkey, ctx.title)
-      end
-    end,
-  },
-  { 
-    id = "float-active",
-    title = "Float active window",
-    menubar = menubar{ "desktop", nil, ui.icons.float },
-    fn = function (ctx)
-      yabai:floatActiveWindow()
-
-      if ctx.hotkey then return ctx.title end
-    end
-  },
-  {
-    id = 'space-change',
-    url = "spaces.changed",
-    fn = function(ctx, params)
-      spaces.onSpaceChange(params)
-    end,
-  },
-  {
-    id = 'space-create',
-    url = "spaces.created",
-    fn = function(ctx, params)
-      spaces.onSpaceCreated(params)
-    end,
-  },
-  {
-    id = 'space-destroyed',
-    url = "spaces.destroyed",
-    fn = function(ctx, params)
-      spaces.onSpaceDestroyed(params)
-    end,
-  },
-  {
-    id = 'show-active-app-shortcuts',
-    title = 'Show Keys for active app',
-    menubar = menubar{ "general", nil, ui.icons.command },
-    hotkey = hotkey({ "bar", "K", "title" }),
-    fn = function(ctx, params)
-      apps.getMenusForActiveApp()
+      U.delay(0.75, hs.relaunch)
     end,
   },
 }
 
+local function scanForCmds()
+  -- Stepping back 3 steps on the call stack to get calling module's filepath
+  local modInfo = debug.getinfo(3, 'S')
+  local rootdir = string.match(modInfo.source, '^@(.*)/')
+  local mods = scan.loaddir(rootdir, 'user.lua')
+
+  local commands = {}
+  for file, mod in pairs(mods) do
+    if (tabl.haspath(mod, 'cmds')) then
+      for i, cmd in ipairs(mod.cmds) do
+        table.insert(commands, cmd)
+      end
+    end
+  end
+
+  return commands
+end
+
 return {
   getCommands = function()
-    return Set:new(command_list)
-    -- return lol
+    U.insert(command_list, table.unpack(scanForCmds()))
+    
+    return collect:new(command_list)
+    -- return Collection:new(command_list)
   end
 } 
 

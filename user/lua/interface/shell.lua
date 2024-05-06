@@ -6,18 +6,25 @@ local log = U.log('Shell', 'warning')
 
 local Shell = {}
 
-function Shell.run(cmd_str, ...)
+
+--
+-- Shell execution with some QOL bits
+--
+---@param cmd string The shell command to run; can be a format string pattern
+---@param ... string|number Parameters format with the command string (if any)
+---@return string Shell output
+function Shell.run(cmd, ...)
   local params = {...}
 
-  if (type(cmd_str) == nil) then
+  if (type(cmd) == nil) then
     log.e('No command passed to utils#run')
   end
 
   log.logIf('info', function()
-    log.f("Running shell command [%s] (%s)", cmd_str, hs.inspect(params))
+    log.f("Running shell command [%s] (%s)", cmd, hs.inspect(params))
   end)
 
-  local cmd = string.format(cmd_str, table.unpack(params))
+  local cmd = string.format(cmd, table.unpack(params))
   log.f("Running shell command [%s]", cmd)
   local output, status, type, rc = hs.execute(cmd, true)
 

@@ -2,8 +2,7 @@ local class   = require 'middleclass'
 local M       = require 'moses'
 local ui      = require 'user.lua.ui'
 local symbols = require 'user.lua.ui.symbols'
-local util    = require 'user.lua.util'
-local fmt     = require 'user.lua.util.fmt'
+local U    = require 'user.lua.util'
 
 local MenuItem = class('MenuItem')
 
@@ -37,26 +36,26 @@ function ServiceMenuProvider.getMenus()
       local state, text = serviceMenuProps(service)
 
       return {
-        title = fmt("%s %s", service.name, text),
+        title = U.fmt("%s %s", service.name, text),
         state = state,
         onStateImage = icons.running,
         offStateImage = icons.stopped,
         mixedStateImage = icons.unknown,
         menu = {
           { 
-            title = fmt("Start %s", service.name),
+            title = U.fmt("Start %s", service.name),
             fn = function()
               service:start()
             end
           },
           { 
-            title = fmt("Stop %s", service.name),
+            title = U.fmt("Stop %s", service.name),
             fn = function()
               service:stop()
             end
           },
           { 
-            title = fmt("Restart %s", service.name),
+            title = U.fmt("Restart %s", service.name),
             fn = function()
               service:restart()
             end

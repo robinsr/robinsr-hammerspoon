@@ -1,39 +1,46 @@
 PkgName = 'ryan-hs'
 
 local logger = require 'user.lua.util.logger'
+local tabl = require 'user.lua.lib.table'
+
 local log = logger.new('user:init', 'debug')
 
 log.i("Starting...")
-
 
 local console = require 'user.lua.interface.console'
 
 console.configureHSConsole()
 console.setDarkMode(true)
 
-local globalstate = require 'user.lua.state'
+require 'user.lua.state'
+
+
 local commands = require 'user.lua.commands'.getCommands()
 
--- log.inspect(commands)
-
 log.i("Setting global hotkeys")
-KittySupreme.boundkeys = require('user.lua.interface.hotkeys').bindall(commands)
+require('user.lua.interface.hotkeys').bindall(commands)
 
 log.i("Setting up url handlers")
-KittySupreme.urlhanders = require('user.lua.interface.url-handler').bindall(commands)
+require('user.lua.interface.url-handler').bindall(commands)
 
 log.i("Creating menubar item")
-KittySupreme.menbar = require('user.lua.interface.menubar').installMenuBar(commands)
+require('user.lua.interface.menubar').install(commands)
 
 log.i('Running onLoad commands')
 
-local onLoad = commands:findById('onLoad')
+local option = require 'user.lua.lib.optional'
 
-local loadCmdOK, loadCmd = pcall(onLoad.fn)
+local onLoad = option.ofNil(
+  commands:findById('KS.OnLoad'), 'No KS.OnLoad command found'
+)
 
-if (not loadCmdOK) then
-  log.e('Onload error')
-  error(loadCmd)
+if onLoad:ispresent() then
+  local loadCmdOK, loadCmd = pcall(onLoad:get().fn)
+
+  if (not loadCmdOK) then
+    log.e('Onload error')
+    error(loadCmd)
+  end
 end
 
 log.i('Init complete')

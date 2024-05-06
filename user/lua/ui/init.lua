@@ -29,7 +29,7 @@ local UI = {
     cancel = "Cancel",
   },
   alert = {
-    window = {
+    position = {
       atScreenEdge = 0,
       radius = 6,
       padding = 20,
