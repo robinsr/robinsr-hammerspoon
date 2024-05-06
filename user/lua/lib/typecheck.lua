@@ -28,4 +28,22 @@ function tc.isTable(i)
   if (type(i) == 'table') then return true else return false end
 end
 
+-- Type-check is function
+---@param i any|nil Possibly a nil value
+---@return boolean # true when param is a table
+function tc.isFunc(i)
+  if (type(i) == 'function') then return true else return false end
+end
+
+tc.is = {
+  nill = tc.isNil,
+  strng = tc.isString,
+  func = tc.isFunc,
+  tabl = tc.isTable,
+}
+
+tc.no = {
+  nill = tc.notNil,
+}
+
 return tc

@@ -1,5 +1,5 @@
 local tc = require 'user.lua.lib.typecheck'
-
+local params = require 'user.lua.lib.params'
 
 
 local Tabl = {}
@@ -15,6 +15,19 @@ function Tabl.keys(tabl)
     table.insert(keys, key)
   end
   return keys
+end
+
+--
+-- Returns a list of table's vales
+--
+---@param tabl table
+---@return table # list of keys
+function Tabl.vals(tabl)
+  local vals = {}
+  for _, val in pairs(tabl) do
+    table.insert(vals, val)
+  end
+  return vals
 end
 
 
@@ -134,7 +147,7 @@ function Tabl.pick(tabl, keys)
   local picked = {}
 
   for i, key in ipairs(keys) do
-    table.insert(picked, U.default(U.path(tabl, key), ""))
+    table.insert(picked, params.default(Tabl.path(tabl, key), ""))
   end
 
   return picked

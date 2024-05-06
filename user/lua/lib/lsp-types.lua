@@ -14,6 +14,8 @@
   lightuserdata
 ]]
 
+---@class Dict<T>: { [string]: T }
+
 ---@class MidClassObject
 ---@field static table
 
@@ -32,5 +34,6 @@
 ---@generic T: any List item type
 ---@generic R: any Type list is reduced to
 ---@alias ReducerFn fun(memo: R, item: T, index: integer): R
+
 
 return {}
