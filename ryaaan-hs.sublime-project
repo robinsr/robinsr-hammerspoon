@@ -8,7 +8,8 @@
 			"path": "/Users/ryan/dotfiles/config/skhd",
 		},
 		{
-			"path": "/Users/ryan/dotfiles/config/yabai"
+			"path": "/Users/ryan/dotfiles/config/yabai",
+			"folder_exclude_patterns": ["node_modules"]
 		},
 	],
 	"settings":
@@ -19,6 +20,8 @@
 			{
 				"settings":
 				{
+					"Lua.workspace.checkThirdParty": false,
+					"Lua.runtime.version": "Lua 5.4",
 					"Lua.diagnostics.globals":
 					[
 						"lfs",
@@ -26,7 +29,7 @@
 					],
 					"Lua.workspace.library":
 					[
-						"${3rd}/lfs/library", "./Spoons"
+						"${3rd}/lfs/library", "./Spoons", "/opt/homebrew/share/lua/5.4"
 					],
 				},
 			},

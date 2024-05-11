@@ -156,6 +156,19 @@ function Tabl.pick(tabl, keys)
 end
 
 
+function Tabl.isEmpty(tabl)
+  if tc.isTable(tabl) then
+    local keys = Tabl.keys(tabl)
+
+    if #keys > 0 then
+      return false
+    end
+  end
+
+  return true
+end
+
+
 --
 -- Wait, I can just add methods to lua's table object?
 --

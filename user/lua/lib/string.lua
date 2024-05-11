@@ -1,6 +1,6 @@
-local trim = require 'string.trim'
-local tc   = require "user.lua.lib.typecheck"
-local P    = require "user.lua.lib.params"
+local penstr = require 'pl.stringx'
+local tc     = require 'user.lua.lib.typecheck'
+local P      = require 'user.lua.lib.params'
 
 local Str = {}
 
@@ -11,7 +11,7 @@ local Str = {}
 ---@param str string Untrimmed input string
 ---@return string The trimmed string
 function Str.trim(str)
-  return trim(str)
+  return penstr.strip(str)
 end
 
 --
@@ -69,6 +69,17 @@ function Str.pad(str, count)
   end
 
   return string.sub(str, 1, count)
+end
+
+
+--
+-- Replace matching parts of a string
+--
+---@param str string Input string
+---@param old string String to remove
+---@param new string String to 
+function Str.replace(str, old, new)
+  return penstr.replace(str, old, new)
 end
 
 return Str

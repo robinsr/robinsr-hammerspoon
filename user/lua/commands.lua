@@ -45,12 +45,21 @@ local command_list = {
       U.delay(0.75, hs.relaunch)
     end,
   },
+  {
+    id = 'KS.TestWebviewText',
+    hotkey = cmd.hotkey{ "bar", "F", "Test Webview Alert" },
+    fn = function(ctx, params)
+      log.i('Testing HS Webview...')
+      require('user.lua.ui.webview').test()
+    end,
+  },
 }
 
 local function scanForCmds()
   -- Stepping back 3 steps on the call stack to get calling module's filepath
-  local modInfo = debug.getinfo(3, 'S')
-  local rootdir = string.match(modInfo.source, '^@(.*)/')
+  -- local modInfo = debug.getinfo(3, 'S')
+  -- local rootdir = string.match(modInfo.source, '^@(.*)/')
+  local rootdir = hs.fs.currentDir() or '/asdf/asdf/asdf'
   local mods = scan.loaddir(rootdir, 'user.lua')
 
   local commands = {}
@@ -68,6 +77,8 @@ end
 return {
   getCommands = function()
     U.insert(command_list, table.unpack(scanForCmds()))
+
+    KittySupreme.commands = command_list
     
     return collect:new(command_list)
     -- return Collection:new(command_list)
