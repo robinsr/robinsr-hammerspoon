@@ -1,7 +1,9 @@
+local json = {}
+
 -- Decodes JSON string to a table
 ---@param rawjson string
 ---@return table
-function parseJSON (rawjson)
+function json.parse(rawjson)
   local tabl = hs.json.decode(rawjson)
   
   if (type(table) ~= "nil") then
@@ -11,4 +13,4 @@ function parseJSON (rawjson)
   error('JSON parsing nil with input: '..rawjson)
 end
 
-return parseJSON
+return json

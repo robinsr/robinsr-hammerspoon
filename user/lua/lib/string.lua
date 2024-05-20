@@ -1,6 +1,9 @@
-local penstr = require 'pl.stringx'
-local tc     = require 'user.lua.lib.typecheck'
-local P      = require 'user.lua.lib.params'
+local penstr   = require 'pl.stringx'
+local lustache = require 'lustache'
+local tc       = require 'user.lua.lib.typecheck'
+local P        = require 'user.lua.lib.params'
+
+local inspect = require('inspect')
 
 local Str = {}
 
@@ -24,6 +27,26 @@ function Str.fmt(msg, ...)
   return string.format(msg, table.unpack{...})
 end
 
+
+--
+-- Compiles a template string
+--
+function Str.tmpl(tmplstr)
+  if not tc.isString(tmplstr) then
+    error(Str.fmt('Invalid template string: %s', tmplstr or 'nil'))
+  end
+
+  local render = lustache:compile(tmplstr)
+
+  if render == nil then
+    error(Str.fmt('Error compiling lustache template: %q', tmplstr))
+  else
+    return function(args) return render(args) end
+  end
+end
+
+
+
 --
 -- Creates a string of joined list elements
 --
@@ -31,7 +54,11 @@ end
 ---@param sep string? Separator string
 function Str.join(tabl, sep)
   local separator = P.default(sep, '')
-  return table.concat(tabl, separator)
+  if tc.isTable(tabl) then
+    return table.concat(tabl, separator)
+  else
+    return ''
+  end
 end
 
 

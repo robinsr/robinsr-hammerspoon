@@ -1,7 +1,7 @@
 PkgName = 'ryan-hs'
 
+local tabl   = require 'user.lua.lib.table'
 local logger = require 'user.lua.util.logger'
-local tabl = require 'user.lua.lib.table'
 
 local log = logger.new('user:init', 'debug')
 

@@ -16,6 +16,8 @@
 
 ---@class Dict<T>: { [string]: T }
 
+---@class Record<N, T>: { [N]: T }
+
 ---@class MidClassObject
 ---@field static table
 

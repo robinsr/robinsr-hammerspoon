@@ -1,5 +1,7 @@
-local color = require 'user.lua.ui.color'
-local util  = require 'user.lua.util'
+local tables = require 'user.lua.lib.table'
+local types  = require 'user.lua.lib.typecheck'
+local color  = require 'user.lua.ui.color'
+
 
 local symbol_table = {
   ["arrow.counterclockwise"] = 0x100149,
@@ -152,11 +154,11 @@ local symbol_table = {
 }
 
 local function doColor(input)
-  if (util.isString(input)) then
+  if types.isString(input) then
     return { hex = input }
   end
 
-  if (util.isTable(input)) then
+  if types.isTable(input) then
     return input
   end
 
@@ -175,7 +177,7 @@ end
 ---@overload fun(code: string|integer, textsize: integer, textcolor: string|table, asText: boolean): hs.styledtext
 local function iconFromSymbol(code, textsize, textcolor, asText)
 
-  if (not hs.fnutils.every({ code, textsize, textcolor }, util.notNil)) then
+  if (not hs.fnutils.every({ code, textsize, textcolor }, types.notNil)) then
     print(code, textsize, textcolor)
     error("Missing parameters to create icon from symbol", 2)
   end
@@ -188,7 +190,7 @@ local function iconFromSymbol(code, textsize, textcolor, asText)
     color = doColor(textcolor)
   }
 
-  if (type(code) == "string" and util.haspath(symbol_table, code)) then
+  if (type(code) == "string" and tables.has(symbol_table, code)) then
     code = symbol_table[code]
   end
 

@@ -1,7 +1,7 @@
 local ui   = require 'user.lua.ui'
-local util = require 'user.lua.util'
+local logr = require 'user.lua.util.logger'
 
-local log = util.log('util:cons', 'error')
+local log = logr.new('Console', 'error')
 
 local console = {}
 

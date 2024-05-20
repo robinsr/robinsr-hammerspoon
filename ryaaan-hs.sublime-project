@@ -25,7 +25,10 @@
 					"Lua.diagnostics.globals":
 					[
 						"lfs",
-						"KittySupreme"
+						"KittySupreme",
+						"describe",
+						"it",
+						"assert"
 					],
 					"Lua.workspace.library":
 					[

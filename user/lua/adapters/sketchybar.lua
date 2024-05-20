@@ -1,10 +1,11 @@
 local class       = require 'middleclass'
 local BrewService = require 'user.lua.adapters.base.brew-service'
 local shell       = require 'user.lua.interface.shell'
-local util        = require 'user.lua.util'
+local logr        = require 'user.lua.util.logger'
+
 
 local wrap = shell.wrap
-local log = util.log('yabai.lua', 'debug')
+local log = logr.new('SketchyBar', 'debug')
 
 
 local SketchyBar = class('SketchyBar', BrewService)

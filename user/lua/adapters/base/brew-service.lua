@@ -1,10 +1,9 @@
-local M       = require 'moses' -- 1.6.1 only
-local class   = require 'middleclass'
-local Service = require 'user.lua.adapters.base.service'
-local shell   = require 'user.lua.interface.shell'
-local util    = require 'user.lua.util'
+local class   = require('middleclass')
+local Service = require('user.lua.adapters.base.service')
+local shell   = require('user.lua.interface.shell')
+local default = require('user.lua.lib.params').default
+local log = require('user.lua.util.logger').new('brew-servive','debug')
 
-local log = util.log('adpt:brew-servive','debug')
 
 local cmd = {
   list = "brew services list --json",
@@ -35,11 +34,11 @@ function BrewService:initialize(name)
   end
 
   ---@cast brewinfo -nil
-  self.service_name = util.default(brewinfo['service_name'], 'unknown') --[[@as string]]
-  self.running = util.default(brewinfo['running'], false) --[[@as boolean]]
-  self._status = util.default(brewinfo['status'], nil) --[[@as string?]]
-  self.pid = util.default(brewinfo['pid'], nil) --[[@as number?]]
-  self.plist = util.default(brewinfo['file'], nil) --[[@as string?]]
+  self.service_name = default(brewinfo['service_name'], 'unknown') --[[@as string]]
+  self.running = default(brewinfo['running'], false) --[[@as boolean]]
+  self._status = default(brewinfo['status'], nil) --[[@as string?]]
+  self.pid = default(brewinfo['pid'], nil) --[[@as number?]]
+  self.plist = default(brewinfo['file'], nil) --[[@as string?]]
 end
 
 function BrewService:start()

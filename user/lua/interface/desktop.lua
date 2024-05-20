@@ -1,9 +1,12 @@
 local screen = require 'hs.screen'
 local mouse  = require 'hs.mouse'
 local win    = require 'hs.window'
-local U      = require 'user.lua.util'
+local logr = require 'user.lua.util.logger'
+local strings = require 'user.lua.lib.string'
+local types = require 'user.lua.lib.typecheck'
+local tables = require 'user.lua.lib.table'
 
-local log = U.log('Desktop', 'debug')
+local log = logr.new('Desktop', 'debug')
 
 
 -- Desktop/environment utilities
@@ -31,10 +34,10 @@ local selectors = {
 ---@param sel ScreenSelector
 ---@return hs.screen
 function desktop.getScreen(sel)
-  if (U.isString(sel) and U.haspath(selectors, sel)) then
+  if (types.isString(sel) and tables.has(selectors, sel)) then
     return selectors[sel]();
   else
-    error(U.fmt("Invalid screen selector [%q]", sel), 2)
+    error(strings.fmt("Invalid screen selector [%q]", sel), 2)
   end
 end
 

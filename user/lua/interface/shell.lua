@@ -1,11 +1,13 @@
-local U     = require 'user.lua.util'
-local run   = require 'user.lua.interface.runnable'
+local run     = require 'user.lua.interface.runnable'
+local logr    = require 'user.lua.util.logger'
+local strings = require 'user.lua.lib.string'
+local tables  = require 'user.lua.lib.table'
+local errorf  = require 'user.lua.util'.errorf
+local json    = require 'user.lua.util.json'
 
-local log = U.log('Shell', 'warning')
-
+local log = logr.new('Shell', 'warning')
 
 local Shell = {}
-
 
 --
 -- Shell execution with some QOL bits
@@ -28,17 +30,19 @@ function Shell.run(cmd, ...)
   log.f("Running shell command [%s]", cmd)
   local output, status, type, rc = hs.execute(cmd, true)
 
-  if (status) then
-    local trimmed = U.trim(output)
+  if (status and output ~= nil) then
+    local trimmed = strings.trim(output)
     log.df("Command [%s] completed with result:\n%s", cmd, trimmed)
     return trimmed
   end
 
-  error(U.fmt([[
+  errorf([[
     Command '%s' exited with error:
       - code: %s %s
       - stderr: %s
-    ]], cmd, tostring(type), rc, output))
+    ]], cmd, tostring(type), rc, output)
+
+  return ''
 end
 
 -- Parses output of Shell.run to a table
@@ -52,7 +56,7 @@ function Shell.runt(cmd_str, ...)
   end)
 
   if (ok) then
-    return U.json(output)
+    return json.parse(output)
   end
 
   error(output)
@@ -70,7 +74,7 @@ function Shell.runtv(cmd_str, key, ...)
   end)
 
   if (ok) then
-    return U.path(output, key) or nil
+    return tables.get(output, key) or nil
   end
   
   error(output)
@@ -95,14 +99,5 @@ function Shell.wrap(cmd)
   end
 end
 
-
-function Shell.pipe(...)
-  return run:new(table.unpack{...})
-end
-
-
-function Shell.trim(str)
-  return U.trim(str)
-end
 
 return Shell

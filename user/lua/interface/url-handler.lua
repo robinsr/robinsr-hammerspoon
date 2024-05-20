@@ -1,6 +1,6 @@
-local U = require 'user.lua.util'
+local logr = require 'user.lua.util.logger'
 
-local log = U.log('url-handler.lua', 'warning')
+local log = logr.new('url-handler.lua', 'warning')
 
 local UrlHandler = {
   ---@param cmds Command[]

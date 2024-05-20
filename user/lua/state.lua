@@ -2,9 +2,10 @@ local watchable   = require "hs.watchable"
 local timer       = require "hs.timer"
 local BrewService = require 'user.lua.adapters.base.brew-service'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
-local util        = require 'user.lua.util'
+local logr        = require 'user.lua.util.logger'
 
-local log = util.log('user:state','info')
+local log = logr.log('KS-State', 'info')
+
 
 ScreenAlert = nil
 

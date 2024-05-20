@@ -1,5 +1,5 @@
 local L = require 'user.lua.lib.list'
-local U = require 'user.lua.util'
+local tables = require 'user.lua.lib.table'
 
 ---@generic T
 ---@class Collection<T> : { [integer]: T }
@@ -25,7 +25,7 @@ end
 ---@param tabl table Table of key/value pairs to match against
 ---@return T|nil
 function Collection:where(tabl)
-  local keys = U.keys(tabl)
+  local keys = tables.keys(tabl)
   
   for k, item in ipairs(self) do
     for j, key in ipairs(keys) do
@@ -47,7 +47,7 @@ end
 ---@return T|nil
 function Collection:findById(id)
   for k, cmd in ipairs(self) do
-    if (U.path(cmd, 'id') == id) then
+    if (tables.get(cmd, 'id') == id) then
       return cmd
     end
   end
@@ -99,7 +99,7 @@ end
 ---@param fn PredicateFn The test function
 ---@return boolean
 function Collection:any(fn)
-  return L.any(self.items, fn)
+  return L.any(self, fn)
 end
 
 

@@ -1,4 +1,10 @@
-local U = require 'user.lua.util'
+local params  = require 'user.lua.lib.params'
+local strings = require 'user.lua.lib.string'
+local tables  = require 'user.lua.lib.table'
+local logr    = require 'user.lua.util.logger'
+
+local log = logr.new('Command', 'info')
+
 
 ---@class Command
 ---@field id string Unique string to identify command
@@ -17,20 +23,28 @@ local U = require 'user.lua.util'
 ---@field message? string Alert message to show. Passing an empty string will just show keys, "title" will copy command title as message, nil will disable message
 ---@field on? ("pressed" | "released" | "repeat")[]
 
-local mods = { "hyper", "meh", "bar", "modA", "modB", "shift", "alt", "ctrl", "cmd" }
+local allowed_mods = { "hyper", "meh", "bar", "modA", "modB", "shift", "alt", "ctrl", "cmd" }
 
----@param params table
+
+--
+-- Returns a Hotkey configuration
+--
+---@params mods "hyper" | "meh" | "bar" | "modA" | "modB" | "shift" | "alt" | "ctrl" | "cmd"
+---@params key string
+---@params message? string Alert message to show. Passing an empty string will just show keys, "title" will copy command title as message, nil will disable message
+---@params on? ("pressed" | "released" | "repeat")[]
 ---@return CommandHotKey
-local function hotkey(params)
-  if not U.contains(mods, params[1]) then
-    error(U.fmt("Invalid value for hotkey 'mods': %s", hs.inspect(params)))
+local function hotkey(mods, key, message, on)
+  if not tables.contains(allowed_mods, mods) then
+    log.ef("Hotkey mods '%s' not allowed", mods)
   end
 
+
   return {
-    mods = params[1],
-    key = params[2],
-    message = params[3],
-    on = U.default(params[4], { "pressed" })
+    mods = mods,
+    key = key,
+    message = message,
+    on = params.default(on, { "pressed" })
   }
 end
 

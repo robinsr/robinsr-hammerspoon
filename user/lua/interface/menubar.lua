@@ -1,10 +1,13 @@
 local M       = require 'moses'
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
+local lists   = require 'user.lua.lib.list'
+local strings = require 'user.lua.lib.string'
+local tables  = require 'user.lua.lib.table'
+local types   = require 'user.lua.lib.typecheck'
 local ui      = require 'user.lua.ui'
 local symbols = require 'user.lua.ui.symbols'
-local U       = require 'user.lua.util'
-local list    = require 'user.lua.lib.list'
+local logr    = require 'user.lua.util.logger'
 
 
 
@@ -24,7 +27,7 @@ local list    = require 'user.lua.lib.list'
 ---@field mixedStateImage? hs.image
 
 
-local log = U.log('menubar', 'info')
+local log = logr.new('menubar', 'info')
 
 ---@param text string
 ---@return MenubarItem
@@ -43,30 +46,30 @@ end
 local function mapCommands(sections, cmds)
 
   ---@type MenubarItem[]
-  local mapped = U.reduce({}, sections, function(all, section)
+  local mapped = lists.reduce({}, sections, function(all, section)
 
-      log.df("Mapping menubar section %s", section)
+    log.df("Mapping menubar section %s", section)
 
-      local sectionCmds = U.filter(cmds, function(cmd)
-        return U.notNil(cmd.menubar) and cmd.menubar.section == section
-      end)
+    local sectionCmds = lists.filter(cmds, function(cmd)
+      return types.notNil(cmd.menubar) and cmd.menubar.section == section
+    end)
 
-      U.forEach(sectionCmds, function(cmd)
-        table.insert(all, {
-          title = cmd.title,
-          shortcut = cmd.menubar.key or nil,
-          image = cmd.menubar.icon or nil,
-          fn = function()
-            local result = cmd.fn({ type = 'menuclick' }, {})
+    lists.forEach(sectionCmds, function(cmd)
+      table.insert(all, {
+        title = cmd.title,
+        shortcut = cmd.menubar.key or nil,
+        image = cmd.menubar.icon or nil,
+        fn = function()
+          local result = cmd.fn({ type = 'menuclick' }, {})
 
-            if U.notNil(result) then
-              alert.alert(result)
-            end
+          if result ~= nil then
+            alert.alert(result)
           end
-        })
-      end)
+        end
+      })
+    end)
 
-      return all
+    return all
   end)
 
   return mapped
@@ -77,7 +80,7 @@ end
 ---@return string, string
 local function serviceMenuProps(service)
   if (service.pid) then
-    return "on" , U.fmt("(%s)", service.pid)
+    return "on" , strings.fmt("(%s)", service.pid)
   else
     return "off", ""
   end
@@ -87,36 +90,36 @@ end
 ---@param services Service[]
 ---@return MenubarItem[]
 local function servicesSubmenu(services)
-  local menuitems = U.map(services, function(service)
+  local menuitems = lists.map(services, function(service)
     local state, text = serviceMenuProps(service)
 
     local subitems = {}
 
     if (service.cmds ~= nil) then
-      list.push(subitems, table.unpack(
+      lists.push(subitems, table.unpack(
         mapCommands({ service.name }, service.cmds)
       ))
-      list.push(textMenuItem'-')
+      lists.push(textMenuItem'-')
     end
 
 
-    list.push(subitems, { 
-      title = U.fmt("Start %s", service.name),
+    lists.push(subitems, { 
+      title = strings.fmt("Start %s", service.name),
       fn = function() service:start() end,
     },
     { 
-      title = U.fmt("Stop %s", service.name),
+      title = strings.fmt("Stop %s", service.name),
       fn = function()  service:stop() end,
     },
     { 
-      title = U.fmt("Restart %s", service.name),
+      title = strings.fmt("Restart %s", service.name),
       fn = function() service:restart() end
     })
 
 
     ---@type MenubarItem
     return {
-      title = U.fmt("%s %s", service.name, text),
+      title = strings.fmt("%s %s", service.name, text),
       state = state,
       onStateImage = ui.icons.running,
       offStateImage = ui.icons.stopped,
@@ -145,16 +148,16 @@ local MenuBar = {}
 function MenuBar.install(cmds)
   local menuitems = {}
 
-  U.insert(menuitems, textMenuItem("Just some text"))
-  U.insert(menuitems, textMenuItem("-"))
-  U.insert(menuitems, table.unpack(mapCommands({ "desktop", "windows" }, cmds)))
-  U.insert(menuitems, textMenuItem("-"))
-  U.insert(menuitems, servicesSubmenu(U.vals(KittySupreme.services)))
-  U.insert(menuitems, textMenuItem("-"))
-  U.insert(menuitems, table.unpack(mapCommands({ "general" }, cmds)))
+  lists.push(menuitems, textMenuItem("Just some text"))
+  lists.push(menuitems, textMenuItem("-"))
+  lists.push(menuitems, table.unpack(mapCommands({ "desktop", "windows" }, cmds)))
+  lists.push(menuitems, textMenuItem("-"))
+  lists.push(menuitems, servicesSubmenu(tables.vals(KittySupreme.services)))
+  lists.push(menuitems, textMenuItem("-"))
+  lists.push(menuitems, table.unpack(mapCommands({ "general" }, cmds)))
 
   log.logIf('debug', function()
-    log.inspect('KittySupreme menu items:', menuitems, U.d3)
+    log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
   end)
 
   local KSmenubar = hs.menubar.new(true, "kittysupreme")

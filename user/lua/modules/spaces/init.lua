@@ -1,16 +1,19 @@
 local desktop    = require 'user.lua.interface.desktop'
 local alert      = require 'user.lua.interface.alert'
 local cmd        = require 'user.lua.model.command'
+local list       = require 'user.lua.lib.list'
+local params     = require 'user.lua.lib.params'
+local strings    = require 'user.lua.lib.string'
+local types      = require 'user.lua.lib.typecheck'
 local ui         = require 'user.lua.ui'
 local text       = require 'user.lua.ui.text'
-local U          = require 'user.lua.util'
-local M          = require 'moses'
+local logr       = require 'user.lua.util.logger'
 
 
 local icons = ui.icons
 local tNorm, tFast = table.unpack{ ui.alert.ts.normal, ui.alert.ts.fast }
 
-local log = U.log('ModSpaces', 'debug')
+local log = logr.new('ModSpaces', 'debug')
 
 local yabai      = KittySupreme.services.yabai
 local sketchybar = KittySupreme.services.sketchybar
@@ -25,7 +28,7 @@ local Spaces = {}
 function Spaces.rename()
   local space = yabai:getSpace()
   local index = tostring(space.index)
-  local label = U.default(space.label, U.fmt("Space #%s", index))
+  local label = params.default(space.label, strings.fmt("Space #%s", index))
 
   local title = "Rename Space"
   local info = "Input a name for current space"
@@ -34,7 +37,7 @@ function Spaces.rename()
   log.f("RenameSpace - Clicked %s; Value: %s", clicked, input)
 
   if (clicked == ui.btn.confirm) then
-    yabai:setSpaceLabel(index, U.default(input, index))
+    yabai:setSpaceLabel(index, params.default(input, index))
     sketchybar.trigger.onNewLabel(index, input)
   end
 end
@@ -54,11 +57,11 @@ function Spaces.onSpaceChange(ctx, params)
   local disp = { 'Irratic space change...', tNorm, icons.tornado }
 
   local screen = desktop.getScreen('active')
-  local submsg = U.fmt("(%s - %s)", screen:id(), screen:name())
+  local submsg = strings.fmt("(%s - %s)", screen:id(), screen:name())
   local movement = { params.from, params.to }
 
-  if (U.every(movement, U.isString)) then
-    message = U.fmt("Moved to space %s", movement[1])
+  if (list.every(movement, types.isString)) then
+    message = strings.fmt("Moved to space %s", movement[1])
 
     local from, to = tonumber(movement[1]), tonumber(movement[2])
 
@@ -94,7 +97,7 @@ function Spaces.cycleLayout()
   local layouts = { "bsp", "float", "stack" }
 
   local space = yabai:getSpace()
-  local layout = U.default(space.type, 'stack')
+  local layout = params.default(space.type, 'stack')
 
   for i, nl in ipairs(layouts) do
     if nl == layout then
@@ -115,23 +118,23 @@ Spaces.cmds = {
   {
     id = 'Spaces.CycleLayout',
     title = "Space → Cycle Layout",
-    hotkey = cmd.hotkey{ "modA", "space" },
+    hotkey = cmd.hotkey("modA", "space"),
     menubar = cmd.menubar{ "desktop", "y", ui.icons.code },
     fn = function(ctx)
       local layout = Spaces.cycleLayout()
-      return U.fmt("Changed layout to %s", layout)
+      return strings.fmt("Changed layout to %s", layout)
     end,
   },
    {
     id = 'Spaces.RenameSpace',
     title = "Label current space",
     menubar = cmd.menubar{ "desktop", "L", ui.icons.tag },
-    hotkey = cmd.hotkey{ "bar", "L" },
+    hotkey = cmd.hotkey("bar", "L"),
     fn = function(ctx)
       Spaces.rename()
 
       if (ctx.trigger == 'hotkey') then
-        return U.fmt('%s: %s', ctx.hotkey, ctx.title)
+        return strings.fmt('%s: %s', ctx.hotkey, ctx.title)
       end
     end,
   },
@@ -162,7 +165,7 @@ Spaces.cmds = {
   },
   {
     id = 'Spaces.OnDisplayChange',
-    fn = U.noop,
+    fn = function() end,
     url = "display.changed",
   },
 }

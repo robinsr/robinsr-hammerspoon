@@ -1,19 +1,25 @@
-local U = require 'user.lua.util'
+local params  = require 'user.lua.lib.params'
+local strings = require 'user.lua.lib.string'
+local tables  = require 'user.lua.lib.table'
+local logr    = require 'user.lua.util.logger'
 
-local log = U.log('ui:color', 'info')
+
+local log = logr.new('ui:color', 'info')
 
 local colorlists = hs.drawing.color.lists()
 
----@cast colorlists -nil
-local colorlistkeys = U.keys(colorlists)
+log.i(hs.inspect(tables, { metatables = true }))
 
-log.df("Available color lists: %s", hs.inspect(colorlistkeys))
+---@cast colorlists -nil
+local colorlistkeys = tables.get(colorlists)
+
+log.df("Available color lists: %s", strings.join(colorlistkeys, ', '))
 
 local systemColors = hs.drawing.color.colorsFor("System")
 
 local function getSystemColor(color_name)
   ---@cast systemColors -nil
-  return U.default(systemColors[color_name], { hex = '#000000' })
+  return params.default(systemColors[color_name], { hex = '#000000' })
 end
 
 

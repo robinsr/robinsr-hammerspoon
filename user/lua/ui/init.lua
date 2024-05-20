@@ -1,8 +1,9 @@
-local symbols = require 'user.lua.ui.symbols'
+local params  = require 'user.lua.lib.params'
 local colors  = require 'user.lua.ui.color'
-local util    = require 'user.lua.util'
+local symbols = require 'user.lua.ui.symbols'
+local logr    = require 'user.lua.util.logger'
 
-local log = util.log('UI:init', 'info')
+local log = logr.new('UI:init', 'info')
 
 -- Preconfigured SF Symbol code points, see symbols.lua for more
 ---@enum
@@ -63,7 +64,7 @@ local icon_font = {
 
 
 function UI.sf_symbol(code, size, attrs, asText)
-  local defSize = util.default(size, icon_font.size)
+  local defSize = params.default(size, icon_font.size)
   return symbols.toIcon(code, defSize, colors.white, asText)
 end
 

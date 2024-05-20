@@ -1,17 +1,18 @@
 local List = {}
 
-
-
 --
 -- WIP! - Adds an item to the end of a list-like table
 --
 ---@generic T
 ---@param items T[] list-like table
----@param ... T[] The item to add
+---@param ... T The item to add
+---@return T[] List with new items appended
 function List.push(items, ...)
   for i, add in ipairs({...}) do
     table.insert(items, add)
   end
+
+  return items
 end
 
 --
@@ -26,20 +27,6 @@ function List.pop(items)
   
   return last
 end
-
---
---
---
----@generic T
----@param items T[] list-like table
-function List.shift(items) end
-
---
---
---
----@generic T
----@param items T[] list-like table
-function List.unshift(items) end
 
 
 --
@@ -154,6 +141,12 @@ function List.any(items, fn)
   end
 
   return false
+end
+
+
+
+function List.new()
+  
 end
 
 return List

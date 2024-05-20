@@ -1,63 +1,14 @@
-local List   = require 'user.lua.lib.list'
-local Path   = require 'user.lua.lib.path'
-local Prms   = require 'user.lua.lib.params'
-local Str    = require 'user.lua.lib.string'
-local Tabl   = require 'user.lua.lib.table'
-local tc     = require 'user.lua.lib.typecheck'
-local json   = require 'user.lua.util.json'
-
 local U = {}
 
 U.log = require('user.lua.util.logger').log
-
-U.string = Str
-U.fmt = Str.fmt
-U.join = Str.join
-U.split = Str.split
-U.pad = Str.pad
-U.trim = Str.trim
-
-U.path = Path
-
-U.json = json
-
-U.types = tc
-U.notNil = tc.notNil
-U.isString = tc.isString
-U.isTable = tc.isTable
 
 U.d1 = { depth = 1 }
 U.d2 = { depth = 2 }
 U.d3 = { depth = 3 }
 
-U.list = List
-U.forEach = List.forEach
-U.map = List.map
-U.filter = List.filter
-U.reduce = List.reduce
-U.every = List.every
-U.any = List.any
-
-U.table = Tabl
-U.keys = Tabl.keys
-U.vals = Tabl.vals
-U.merge = Tabl.merge
-U.concat = Tabl.concat
-U.insert = Tabl.insert
-U.contains = Tabl.contains
-U.path = Tabl.path
-U.haspath = Tabl.haspath
-U.pick = Tabl.pick
-
-
-U.params = Prms
-U.default = Prms.default
-U.spread = Prms.spread
-U.noop = Prms.noop
-
 
 --
--- FUNCTION - Delay execution of function fn by msec
+-- Delays the execution of function fn by msec
 --
 ---@param msec integer delay in MS
 ---@param fn function function to run after delay
@@ -67,6 +18,14 @@ function U.delay(msec, fn)
 end
 
 
+--
+-- Lua `error` with string formatting
+--
+---@param fmtstr string Format string pattern
+---@param ... string|number|boolean Format string parameters
+function U.errorf(fmtstr, ...)
+  error(string.format(fmtstr, ...), 2)
+end
 
 
 return U

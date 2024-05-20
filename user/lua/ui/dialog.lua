@@ -1,8 +1,8 @@
 local hsdialog = require 'hs.dialog'
 local webview  = require 'user.lua.ui.webview'
-local U        = require 'user.lua.util'
+local logr     = require 'user.lua.util.logger'
 
-local log = U.log('dialog', 'debug')
+local log = logr.new('dialog', 'debug')
 
 local D = {}
 

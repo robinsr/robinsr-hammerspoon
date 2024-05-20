@@ -1,9 +1,10 @@
-local path = require 'pl.path'
-local U    = require 'user.lua.util'
-local L    = require 'user.lua.lib.list'
-local is   = require 'user.lua.lib.typecheck'
+local path     = require 'pl.path'
+local list     = require 'user.lua.lib.list'
+local strings  = require 'user.lua.lib.string'
+local is       = require 'user.lua.lib.typecheck'
+local logr     = require 'user.lua.util.logger'
 
-local log = U.log('filescan', 'info')
+local log = logr.new('scan', 'info')
 
 local THISMOD = ... or 'user.lua.lib.scan'
 local MAXFILES = 150
@@ -23,11 +24,11 @@ function scan.listdir(dirname, ext, depth, max)
   local files, popen = {}, io.popen
 
   local primaries = {
-    U.fmt(" -name '*.%s'", ext or 'lua'),
-    U.fmt(" -maxdepth %d", depth or 10),
+    strings.fmt(" -name '*.%s'", ext or 'lua'),
+    strings.fmt(" -maxdepth %d", depth or 10),
   }
 
-  local findcmd = U.fmt('find %s -type f %s', dirname, U.join(primaries))
+  local findcmd = strings.fmt('find %s -type f %s', dirname, strings.join(primaries))
 
   log.df('Running command [%s]', findcmd)
 
@@ -45,7 +46,7 @@ function scan.listdir(dirname, ext, depth, max)
 
     pfind:close()
   else
-    error(U.fmt('Could not scan dir [%s]', dirname))
+    error(strings.fmt('Could not scan dir [%s]', dirname))
   end
 
   log.inspect('Scan directory complete:', files)
@@ -60,10 +61,10 @@ end
 ---@param pkg string Lua package prefix
 ---@return table table of filepaths and correspnding lua module name
 function scan.mapdir(dir, pkg)
-  local targetdir = path.join(dir, U.string.replace(pkg, '.', '/'))
+  local targetdir = path.join(dir, strings.replace(pkg, '.', '/'))
   local luafiles = scan.listdir(targetdir, 'lua')
 
-  local modules = L.reduce({}, luafiles, function(memo, filename)
+  local modules = list.reduce({}, luafiles, function(memo, filename)
     log.df('loading lua file [%s]', filename)
 
     memo[filename] = filename:sub(dir:len() + 2)
@@ -79,6 +80,9 @@ function scan.mapdir(dir, pkg)
 end
 
 
+--
+-- Requires in all lua files into a table
+--
 ---@param dir string Directory path to load modules from
 ---@param pkg string Lua package prefix
 function scan.loaddir(dir, pkg)

@@ -1,4 +1,5 @@
-local U = require 'user.lua.util'
+local strings = require 'user.lua.lib.string'
+
 
 -- Shows an alert on screen. 
 -- Clears previous alert on subsequenct alert calls, preventing alerts from stacking
@@ -21,7 +22,7 @@ end
 
 function Alert.showf(fmt_string, fmt_args, style, screen, seconds)
   hs.alert.closeSpecific(prev_alert, 0)
-  local str = U.fmt(fmt_string, table.unpack(fmt_args))
+  local str = strings.fmt(fmt_string, table.unpack(fmt_args))
   Alert.alert(str, style, screen, seconds)
 end
 

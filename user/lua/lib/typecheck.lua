@@ -21,6 +21,13 @@ function tc.isString(i)
   if (type(i) == 'string') then return true else return false end
 end
 
+-- Type-check is number
+---@param i any|nil Possibly a nil value
+---@return boolean true when param is a string
+function tc.isNum(i)
+  if (type(i) == 'number') then return true else return false end
+end
+
 -- Type-check is table
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is a table
