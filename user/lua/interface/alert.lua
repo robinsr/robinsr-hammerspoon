@@ -1,42 +1,97 @@
+local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
-
-
--- Shows an alert on screen. 
--- Clears previous alert on subsequenct alert calls, preventing alerts from stacking
-local Alert = {}
+local types   = require 'user.lua.lib.typecheck'
+local plutils = require 'pl.utils'
 
 local prev_alert = nil
 
--- Shows an alert on screen. 
--- Currently just proxies to hs.alert.show with no modifications
+
+---@class HS.AlertStyle
+---@field fillColor? HS.Color     The background color for the alert; defaults to { white = 0, alpha = 0.75 }.
+---@field strokeColor? HS.Color   The outline color for the alert, defaults to { white = 1, alpha = 1 }.
+---@field strokeWidth? number     The width of the outline for the alert, defaults to 2
+---@field radius? number          The radius used for the rounded corners of the alert box, defaults to 27
+---@field textColor? HS.Color     The message text color for the alert, defaults to { white = 1, alpha = 1 }.
+---@field textFont? string        The font to be used for the alert text, defaults to ".AppleSystemUIFont" which is a symbolic name representing the systems default user interface font.
+---@field textSize? number        The font size to be used for the alert text, defaults to 27.
+---@field textStyle? table        Message should be converted to an `hs.styledtext` object using the style elements specified in this table.  This table should conform to the key-value pairs as described in the documentation for the `hs.styledtext` module.  If this table does not contain a `font` key-value pair, one will be constructed from the `textFont` and `textSize` keys (or their defaults); likewise, if this table does not contain a `color` key-value pair, one will be constructed from the `textColor` key (or its default).
+---@field padding? number         Pixels to reserve around each side of the text and/or image, defaults to textSize/2
+---@field atScreenEdge? 0|1|2     One of — 0: screen center (default); 1: top edge; 2: bottom edge . Note when atScreenEdge>0, the latest alert will overlay above the previous ones if multiple alerts visible on same edge; and when atScreenEdge=0, latest alert will show below previous visible ones without overlap.
+---@field fadeInDuration? number  The fade in duration of the alert in seconds, defaults to 0.15
+---@field fadeOutDuration? number The fade out duration of the alert in seconds, defaults to 0.15
+
+
+
+---@class AlertConfig
+---@field text string
+---@field style HS.AlertStyle
+---@field icon hs.image
+---@field timing AlertTime
+
+
+---@class Alert
+---@field config AlertConfig
+local Alert = {}
+
+
+---@enum AlertTime
+Alert.timing = {
+  FAST = 0.4,
+  NORMAL = 1.8,
+  LONG = 3,
+}
+
+
 --
----@param str string The string or `hs.styledtext` object to display in the alert
----@param style? table an optional table containing one or more of the keys specified in [hs.alert.defaultStyle](#defaultStyle).  If `str` is already an `hs.styledtext` object, this argument is ignored.
----@param screen? any string an optional `hs.screen` userdata object specifying the screen (monitor) to display the alert on.  Defaults to `hs.screen.mainScreen()` which corresponds to the screen with the currently focused window.
----@param seconds? integer The number of seconds to display the alert. Defaults to 2.  If seconds is specified and is not a number, displays the alert indefinitely.
-function Alert.alert(str, style, screen, seconds, ...)
-  hs.alert.closeSpecific(prev_alert, 0)
-  prev_alert = hs.alert.show(str, style, screen, seconds, ...)
-end
-
-
-function Alert.showf(fmt_string, fmt_args, style, screen, seconds)
-  hs.alert.closeSpecific(prev_alert, 0)
-  local str = strings.fmt(fmt_string, table.unpack(fmt_args))
-  Alert.alert(str, style, screen, seconds)
-end
-
--- Shows an alert on screen with an image. 
--- Currently just proxies to hs.alert.show with no modifications
+-- Returns a builder for a new alert
 --
----@param str string The string or `hs.styledtext` object to display in the alert
----@param image any The image to display in the alert
----@param style? table an optional table containing one or more of the keys specified in [hs.alert.defaultStyle](#defaultStyle).  If `str` is already an `hs.styledtext` object, this argument is ignored.
----@param screen? any string an optional `hs.screen` userdata object specifying the screen (monitor) to display the alert on.  Defaults to `hs.screen.mainScreen()` which corresponds to the screen with the currently focused window.
----@param seconds? integer The number of seconds to display the alert. Defaults to 2.  If seconds is specified and is not a number, displays the alert indefinitely.
-function Alert.imageAlert(str, image, style, screen, seconds, ...)
-  hs.alert.closeSpecific(prev_alert, 0)
-  prev_alert = hs.alert.showWithImage(str, image, style, screen, seconds, ...)
+---@param pattern string
+---@param ... any[] pattern variables
+---@return Alert
+function Alert.new(self, pattern, ...)
+  local config = {
+    text = strings.fmt(pattern, ...)
+  }
+
+  return proto.setProtoOf({ config = config }, Alert)
 end
+
+
+---@param style HS.AlertStyle
+---@return Alert
+function Alert.style(self, style)
+  self.config.style = style
+  return self
+end
+
+
+---@param icon hs.image
+---@return Alert
+function Alert.icon(self, icon)
+  self.config.icon = icon
+  return self
+end
+
+
+--
+-- Shows the configured alert
+--
+---@param timing? AlertTime
+function Alert.show(self, timing)
+  hs.alert.closeSpecific(prev_alert, 0)
+
+  local text = self.config.text
+  local icon = self.config.icon
+  local style = self.config.style
+  local screen = hs.screen.mainScreen()
+  local seconds = self.config.timing or Alert.timing.NORMAL
+
+  if types.notNil(self.config.icon) then
+    prev_alert = hs.alert.showWithImage(text, icon, style, screen, seconds)
+  else
+    prev_alert = hs.alert.show(text, style, screen, seconds)
+  end
+end
+
 
 return Alert

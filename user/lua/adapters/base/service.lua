@@ -1,17 +1,35 @@
-local class = require 'middleclass'
+local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
-local logr = require 'user.lua.util.logger' 
+local logr    = require 'user.lua.util.logger' 
 
 local log = logr.new('service', 'warning')
 
----@class Service : MidClassObject
----@field new fun(): Service
-local Service = class('Service')
 
-function Service:initialize(name)
-  log.f("New service [%s]", name)
-  self.name = name or "unknown"
-  self.pid = nil
+---@enum ServiceStatus
+local STATUS = {
+  running = 0,
+  not_running = 1,
+}
+
+
+---@class Service
+---@field name string
+---@field pid integer
+local Service = {}
+
+Service.STATUS = STATUS
+
+
+---@return Service
+function Service:new(name)
+  local this = self == Service and {} or self
+  
+  this.name = name or "unknown"
+  this.pid = nil
+  
+  log.f("New service [%s]", this.name)
+
+  return proto.setProtoOf(this, Service)
 end
 
 function Service:start()

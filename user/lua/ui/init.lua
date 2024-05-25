@@ -1,4 +1,5 @@
 local params  = require 'user.lua.lib.params'
+local tables  = require 'user.lua.lib.table'
 local colors  = require 'user.lua.ui.color'
 local symbols = require 'user.lua.ui.symbols'
 local logr    = require 'user.lua.util.logger'
@@ -24,6 +25,24 @@ local icons = {
   default    = symbols.toIcon("tornado", 72, colors.white),
 }
 
+local _icons = tables{
+  kitty      = "cat",
+  info       = "info.circle",
+  tag        = "tag",
+  reload     = "arrow.counterclockwise",
+  term       = "terminal",
+  code       = "htmltag",
+  command    = "command",
+  running    = "circle.fill",
+  stopped    = "circle.fill",
+  unknown    = "circle.fill",
+  float      = "macwindow.on.rectangle",
+  spaceLeft  = "rectangle.righthalf.inset.filled.arrow.right",
+  spaceRight = "rectangle.lefthalf.inset.filled.arrow.left",
+  default    = "tornado",
+}
+
+
 local UI = {
   btn = {
     confirm = "OK",
@@ -44,28 +63,40 @@ local UI = {
         alpha = 0.15,
       },
     },
-    ts = {
-      normal = 1.8,
-      fast = 0.4,
-      flash = 0.25,
-    },
   },
   icons = icons,
   colors = colors,
   console = {},
 }
 
+--
+-- Returns template hs.image to use in menubars
+--
+---@param icon string|hs.image
+---@param hscolor? HS.Color
+---@return hs.image
+function UI.menuIcon(icon, hscolor)
 
-local icon_font = {
-  size = 12,
-  name = 'SF Pro',
-  color = colors.white,
-}
+  local cp = 'questionmark'
 
+  if _icons:has(icon) then
+    cp = _icons[icon]
+  end
 
-function UI.sf_symbol(code, size, attrs, asText)
-  local defSize = params.default(size, icon_font.size)
-  return symbols.toIcon(code, defSize, colors.white, asText)
+  if symbols:has(icon) then
+    cp = symbols[icon]
+  end
+
+  local img = symbols.toIcon(cp, 12, hscolor or colors.black)
+    
+  if img == nil then
+    error('Could not create icon image for '..cp)
+  end
+
+  img:setSize({ w = 16, h = 16 })
+  img:template(true)
+
+  return img
 end
 
 return UI

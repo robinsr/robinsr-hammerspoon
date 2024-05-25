@@ -2,15 +2,15 @@ local shell   = require 'user.lua.interface.shell'
 local strings = require 'user.lua.lib.string'
 local util    = require 'user.lua.util'
 
-
+---@class CliUtility
 local isCli = {}
 
-function isCli:included(clss)
-  local pattern = strings.fmt('^\\/.*\\/%s$', clss.path)
-  local found = shell.run('which %s', clss.path):gmatch(pattern)
+function isCli:included()
+  local pattern = strings.fmt('^\\/.*\\/%s$', self.path)
+  local found = shell.run('which %s', self.path):gmatch(pattern)
   
   if not found then
-    util.errorf('No path executable found for cli [%s]', clss.path)
+    util.errorf('No path executable found for cli [%s]', self.path)
   end
 end
 

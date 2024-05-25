@@ -3,29 +3,40 @@ local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local logr    = require 'user.lua.util.logger'
 
-
 local log = logr.new('ui:color', 'info')
 
-local colorlists = hs.drawing.color.lists()
 
-log.i(hs.inspect(tables, { metatables = true }))
+---@class HS.RGBColor
+---@field red number
+---@field green number
+---@field blue number
+---@field alpha number
 
----@cast colorlists -nil
-local colorlistkeys = tables.get(colorlists)
+---@class HS.HSBColor
+---@field hue number
+---@field saturation number
+---@field brightness number
+---@field alpha number
 
-log.df("Available color lists: %s", strings.join(colorlistkeys, ', '))
+---@class HS.GrayscaleColor
+---@field white number
+---@field alpha number
 
-local systemColors = hs.drawing.color.colorsFor("System")
+---@class HS.SystemColor
+---@field list number
+---@field name number
 
-local function getSystemColor(color_name)
-  ---@cast systemColors -nil
-  return params.default(systemColors[color_name], { hex = '#000000' })
-end
+---@class HS.HexColor
+---@field hex string
+---@field alpha number
+
+---@alias HS.Color HS.RGBColor|HS.HSBColor|HS.GrayscaleColor|HS.SystemColor|HS.HexColor
+
+---@alias ColorList Dict<HS.Color>
 
 
+---@enum KS.Colors
 local colors = {
-  black      = '#000000',
-  white      = '#FFFFFF',
   chateau    = '#A5ACBA',
   bunker     = '#0C1017',
   outerspace = '#2E3842',
@@ -36,8 +47,57 @@ local colors = {
   pelorous   = '#39B7B5',
   danube     = '#589ACF',
   viola      = '#CF90C8',
-  -- todo; what is the hex for disabled text in menubar item?
-  disabled   = getSystemColor("disabledControlTextColor"),
 }
+
+colors.black = {
+  red   = 0.0,
+  green = 0.0,
+  blue  = 0.0,
+  alpha = 1.0,
+}
+
+colors.white = {
+  red   = 1.0,
+  green = 1.0,
+  blue  = 1.0,
+  alpha = 1.0,
+}
+
+colors.transparent = {
+  red   = 1.0,
+  green = 1.0,
+  blue  = 1.0,
+  alpha = 0.0,
+}
+
+
+--
+-- Gets all system color lists
+--
+---@return Dict<ColorList> A table containing all color lists
+function colors.getAllLists()
+  return hs.drawing.color.lists() --[[@as Dict<ColorList>]]
+end
+
+
+--
+-- Gets a specific system color list
+--
+---@param name string Name of the color list
+---@return ColorList
+function colors.getListColors(name)
+  return hs.drawing.color.colorsFor(name) --[[@as ColorList]]
+end
+
+
+
+function colors.getSystemColor(name)
+  local systemColors = hs.drawing.color.colorsFor("System")
+  ---@cast systemColors -nil
+  return params.default(systemColors[name], { hex = '#000000' })
+end
+
+
+colors.disabled = colors.getSystemColor("disabledControlTextColor")
 
 return colors

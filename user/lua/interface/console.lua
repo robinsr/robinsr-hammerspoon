@@ -14,7 +14,7 @@ function console.configureHSConsole()
   
   -- hs.console.clearConsole()
   hs.console.consoleFont(console_font)
-  hs.console.maxOutputHistory(30000) -- sets max character count, not lines
+  hs.console.maxOutputHistory(50000) -- sets max character count, not lines
 end
 
 

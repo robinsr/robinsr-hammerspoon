@@ -75,7 +75,9 @@ function D.test()
 
   log.i(content)
   
-  local webview = hs.webview.newBrowser(box, webviewOpts):html(content)
+  local webview = hs.webview.new(box, webviewOpts) --[[@as hs.webview]]
+
+  webview:html(content)
 
   hs.timer.doAfter(0.5, function()
     webview:show(0.5)

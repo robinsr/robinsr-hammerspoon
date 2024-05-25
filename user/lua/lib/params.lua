@@ -13,7 +13,7 @@ local Params = {}
 ---@param allowEmpty? boolean Set true to allow empty strings
 ---@return V
 function Params.default(val, default, allowEmpty)
-  local useDefault = is.nill(val)
+  local useDefault = is.Nil(val)
 
   if (allowEmpty and is.strng(val)) then
     useDefault = val ~= ""

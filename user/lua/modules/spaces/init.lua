@@ -10,11 +10,9 @@ local text       = require 'user.lua.ui.text'
 local logr       = require 'user.lua.util.logger'
 
 
-local icons = ui.icons
-local tNorm, tFast = table.unpack{ ui.alert.ts.normal, ui.alert.ts.fast }
-
 local log = logr.new('ModSpaces', 'debug')
 
+---@type Yabai
 local yabai      = KittySupreme.services.yabai
 local sketchybar = KittySupreme.services.sketchybar
 
@@ -27,18 +25,20 @@ local Spaces = {}
 ---
 function Spaces.rename()
   local space = yabai:getSpace()
-  local index = tostring(space.index)
-  local label = params.default(space.label, strings.fmt("Space #%s", index))
+  local label = params.default(space.label, strings.fmt("Space #%d", space.index))
 
   local title = "Rename Space"
   local info = "Input a name for current space"
-  local clicked, input = hs.dialog.textPrompt(title, info, label, ui.btn.confirm, ui.btn.cancel)
+  local clicked, input = hs.dialog.textPrompt(title, info, label, "OK", "Cancel")
 
   log.f("RenameSpace - Clicked %s; Value: %s", clicked, input)
 
-  if (clicked == ui.btn.confirm) then
-    yabai:setSpaceLabel(index, params.default(input, index))
-    sketchybar.trigger.onNewLabel(index, input)
+  if (clicked == "OK") then
+    ---@cast input string
+    space.label = input
+
+    yabai:setSpaceLabel(space.index, input or '""')
+    sketchybar:onSpaceEnvChange(space)
   end
 end
 
@@ -51,10 +51,11 @@ end
 -- Handles space change events
 -- Currently responds after Yabai has already changed the active space
 --
+---@param cmd Command
 ---@param ctx CommandCtx The event context
 ---@param params SpaceChangeParams to/from index of change
-function Spaces.onSpaceChange(ctx, params)
-  local disp = { 'Irratic space change...', tNorm, icons.tornado }
+function Spaces.onSpaceChange(cmd, ctx, params)
+  local disp = { 'Irratic space change...', alert.timing.NORMAL, ui.icons.tornado }
 
   local screen = desktop.getScreen('active')
   local submsg = strings.fmt("(%s - %s)", screen:id(), screen:name())
@@ -66,25 +67,29 @@ function Spaces.onSpaceChange(ctx, params)
     local from, to = tonumber(movement[1]), tonumber(movement[2])
 
     if (from - to > 0) then 
-      disp = { 'Moved space left', tFast, icons.spaceLeft }
+      disp = { 'Moved space left', alert.timing.FAST, ui.icons.spaceLeft }
     elseif (from - to < 0) then
-      disp = { 'Moved space right', tFast, icons.spaceRight }
+      disp = { 'Moved space right', alert.timing.FAST, ui.icons.spaceRight }
     else
-      disp = { 'Moved space', tNorm, icons.tornado }
+      disp = { 'Moved space', alert.timing.NORMAL, ui.icons.tornado }
     end
   end
 
   local text, timing, icon = table.unpack(disp)
 
-  return alert.imageAlert(text, icon, nil, screen, timing)
+  return alert:new(text):icon(icon):show(timing)
 end
 
 function Spaces.onSpaceCreated(ctx, params)
-  log.d("space created:", hs.inspect(params))
+  log.inspect("space created:", params)
+
+  sketchybar:update()
 end
 
 function Spaces.onSpaceDestroyed(ctx, params)
-  log.d("space destroyed:", hs.inspect(params))
+  log.inspect("space destroyed:", params)
+
+  sketchybar:update()
 end
 
 
@@ -108,19 +113,24 @@ function Spaces.cycleLayout()
   log.i('next yabai layout:', nextlayout)
 
   yabai:setLayout(nextlayout)
-  sketchybar.trigger.onLayoutChange(space.index, nextlayout)
+
+  print(tostring(#space.windows), hs.inspect(space))
+
+  sketchybar:onSpaceEnvChange(space)
 
   return nextlayout
 end
 
 
+---@type CommandConfig[]
 Spaces.cmds = {
   {
     id = 'Spaces.CycleLayout',
     title = "Space → Cycle Layout",
-    hotkey = cmd.hotkey("modA", "space"),
-    menubar = cmd.menubar{ "desktop", "y", ui.icons.code },
-    fn = function(ctx)
+    icon = "tag",
+    mods = "modA",
+    key = "space",
+    exec = function(cmd)
       local layout = Spaces.cycleLayout()
       return strings.fmt("Changed layout to %s", layout)
     end,
@@ -128,45 +138,98 @@ Spaces.cmds = {
    {
     id = 'Spaces.RenameSpace',
     title = "Label current space",
-    menubar = cmd.menubar{ "desktop", "L", ui.icons.tag },
-    hotkey = cmd.hotkey("bar", "L"),
-    fn = function(ctx)
+    icon = "tag",
+    mods = "bar",
+    key = "L",
+    exec = function(cmd, ctx)
       Spaces.rename()
 
       if (ctx.trigger == 'hotkey') then
-        return strings.fmt('%s: %s', ctx.hotkey, ctx.title)
+        return strings.fmt('%s: %s', cmd:getHotkey().label, cmd.title)
       end
     end,
   },
   { 
     id = "Spaces.floatActiveWindow",
     title = "Float active window",
-    menubar = cmd.menubar{ "desktop", nil, ui.icons.float },
-    fn = function (ctx)
+    icon = "float",
+    exec = function (cmd, ctx)
       yabai:floatActiveWindow()
 
-      if ctx.hotkey then return ctx.title end
+      if (ctx.trigger == 'hotkey') then
+        return strings.fmt('%s: %s', cmd:getHotkey().label, cmd.title)
+      end
     end
   },
   {
     id = 'Spaces.OnSpaceChange',
-    fn = Spaces.onSpaceChange,
+    exec = Spaces.onSpaceChange,
     url = "spaces.changed",
   },
   {
     id = 'Spaces.OnSpaceCreated',
-    fn = Spaces.onSpaceCreated,
+    exec = Spaces.onSpaceCreated,
     url = "spaces.created",
   },
   {
     id = 'Spaces.OnSpaceDestroyed',
-    fn = Spaces.onSpaceDestroyed,
+    exec = Spaces.onSpaceDestroyed,
     url = "spaces.destroyed",
   },
   {
     id = 'Spaces.OnDisplayChange',
-    fn = function() end,
+    exec = function() end,
     url = "display.changed",
+  },
+  {
+    id = 'Yabai.Window.First3rd',
+    title = "Move window: 1st ⅓",
+    mods = 'modB',
+    key = '1',
+    exec = function(cmd)
+      yabai:shiftWindow(desktop.activeWindow(), { x = 0, y = 0 }, { x = 1, y = 1 })
+      return cmd.title
+    end,
+  },
+  {
+    id = 'Yabai.Window.Second3rd',
+    title = "Move window: 2nd ⅓",
+    mods = 'modB',
+    key = '2',
+    exec = function(cmd)
+      yabai:shiftWindow(desktop.activeWindow(), { x = 1, y = 0 }, { x = 1, y = 1 })
+      return cmd.title
+    end,
+  },
+  {
+    id = 'Yabai.Window.Third3rd',
+    title = "Move window: 3rd ⅓",
+    mods = 'modB',
+    key = '3',
+    exec = function(cmd)
+      yabai:shiftWindow(desktop.activeWindow(), { x = 2, y = 0 }, { x = 1, y = 1 })
+      return cmd.title
+    end,
+  },
+  {
+    id = 'Yabai.Window.FirstTwo3rds',
+    title = "Move window: 1st ⅔",
+    mods = 'modB',
+    key = '4',
+    exec = function(cmd)
+      yabai:shiftWindow(desktop.activeWindow(), { x = 0, y = 0 }, { x = 2, y = 1 })
+      return cmd.title
+    end,
+  },
+  {
+    id = 'Yabai.Window.SecondTwo3rds',
+    title = "Move window: 2nd ⅔",
+    mods = 'modB',
+    key = '5',
+    exec = function(cmd)
+      yabai:shiftWindow(desktop.activeWindow(), { x = 1, y = 0 }, { x = 2, y = 1 })
+      return cmd.title
+    end,
   },
 }
 

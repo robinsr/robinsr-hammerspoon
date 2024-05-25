@@ -1,6 +1,7 @@
-local class = require 'middleclass'
+
 local isCli = require 'user.lua.adapters.base.cli-utility'
 local shell = require 'user.lua.interface.shell'
+local proto = require 'user.lua.lib.proto'
 
 --[[
 karabiner_cli [OPTION...] positional parameters
@@ -23,10 +24,11 @@ karabiner_cli [OPTION...] positional parameters
   --eval-js glob-patterns   Run javascript files using Duktape
 ]]
 
-local Kcli = class('KarabinerCLI')
 
-Kcli.static.path = "karabiner_cli"
-Kcli:include(isCli)
+---@class KarabinerCLI: CliUtility
+local Kcli = {}
+
+Kcli._path = "karabiner_cli"
 
 function Kcli:initialize()
   -- todo...
@@ -41,4 +43,4 @@ function Kcli:setCurrentProfile()
   return shell.run('karabiner_cli --select-profile arg')
 end
 
-return Kcli:new()
+return proto.setProtoOf(Kcli, isCli)

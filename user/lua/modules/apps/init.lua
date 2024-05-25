@@ -1,26 +1,19 @@
 local alert   = require 'user.lua.interface.alert'
+local app     = require 'user.lua.model.application'
 local cmd     = require 'user.lua.model.command'
+local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local ui      = require 'user.lua.ui'
+local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 local delay   = require 'user.lua.util'.delay
 
 local log   = logr.new('ModApps', 'debug')
 
 -- Returns relevant fields from hs.application.menuitem
---[[
-  AXChildren = {...},
-  AXEnabled = true,
-  AXMenuItemCmdChar = "",
-  AXMenuItemCmdGlyph = "",
-  AXMenuItemCmdModifiers = {...},
-  AXMenuItemMarkChar = "",
-  AXRole = "AXMenuBarItem",
-  AXTitle = "Messages"
-]]
 local function unpackItem(item)
   local picked = { "AXTitle", "AXMenuItemCmdModifiers", "AXMenuItemCmdChar", "AXChildren" }
   return table.unpack(tables.pick(item, picked))
@@ -77,14 +70,13 @@ end
 function Apps.getMenusForActiveApp()
   local activeapp = hs.application.frontmostApplication()
 
-  alert.alert(strings.fmt("Getting keys for %s...", activeapp:name()), nil, nil, 10)
+  alert:new("Getting keys for %s...", activeapp:name()):show()
 
   delay(1, function ()
     activeapp:getMenuItems(function(menus)
-      
-      table.insert(menus, 1, {})
-      
-      local items = traverseMenu({ mapped = {}, unmapped = {} }, { menus[4] }, {})
+      json.write('~/Desktop/hs-activeapp-getmenuitems.json', menus)
+
+      local items = lists(menus):map(app.menuItem):items()
       
       log.inspect(items, { depth = 3 })
     end)
@@ -95,9 +87,10 @@ Apps.cmds = {
   {
     id = 'Apps.getMenusForActiveApp',
     title = 'Show Keys for active app',
-    menubar = cmd.menubar{ "general", nil, ui.icons.command },
-    hotkey = cmd.hotkey("bar", "K", "title"),
-    fn = function(ctx, params)
+    icon = ui.icons.command,
+    mods = "bar",
+    key = "K",
+    exec = function(ctx, params)
       Apps.getMenusForActiveApp()
     end,
   },

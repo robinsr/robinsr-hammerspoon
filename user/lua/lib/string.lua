@@ -1,11 +1,11 @@
 local penstr   = require 'pl.stringx'
 local lustache = require 'lustache'
-local tc       = require 'user.lua.lib.typecheck'
+local types    = require 'user.lua.lib.typecheck'
 local P        = require 'user.lua.lib.params'
 
 local inspect = require('inspect')
 
-local Str = {}
+local strings = {}
 
 
 --
@@ -13,8 +13,25 @@ local Str = {}
 --
 ---@param str string Untrimmed input string
 ---@return string The trimmed string
-function Str.trim(str)
+function strings.trim(str)
   return penstr.strip(str)
+end
+
+function strings.truncate(str, len)
+  return penstr.shorten(str, len)
+end
+
+
+function strings.ifEmpty(str, replace)
+  if (types.isNil(str) or not types.isString(str)) then
+    return tostring(replace or '')
+  end
+
+  if (str == '') then
+    return tostring(replace)
+  end
+
+  return str
 end
 
 --
@@ -23,7 +40,7 @@ end
 ---@param msg string The format string
 ---@param ... any Format string variables
 ---@return string The final string
-function Str.fmt(msg, ...)
+function strings.fmt(msg, ...)
   return string.format(msg, table.unpack{...})
 end
 
@@ -31,20 +48,19 @@ end
 --
 -- Compiles a template string
 --
-function Str.tmpl(tmplstr)
-  if not tc.isString(tmplstr) then
-    error(Str.fmt('Invalid template string: %s', tmplstr or 'nil'))
+function strings.tmpl(tmplstr)
+  if not types.isString(tmplstr) then
+    error(strings.fmt('Invalid template string: %s', tmplstr or 'nil'))
   end
 
   local render = lustache:compile(tmplstr)
 
   if render == nil then
-    error(Str.fmt('Error compiling lustache template: %q', tmplstr))
+    error(strings.fmt('Error compiling lustache template: %q', tmplstr))
   else
     return function(args) return render(args) end
   end
 end
-
 
 
 --
@@ -52,9 +68,9 @@ end
 --
 ---@param tabl table List to join
 ---@param sep string? Separator string
-function Str.join(tabl, sep)
+function strings.join(tabl, sep)
   local separator = P.default(sep, '')
-  if tc.isTable(tabl) then
+  if types.isTable(tabl) then
     return table.concat(tabl, separator)
   else
     return ''
@@ -68,8 +84,8 @@ end
 ---@param line string String to split
 ---@param char? string Optional split character
 ---@return string[]
-function Str.split(line, char)
-  local pattern = Str.fmt("[^%s]+", char or "%s")
+function strings.split(line, char)
+  local pattern = strings.fmt("[^%s]+", char or "%s")
 
   local items = {}
   for token in string.gmatch(line, pattern) do
@@ -86,8 +102,8 @@ end
 ---@param str string The input string to pad or truncate
 ---@param count integer The desired resulting string length
 ---@return string
-function Str.pad(str, count)
-  if (tc.isNil(str) or not tc.isString(str)) then
+function strings.pad(str, count)
+  if (types.isNil(str) or not types.isString(str)) then
     return ""
   end
 
@@ -105,8 +121,8 @@ end
 ---@param str string Input string
 ---@param old string String to remove
 ---@param new string String to 
-function Str.replace(str, old, new)
+function strings.replace(str, old, new)
   return penstr.replace(str, old, new)
 end
 
-return Str
+return strings

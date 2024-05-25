@@ -1,5 +1,9 @@
 local U = {}
 
+local fmt = string.format
+local pack = table.pack
+local upack = table.unpack
+
 U.log = require('user.lua.util.logger').log
 
 U.d1 = { depth = 1 }
@@ -24,7 +28,26 @@ end
 ---@param fmtstr string Format string pattern
 ---@param ... string|number|boolean Format string parameters
 function U.errorf(fmtstr, ...)
-  error(string.format(fmtstr, ...), 2)
+  error(fmt(fmtstr, ...), 2)
+end
+
+
+--
+-- Returns a error function
+--
+function U.errorft(tmpl, ...)
+  local tmplvars = pack(...)
+  return function(fmtstr, ...)
+    local submsg = fmt(fmtstr, ...)
+    local msg = fmt(tmpl, { upack(tmplvars), submsg })
+    
+    error(msg, 3)
+  end
+end
+
+
+function U.noop() 
+  -- do nothing
 end
 
 

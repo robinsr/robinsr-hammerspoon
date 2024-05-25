@@ -1,35 +1,40 @@
 local watchable   = require "hs.watchable"
 local timer       = require "hs.timer"
 local BrewService = require 'user.lua.adapters.base.brew-service'
-local LaunchAgent = require 'user.lua.adapters.base.launchagent'
 local logr        = require 'user.lua.util.logger'
 
-local log = logr.log('KS-State', 'info')
+local log = logr.log('KS-State', 'debug')
 
 
 ScreenAlert = nil
 
+---@class Services
+---@field yabai Yabai
+---@field sketchybar SketchyBar
+
 
 ---@class KittySupremeGlobal
+---@field colors KS.Colors
+---@field commands Collection
 ---@field boundkeys hs.hotkey[]
 ---@field urlhanders table[]
 ---@field menubar hs.menubar|nil
----@field services Dict<Service>
+---@field services Services
 
 ---@type KittySupremeGlobal
 KittySupreme = {
+  colors = require('user.lua.ui.color'),
+  commands = {},
   boundkeys = {},
   urlhanders = {},
   menubar = nil,
-  services = {},
+  services = {
+    yabai      = require('user.lua.adapters.yabai'):new(),
+    sketchybar = require('user.lua.adapters.sketchybar'):new(),
+    skhd       = require('user.lua.adapters.skhd'):new(),
+  },
 }
 
-
-KittySupreme.services = {
-  yabai      = require 'user.lua.adapters.yabai',
-  sketchybar = require 'user.lua.adapters.sketchybar',
-  skhd       = LaunchAgent:new('skhd', 'com.koekeishiya.skhd'),
-}
 
 for i,v in ipairs(BrewService:list()) do
   if (KittySupreme.services[v.name] == nil) then
@@ -37,7 +42,7 @@ for i,v in ipairs(BrewService:list()) do
   end
 end
 
-log.inspect(KittySupreme.services, { depth = 2 })
+log.inspect('Services loaded:', KittySupreme.services, { depth = 2 })
 
 -- -- Works! Most of the time
 -- KittySupreme.spacelabels = watchable.new('spacelabels', true)

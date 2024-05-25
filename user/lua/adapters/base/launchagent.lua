@@ -1,37 +1,72 @@
-local class   = require 'middleclass'
 local Service = require 'user.lua.adapters.base.service'
 local shell   = require 'user.lua.interface.shell'
+local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local logr    = require 'user.lua.util.logger'
+local data    = require 'pl.data'
 
 local log = logr.new('LaunchAgent', 'info')
 
-local PROC_UID = shell.run('id -u')
+local PROC_UID = nil
 
----@class LaunchAgent : Service
----@field new fun(...: any[]): LaunchAgent
----@field getUID fun(): string
-local LaunchAgent = class('LaunchAgent', Service)
+---@class LaunchAgent: Service
+local LaunchAgent = {}
 
-function LaunchAgent.static:getUID()
-  return PROC_UID
+
+
+function LaunchAgent.getUID()
+  return shell.run('id -u')
 end
 
 
-function LaunchAgent:initialize(name, servicename)
-  Service.initialize(self, name)
+--
+-- Query the list of active launch agents
+--
+-- - Select row          - seq.copy(launchd:select_row('* where label == "com.koekeishiya.yabai"'))[1]
+-- - Select row as table - launchd:copy_select('* where label == "com.koekeishiya.yabai"')
+--
+function LaunchAgent.list()
+  local dataconfig = {
+    delimg = '\t',
+    fieldnames = { 'pid', 'exit', 'label' }
+  }
 
-  self.service_name = servicename
+  local services, err = data.read(io.popen('launchctl list'), dataconfig)
+
+  if err ~= nil then error(err) end
+
+  return services
+end
+
+
+--
+-- Creates a new LaunchAgent instance for a service
+--
+---@param name string A user-friendly name for the serivce
+---@param servicename string The name the services uses within launchctl
+---@return LaunchAgent
+function LaunchAgent:new(name, servicename)
+
+  ---@class LaunchAgent
+  local this = Service.new(self == LaunchAgent and {} or self, name)
+
+  this.service_name = servicename
 
   local uid = LaunchAgent:getUID()
 
-  self.domain_target = strings.fmt('gui/%s', uid)
-  self.service_target = strings.fmt('gui/%s/%s', uid, self.service_name)
+  this.domain_target = strings.fmt('gui/%s', uid)
+  this.service_target = strings.fmt('gui/%s/%s', uid, this.service_name)
 
-  local launchinfo = shell.run('launchctl print %s', self.service_target)
-  
-  self.plistfile = launchinfo:match("path%s=%s([^%s]*)")
-  self.pid = launchinfo:match("pid%s=%s([^%s]*)")
+  local ok, launchinfo = pcall(function()
+    return shell.run('launchctl print %s', this.service_target)
+  end)
+
+  if (ok) then
+    this.plistfile = launchinfo:match("path%s=%s([^%s]*)")
+    this.pid = launchinfo:match("pid%s=%s([^%s]*)")
+  end
+
+  return proto.setProtoOf(this, LaunchAgent)
 end
 
 
@@ -66,24 +101,25 @@ end
 -- end
 
 
+---@return ServiceStatus
 function LaunchAgent:status(name)
-  local ok, msg = pcall(function()
-    return shell.run('launchctl kickstart -p %s', self.service_target)
+  local ok, services = pcall(function()
+    return LaunchAgent.list()
   end)
 
-  if (ok and msg ~= nil) then
-    local pid = msg:match("(%d+)")
-
-    log.df("Started service [%s] (pid: %s)", self.name, pid)
-
-    self.pid = pid
-
-    return 'running '..self.pid
-  else
+  if not ok then
     error("Failed to get status of "..self.service_name)
   end
 
-  return 'not running'
+  if services ~= nil then
+    local proc = services:copy_select(strings.fmt('* where label == "%s"'))
+
+    if (proc ~= nil and proc.pid) then
+      return Service.STATUS.running
+    end
+  end
+
+  return Service.STATUS.not_running
 end
 
 

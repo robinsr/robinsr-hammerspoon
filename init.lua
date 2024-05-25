@@ -1,5 +1,6 @@
 PkgName = 'ryan-hs'
 
+local lists  = require 'user.lua.lib.list'
 local tabl   = require 'user.lua.lib.table'
 local logger = require 'user.lua.util.logger'
 
@@ -12,26 +13,31 @@ local console = require 'user.lua.interface.console'
 console.configureHSConsole()
 console.setDarkMode(true)
 
-require 'user.lua.state'
+local KS = require 'user.lua.state'
 
 
-local commands = require 'user.lua.commands'.getCommands()
+KS.commands = require 'user.lua.commands'.getCommands()
+
 
 log.i("Setting global hotkeys")
-require('user.lua.interface.hotkeys').bindall(commands)
+
+KS.commands:forEach(function(cmd) 
+  log.inspect(cmd, { depth = 3, metatables = true })
+  cmd:bindHotkey()
+end)
 
 log.i("Setting up url handlers")
-require('user.lua.interface.url-handler').bindall(commands)
+lists(KS.commands):forEach(function(cmd) cmd:bindURL() end)
 
 log.i("Creating menubar item")
-require('user.lua.interface.menubar').install(commands)
+require('user.lua.interface.menubar').install(KS.commands)
 
 log.i('Running onLoad commands')
 
 local option = require 'user.lua.lib.optional'
 
 local onLoad = option.ofNil(
-  commands:findById('KS.OnLoad'), 'No KS.OnLoad command found'
+  KS.commands:findById('KS.OnLoad'), 'No KS.OnLoad command found'
 )
 
 if onLoad:ispresent() then
@@ -44,6 +50,14 @@ if onLoad:ispresent() then
 end
 
 log.i('Init complete')
+
+---@type hs.distributednotifications|nil
+local nsDistNotes = hs.distributednotifications.new(function(name, object, userInfo)
+  print(string.format("name: %s\nobject: %s\nuserInfo: %s\n", name, object, hs.inspect(userInfo)))
+end)
+if (nsDistNotes ~= nil) then
+  nsDistNotes:start()
+end
 
 
 --- init_d app container WIP

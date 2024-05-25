@@ -34,7 +34,7 @@ local log = logr.new('menubar', 'info')
 local function textMenuItem(text)
   return {
     title = text,
-    image = ui.icons.info,
+    image = ui.menuIcon('info'),
     disabled = true,
   }
 end
@@ -46,24 +46,24 @@ end
 local function mapCommands(sections, cmds)
 
   ---@type MenubarItem[]
-  local mapped = lists.reduce({}, sections, function(all, section)
+  local mapped = lists.reduce(sections, {}, function(all, section)
 
     log.df("Mapping menubar section %s", section)
 
     local sectionCmds = lists.filter(cmds, function(cmd)
-      return types.notNil(cmd.menubar) and cmd.menubar.section == section
+      return cmd:getMenuSection() == section
     end)
 
     lists.forEach(sectionCmds, function(cmd)
       table.insert(all, {
         title = cmd.title,
-        shortcut = cmd.menubar.key or nil,
-        image = cmd.menubar.icon or nil,
+        shortcut = cmd.key or nil,
+        image = cmd:getMenuIcon() or nil,
         fn = function()
-          local result = cmd.fn({ type = 'menuclick' }, {})
+          local result = cmd:invoke('menu', {})
 
           if result ~= nil then
-            alert.alert(result)
+            alert:new(result):show()
           end
         end
       })
@@ -87,23 +87,24 @@ local function serviceMenuProps(service)
 end
 
 
----@param services Service[]
----@return MenubarItem[]
-local function servicesSubmenu(services)
-  local menuitems = lists.map(services, function(service)
+---@return MenubarItem
+local function servicesSubmenu()
+  local services = lists(tables.vals(KittySupreme.services))
+
+  local menuitems = services:map(function(service)
     local state, text = serviceMenuProps(service)
 
-    local subitems = {}
+    local subitems = lists()
 
-    if (service.cmds ~= nil) then
-      lists.push(subitems, table.unpack(
-        mapCommands({ service.name }, service.cmds)
-      ))
-      lists.push(textMenuItem'-')
+    local servicecmds = mapCommands({ service.name }, KittySupreme.commands)
+
+    if (#servicecmds > 0) then
+      subitems:push(table.unpack(servicecmds))
+      subitems:push(textMenuItem'-')
     end
 
 
-    lists.push(subitems, { 
+    subitems:push({ 
       title = strings.fmt("Start %s", service.name),
       fn = function() service:start() end,
     },
@@ -133,7 +134,7 @@ local function servicesSubmenu(services)
   return {
     title = "Services",
     menu = menuitems,
-    image = ui.icons.term,
+    image = ui.menuIcon('term'),
   }
 end
 
@@ -146,29 +147,38 @@ local MenuBar = {}
 ---@param cmds Command[]
 ---@return nil
 function MenuBar.install(cmds)
-  local menuitems = {}
 
-  lists.push(menuitems, textMenuItem("Just some text"))
-  lists.push(menuitems, textMenuItem("-"))
-  lists.push(menuitems, table.unpack(mapCommands({ "desktop", "windows" }, cmds)))
-  lists.push(menuitems, textMenuItem("-"))
-  lists.push(menuitems, servicesSubmenu(tables.vals(KittySupreme.services)))
-  lists.push(menuitems, textMenuItem("-"))
-  lists.push(menuitems, table.unpack(mapCommands({ "general" }, cmds)))
+  local getItems = function(keymods)
+    log.f('KS menubar clicked with modifier keys: %s', hs.inspect(keymods))
 
-  log.logIf('debug', function()
+    ---@type MenubarItem[]
+    local menuitems = lists({})
+      :push(textMenuItem("Just some text"))
+      :push(textMenuItem("-"))
+      :push(table.unpack(mapCommands({ "Spaces", "Apps" }, cmds)))
+      :push(textMenuItem("-"))
+      :push(servicesSubmenu())
+      :push(textMenuItem("-"))
+      :push(table.unpack(mapCommands({ "KS" }, cmds)))
+
     log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
-  end)
 
-  local KSmenubar = hs.menubar.new(true, "kittysupreme")
+    return menuitems
+  end
 
-  if (KSmenubar == nil) then
+
+  ---@type hs.menubar|nil
+  local ksmbar = hs.menubar.new(true, "kittysupreme")
+
+  if (ksmbar == nil) then
     error('Could not create menubar')
   end
 
-  KSmenubar:setMenu(menuitems):setTitle('KS'):setIcon(ui.icons.kitty)
+  ksmbar:setMenu(getItems)
+  ksmbar:setTitle('KS')
+  ksmbar:setIcon(ui.menuIcon('kitty'))
 
-  KittySupreme.menubar = KSmenubar
+  KittySupreme.menubar = ksmbar
 end
 
 return MenuBar

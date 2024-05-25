@@ -9,7 +9,7 @@
 		},
 		{
 			"path": "/Users/ryan/dotfiles/config/yabai",
-			"folder_exclude_patterns": ["node_modules"]
+			"folder_exclude_patterns": ["node_modules"],
 		},
 	],
 	"settings":
@@ -24,17 +24,14 @@
 					"Lua.runtime.version": "Lua 5.4",
 					"Lua.diagnostics.globals":
 					[
-						"lfs",
-						"KittySupreme",
-						"describe",
-						"it",
-						"assert"
+						"luasublimeproject", "lfs", "hs", "KittySupreme", "it", "describe"
 					],
 					"Lua.workspace.library":
 					[
 						"${3rd}/lfs/library", "./Spoons", "/opt/homebrew/share/lua/5.4"
 					],
 				},
+				"enabled": true,
 			},
 		},
 	},

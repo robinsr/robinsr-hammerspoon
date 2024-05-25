@@ -1,33 +1,41 @@
-local L = require 'user.lua.lib.list'
+local lists  = require 'user.lua.lib.list'
 local tables = require 'user.lua.lib.table'
+local proto  = require 'user.lua.lib.proto'
 
----@generic T
----@class Collection<T> : { [integer]: T }
+
+---@class Collection : List
 local Collection = {}
 
----@generic T
----@param items T[] List of commands to search
-function Collection:new(items)
-  ---@type Collection
-  local o = items
+local ColMeta = {}
+ColMeta.__index = Collection
 
-  -- todo: can I just pass the List module to setmetatable to get all List methods?
-  setmetatable(o, self)
-  self.__index = self
-  return o
+
+setmetatable(Collection, { 
+  __index = lists,
+  __call = function(c, items)
+    return setmetatable(items or {}, ColMeta)
+  end 
+ })
+
+
+---@param c self
+---@param items any[] List of commands to search
+---@return Collection
+function Collection.new(c, items)
+  return setmetatable(items or {}, ColMeta)
 end
 
 
 --
 -- Return first item where item's properties match all of tabl's properties
 --
----@generic T
+---@param col self
 ---@param tabl table Table of key/value pairs to match against
----@return T|nil
-function Collection:where(tabl)
+---@return any
+function Collection.where(col, tabl)
   local keys = tables.keys(tabl)
   
-  for k, item in ipairs(self) do
+  for k, item in ipairs(col or {}) do
     for j, key in ipairs(keys) do
       if (item[key] == tabl[key]) then
         return item
@@ -42,11 +50,11 @@ end
 --
 -- Return item where item.id eq passed parameter
 --
----@generic T
----@param id any String to match against command's id field
----@return T|nil
-function Collection:findById(id)
-  for k, cmd in ipairs(self) do
+---@param col self
+---@param id string String to match against command's id field
+---@return any
+function Collection.findById(col, id)
+  for k, cmd in ipairs(col or {}) do
     if (tables.get(cmd, 'id') == id) then
       return cmd
     end
@@ -55,52 +63,7 @@ function Collection:findById(id)
   return nil
 end
 
---
--- See `List.first`
---
----@see List.first
----@generic T: any
----@param fn PredicateFn to match against
----@return T|nil
-function Collection:first(fn)
-  return L.first(self, fn)
-end
+__kscollection = Collection
 
-
---
--- See `List.filter`
---
----@see List.filter
----@generic T: any
----@param self Collection<T>
----@param fn PredicateFn to match against
----@return T[]
-function Collection:filter(fn)
-  return L.filter(self, fn)
-end
-
-
---
--- See `List.every'
---
----@generic T : any
----@param fn PredicateFn The test function
----@return boolean
-function Collection:every(fn)
-  return L.every(self, fn)
-end
-
-
---
--- See `List.any`
---
----@see List.any
----@generic T : any
----@param fn PredicateFn The test function
----@return boolean
-function Collection:any(fn)
-  return L.any(self, fn)
-end
-
-
+-- return setmetatable({}, ColMeta)
 return Collection

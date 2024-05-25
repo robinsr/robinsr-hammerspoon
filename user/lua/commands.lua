@@ -1,7 +1,10 @@
+local chooser    = require 'hs.chooser'
 local collect    = require 'user.lua.lib.collection'
+local lists      = require 'user.lua.lib.list'
 local scan       = require 'user.lua.lib.scan'
 local tables     = require 'user.lua.lib.table'
-local cmd        = require 'user.lua.model.command'
+local types      = require 'user.lua.lib.typecheck'
+local Command    = require 'user.lua.model.command'
 local ui         = require 'user.lua.ui'
 local logr       = require 'user.lua.util.logger'
 local delay      = require 'user.lua.util'.delay
@@ -14,47 +17,85 @@ local log = logr.new('commands', 'debug')
 local command_list = {
   {
     id = 'KS.OnLoad',
-    fn = function(ctx, params)
+    exec = function()
       log.i('Running KittySupreme onLoad...')
-      KittySupreme.services.sketchybar.onLoad('Hammerspoon loaded!')
+      KittySupreme.services.sketchybar:setFrontApp('Hammerspoon Loaded!')
     end,
   },
-  { 
+  {
     id = 'KS.ShowHSConsole',
     title = "Show console",
-    menubar = cmd.menubar{ "general", "i", ui.icons.code },
-    hotkey = cmd.hotkey("bar", "I"),
-    fn = function()
+    icon = "code",
+    key = "I",
+    mods = "bar",
+    exec = function()
       hs.openConsole(true)
     end,
   },
   {
     id = 'KS.ReloadConfig',
     title = "Reload KittySupreme",
-    menubar = cmd.menubar{ "general", "w", ui.icons.reload },
-    hotkey = cmd.hotkey("bar", "W", "Reload KittySupreme"),
-    fn = function(ctx)
+    icon = "reload",
+    key = "W",
+    mods = "bar",
+    exec = function()
       delay(0.75, hs.reload)
     end,
   },
   {
     id = 'KS.RestartHS',
     title = "Reload Hammerspoon",
-    menubar = cmd.menubar{ "general", "X", ui.icons.reload },
-    hotkey = cmd.hotkey("bar", "X", "Restart Hammerspoon"),
-    fn = function(ctx)
+    icon = "reload",
+    key = "X",
+    mods = "bar",
+    exec = function()
       delay(0.75, hs.relaunch)
     end,
   },
   {
     id = 'KS.TestWebviewText',
-    hotkey = cmd.hotkey("bar", "F", "Test Webview Alert"),
-    fn = function(ctx, params)
+    title = "Test Webview Alert",
+    key = "F",
+    mods = "bar",
+    exec = function()
       log.i('Testing HS Webview...')
       require('user.lua.ui.webview').test()
     end,
   },
+  {
+    id = 'KS.ChooseCommand',
+    title = "Show command chooser",
+    mods = "bar",
+    key = "c",
+    setup = function(cmd)
+
+      local onCmdChosen = function(cmd)
+        log.f('Chose command : %s', hs.inspect(cmd))
+      end
+
+      local cmdChooser = chooser.new(onCmdChosen)
+
+      cmdChooser:choices(function()
+        return lists(KittySupreme.commands):map(function(cmd)
+          return {
+            text = cmd.title or cmd.id,
+            subText = cmd.id,
+            command = cmd.id,
+          }
+        end)
+      end)
+
+      cmdChooser:searchSubText(true)
+
+      return { chooser = cmdChooser }
+    end,
+    exec = function(cmd, ctx, params)
+      ctx.chooser:refreshChoicesCallback()
+      ctx.chooser:show()
+    end
+  }
 }
+
 
 local function scanForCmds()
   -- Stepping back 3 steps on the call stack to get calling module's filepath
@@ -65,7 +106,7 @@ local function scanForCmds()
 
   local commands = {}
   for file, mod in pairs(mods) do
-    if (tables.haspath(mod, 'cmds')) then
+    if (types.isTable(mod) and tables.has(mod, 'cmds')) then
       for i, cmd in ipairs(mod.cmds) do
         table.insert(commands, cmd)
       end
@@ -75,14 +116,12 @@ local function scanForCmds()
   return commands
 end
 
-return {
-  getCommands = function()
-    tables.insert(command_list, table.unpack(scanForCmds()))
+local Cmds = {}
 
-    KittySupreme.commands = command_list
-    
-    return collect:new(command_list)
-    -- return Collection:new(command_list)
-  end
-} 
+function Cmds.getCommands()
+  return lists(command_list)
+    :concat(scanForCmds())
+    :map(function(cmd) return Command:new(cmd) end)
+end
 
+return Cmds

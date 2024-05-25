@@ -3,12 +3,15 @@ local types  = require 'user.lua.lib.typecheck'
 local color  = require 'user.lua.ui.color'
 
 
-local symbol_table = {
+local symbols = tables{
   ["arrow.counterclockwise"] = 0x100149,
   ["chevron.left.forwardslash.chevron.right"] = 0x10065A, --alias "htmltag"
   ["htmltag"] = 0x10065A,
   ["tag"] = 0x1002E1,
   ["macwindow.on.rectangle"] = 0x10088C,
+  ["rectangle.stack"] = 0x1003ED,
+  ["rectangle.split.2x2.fill"] = 0x1009CD,
+  ["rectangle.split.3x1.fill"] = 0x100578,
   ["command"] = 0x100194,
   ["rectangle.righthalf.inset.filled.arrow.right"] = 0x101065,
   ["rectangle.lefthalf.inset.filled.arrow.left"] = 0x10095f,
@@ -151,6 +154,7 @@ local symbol_table = {
   ["chevron.down.circle.fill"] = 0x100071,
   ["circle.fill"] = 0x100001,
   ["info.circle"] = 0x100174,
+  ["questionmark"] = 0x10014D,
 }
 
 local function doColor(input)
@@ -167,6 +171,25 @@ end
 
 
 --
+-- Gets the text representation of a symbol from a codepoint number or symbol name
+--
+---@param code string|integer codepoint number or symbol name
+---@return string
+function symbols.toText(code)
+  if (types.isNum(code)) then
+    ---@cast code integer
+    return utf8.char(code) 
+  end
+
+  if symbols:has(code) then
+    return utf8.char(symbols[code])
+  end
+
+  return ''
+end
+
+
+--
 -- Creates a usable HS Image from a SF-Symbols codepoint; basically screenshots
 -- a single glyph unsing SF-Pro as the font, at a particular font-size
 --
@@ -174,8 +197,7 @@ end
 ---@param textsize integer Desired size of image (literally the font-size to apply to icon)
 ---@param textcolor string|table Either a hex code, or a one of the table structures described in `hs.drawing.color`
 ---@return hs.image # Image to use
----@overload fun(code: string|integer, textsize: integer, textcolor: string|table, asText: boolean): hs.styledtext
-local function iconFromSymbol(code, textsize, textcolor, asText)
+symbols.toIcon = function(code, textsize, textcolor)
 
   if (not hs.fnutils.every({ code, textsize, textcolor }, types.notNil)) then
     print(code, textsize, textcolor)
@@ -190,39 +212,24 @@ local function iconFromSymbol(code, textsize, textcolor, asText)
     color = doColor(textcolor)
   }
 
-  if (type(code) == "string" and tables.has(symbol_table, code)) then
-    code = symbol_table[code]
+  if (type(code) == "string" and symbols:has(code)) then
+    code = symbols[code]
   end
 
   ---@cast code integer
   local char = hs.styledtext.new(utf8.char(code), text_style)
 
-  -- if you can use the symbol as a styled text object, then this is all you need
-  if (asText ~= nil) then
-    ---@cast char hs.styledtext
-    return char
-  end
+  local canvas = hs.canvas.new({ x = 0, y = 0, h = 0, w = 0 }) --[[@as hs.canvas]]
 
-  -- if you need it as an image, then also do the following
-  local canvas = hs.canvas.new({ x = 0, y = 0, h = 0, w = 0 })
+  canvas:size(canvas:minimumTextSize(char))
 
-  if (canvas ~= nil) then
-    canvas:size(canvas:minimumTextSize(char))
-    canvas[#canvas + 1] = {
-        type = "text",
-        text = char
-    }
+  canvas[#canvas + 1] = {
+      type = "text",
+      text = char
+  }
 
-    return canvas:imageFromCanvas()
-    -- canvas:delete() -- ~~won't auto collect yet~~ It will!
-  end
-
-  error("UI.sf_symbol - Failed to create new canvas")
+  return canvas:imageFromCanvas()
 end
 
 
-return {
-  all = symbol_table,
-  toIcon = iconFromSymbol,
-}
-
+return symbols

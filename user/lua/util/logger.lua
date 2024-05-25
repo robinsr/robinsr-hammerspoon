@@ -1,7 +1,7 @@
-local tc = require 'user.lua.lib.typecheck'
-local L  = require 'user.lua.lib.list'
+local types = require 'user.lua.lib.typecheck'
+local lists = require 'user.lua.lib.list'
 
-local is, notNil = tc.is, tc.notNil
+local is, notNil = types.is, types.notNil
 
 ---@class ProxyLogger : hs.logger
 ---@field inspect fun(...): nil prints a thing nice
@@ -39,18 +39,18 @@ function ProxyLogger:new(log_name, level)
   ---@cast log ProxyLogger
   log.inspect = function (...)
     if (log:getLogLevel() > 3) then
-      local args = table.pack(...)
+      local args = lists.pack(...)
       local lastarg = args[#args]
 
       -- Prevents unintentionally bogging down HS with huge objects
       -- Add { depth = N } as last argument to override
       if (is.tabl(lastarg) and notNil(lastarg.depth)) then
-        L.pop(args)
+        lists.pop(args)
       else
         lastarg = { depth = 1 }
       end
 
-      local bits = L.map(args, function(bit)
+      local bits = lists.map(args, function(bit)
         if is.strng(bit) then
           return bit
         else
@@ -78,6 +78,10 @@ end
 return {
   log = newLogger,
   new = newLogger,
+  META = { metatables = true },
+  d1 = { depth = 1 },
+  d2 = { depth = 2 },
+  d3 = { depth = 3 },
 }
 
 

@@ -1,5 +1,6 @@
 Spoons
 *.sublime-workspace
+.idea
 
 ### macOS ###
 # General

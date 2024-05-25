@@ -1,8 +1,13 @@
-local class   = require('middleclass')
-local Service = require('user.lua.adapters.base.service')
-local shell   = require('user.lua.interface.shell')
-local default = require('user.lua.lib.params').default
-local log = require('user.lua.util.logger').new('brew-servive','debug')
+local class   = require 'middleclass'
+local Service = require 'user.lua.adapters.base.service'
+local shell   = require 'user.lua.interface.shell'
+local params  = require 'user.lua.lib.params'
+local proto   = require 'user.lua.lib.proto'
+local tables  = require 'user.lua.lib.table'
+local logr    = require 'user.lua.util.logger'
+
+local def = params.default
+local log = logr.new('brew-servive','debug')
 
 
 local cmd = {
@@ -15,16 +20,20 @@ local cmd = {
 }
 
 
-local BrewService = class('BrewService', Service)
+---@class BrewService: Service
+local BrewService = {}
 
 
-function BrewService.static:list()
+function BrewService.list()
   return shell.runt(cmd.list)
 end
 
 
-function BrewService:initialize(name)
-  Service.initialize(self, name)
+---@return BrewService
+function BrewService:new(name)
+
+  ---@class BrewService
+  local this = Service.new(self == BrewService and {} or self, name)
 
   ---@type table
   local brewinfo = shell.runt(cmd.info, name)
@@ -34,11 +43,13 @@ function BrewService:initialize(name)
   end
 
   ---@cast brewinfo -nil
-  self.service_name = default(brewinfo['service_name'], 'unknown') --[[@as string]]
-  self.running = default(brewinfo['running'], false) --[[@as boolean]]
-  self._status = default(brewinfo['status'], nil) --[[@as string?]]
-  self.pid = default(brewinfo['pid'], nil) --[[@as number?]]
-  self.plist = default(brewinfo['file'], nil) --[[@as string?]]
+  this.service_name = def(brewinfo['service_name'], 'unknown') --[[@as string]]
+  this.running = def(brewinfo['running'], false) --[[@as boolean]]
+  this._status = def(brewinfo['status'], nil) --[[@as string?]]
+  this.pid = def(brewinfo['pid'], nil) --[[@as number?]]
+  this.plist = def(brewinfo['file'], nil) --[[@as string?]]
+
+  return proto.setProtoOf(this, BrewService, { locked = true })
 end
 
 function BrewService:start()

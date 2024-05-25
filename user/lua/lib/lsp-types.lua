@@ -30,7 +30,7 @@
 
 ---@generic I: any Input type
 ---@generic O: any Output type
----@alias MappingFn fun(item: I, index: integer): O
+---@alias MappingFn<I, O> fun(item: I, index: integer): O
 
 
 ---@generic T: any List item type

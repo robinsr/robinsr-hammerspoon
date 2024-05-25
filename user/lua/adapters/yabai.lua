@@ -1,41 +1,83 @@
-local class       = require 'middleclass'
 local apps        = require 'hs.application'
 local win         = require 'hs.window'
 local winf        = require 'hs.window.filter'
+local sysevnt     = require 'hs.caffeinate.watcher'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
-local isCli       = require 'user.lua.adapters.base.cli-utility'
 local desktop     = require 'user.lua.interface.desktop'
 local sh          = require 'user.lua.interface.shell'
-local option      = require 'user.lua.lib.optional'
 local params      = require 'user.lua.lib.params'
+local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
 local types       = require 'user.lua.lib.typecheck'
-local cmd         = require 'user.lua.model.command'
 local logr        = require 'user.lua.util.logger'
 
 
 local log = logr.new('Yabai', 'debug')
 
--- Format for grid command:  `<rows>:<cols>:<start-x>:<start-y>:<width>:<height>`
-local GRID_PATTERN = strings.tmpl('{{grid.rows}}:{{grid.cols}}:{{start.x}}:{{start.y}}:{{span.x}}:{{span.y}}')
+
+---@class Yabai: LaunchAgent
+---@field syswatcher hs.caffeinate.watcher
+local Yabai = {}
 
 
----@class Yabai : LaunchAgent
----@field new fun(): Yabai
-local Yabai = class('Yabai', LaunchAgent)
+--
+-- Yabai constructor
+--
+---@return Yabai
+function Yabai:new()
+  local this = self == Yabai and {} or self
 
+  LaunchAgent.new(this, 'Yabai', 'com.koekeishiya.yabai')
 
-function Yabai:initialize()
-  LaunchAgent.initialize(self, 'yabai', 'com.koekeishiya.yabai')
+  this.syswatcher = sysevnt.new(function(evt) this:onEnvChange(evt) end):start()
+  
+  return proto.setProtoOf(this, Yabai)
 end
 
-function Yabai:getRules()
+function Yabai:onEnvChange(evt)
+  log.f('Yabai event callback; event: %s', tostring(evt))
+  if (evt == sysevnt.screensDidUnlock) then
+      
+  end
+end
 
+
+--
+-- Gets yabai rules
+--
+---@return Yabai.Rule[]
+function Yabai:getRules()
+  local rules, err = sh.runt('yabai -m rules --list')
+
+  if types.notNil(err) then
+    log.e(err)
+    return {}
+  end
+
+  ---@cast rules Yabai.Rule[]
+  return rules
+end
+
+function Yabai:addRule()
+  error('not implemented')
+end
+
+function Yabai:removeRule()
+  error('not implemented')
+end
+
+function Yabai:setConfig(propname, propval)
+  sh.run('yabai -m config %s %s', propname, sh.argEsc(propval))
 end
 
 --
 -- Shifts windows around on a grid
 --
+---@param windowId string|number Window ID, index or other window selector
+---@param start { x: number, y: number } Grid coornidates to position window to (the top-left)
+---@param span { x: number, y: number } number of grid units the window will span
+---@param gridrows? number Optionally define number of grid rows; defaults 1
+---@param gridcols? number Optionally define number of grid columns; default 3
 function Yabai:shiftWindow(windowId, start, span, gridrows, gridcols)
 
   local window = self:getWindow(windowId)
@@ -50,22 +92,9 @@ function Yabai:shiftWindow(windowId, start, span, gridrows, gridcols)
     self:setLayout('float', space.id)
   end
 
-  local gridargs = {
-    grid = {
-      rows = gridrows or 1,
-      cols = gridcols or 3,
-    },
-    start = {
-      x = start.x or 0,
-      y = start.y or 0,
-    },
-    span = {
-      x = span.x or 2,
-      y = span.y or 1,
-    }
-  }
+  local gridargs = { gridrows or 1, gridcols or 3, start.x, start.y, span.x, span.y }
 
-  local cmd = strings.fmt('yabai -m window %s --grid %s', windowId, GRID_PATTERN(gridargs))
+  local cmd = strings.fmt('yabai -m window %s --grid %s', windowId, strings.join(gridargs, ':'))
 
   log.f('Yabai#shiftWindow: %s', cmd)
 
@@ -157,8 +186,8 @@ end
 ---@param label string Label to apply to space
 ---@return string
 function Yabai:setSpaceLabel(space, label)
-  log.df("Setting label for space [%s] to [%s]", tostring(space), label)
-  return sh.run("yabai -m space %s --label %q", tostring(space), label)
+  log.df("Setting label for space [%s] to [ %s ]", tostring(space), label)
+  return sh.run("yabai -m space %s --label %s", tostring(space), label)
 end
 
 
@@ -191,112 +220,4 @@ function Yabai:setLayout(layout, selector)
 end
 
 
-local yabai = Yabai:new()
-
-
-Yabai.cmds = {
-  {
-    id = 'Yabai.RestartYabai',
-    title = "Restart Yabai",
-    menubar = nil,
-    hotkey = cmd.hotkey("bar", "Y"),
-    fn = function (ctx)
-      Yabai:restart()
-      
-      if (ctx.trigger == 'hotkey') then
-        return strings.fmt('%s: %s', ctx.hotkey, ctx.title)
-      end
-    end,
-  },
-  {
-    id = 'Yabai.ManagedApps.Add',
-    title = "Manage app's windows",
-    menubar = cmd.menubar{ "yabai" },
-    fn = function()
-      local active = hs.window.focusedWindow()
-      local app = option.ofNil(active:application()):orElse({ title = function() return 'idk' end })
-
-      local appName = app:title()
-
-      return strings.fmt('Managing windows for app %s with yabai...', appName)
-    end,
-  },
-  {
-    id = 'Yabai.ManagedApps.Remove',
-    title = "Ignore app's windows",
-    menubar = cmd.menubar{ "yabai" },
-    fn = function() end,
-  },
-  {
-    id = 'Yabai.ManagedApps.List',
-    title = "Show ignore list",
-    menubar = cmd.menubar{ "yabai" },
-    fn = function() end,
-  },
-  {
-    id = 'Yabai.Info.Window',
-    title = "Show info for active app",
-    menubar = cmd.menubar{ "yabai" },
-    fn = function() end,
-  },
-  {
-    id = 'Yabai.Info.Space',
-    title = "Show info current space",
-    menubar = cmd.menubar{ "yabai" },
-    fn = function() end,
-  },
-  {
-    id = 'Yabai.Window.First3rd',
-    title = "Move window: 1st ⅓",
-    menubar = cmd.menubar{ "yabai" },
-    hotkey = cmd.hotkey('modB', '1'),
-    fn = function(ctx)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 0, y = 0 }, { x = 1, y = 1 })
-      return ctx.title
-    end,
-  },
-  {
-    id = 'Yabai.Window.Second3rd',
-    title = "Move window: 2nd ⅓",
-    menubar = cmd.menubar{ "yabai" },
-    hotkey = cmd.hotkey('modB', '2'),
-    fn = function(ctx)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 1, y = 0 }, { x = 1, y = 1 })
-      return ctx.title
-    end,
-  },
-  {
-    id = 'Yabai.Window.Third3rd',
-    title = "Move window: 3rd ⅓",
-    menubar = cmd.menubar{ "yabai" },
-    hotkey = cmd.hotkey('modB', '3'),
-    fn = function(ctx)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 2, y = 0 }, { x = 1, y = 1 })
-      return ctx.title
-    end,
-  },
-  {
-    id = 'Yabai.Window.FirstTwo3rds',
-    title = "Move window: 1st ⅔",
-    menubar = cmd.menubar{ "yabai" },
-    hotkey = cmd.hotkey('modB', '4'),
-    fn = function(ctx)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 0, y = 0 }, { x = 2, y = 1 })
-      return ctx.title
-    end,
-  },
-  {
-    id = 'Yabai.Window.SecondTwo3rds',
-    title = "Move window: 2nd ⅔",
-    menubar = cmd.menubar{ "yabai" },
-    hotkey = cmd.hotkey('modB', '5'),
-    fn = function(ctx)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 1, y = 0 }, { x = 2, y = 1 })
-      return ctx.title
-    end,
-  },
-}
-
-log.df('Yabai status: "%s"', yabai:status()) 
-
-return yabai
+return proto.setProtoOf(Yabai, LaunchAgent, { locked = true })

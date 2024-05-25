@@ -22,7 +22,7 @@
 ---@field can-move boolean
 ---@field can-resize boolean
 ---@field display integer
----@field frame Yabai.Window.Frame
+---@field frame Yabai.Frame
 ---@field has-ax-reference boolean
 ---@field has-focus boolean
 ---@field has-fullscreen-zoom boolean
@@ -56,13 +56,23 @@
 
 ---@alias Yabai.Window.AccessSubrole 'AXStandardWindow'|'idk'
 
----@class Yabai.Window.Frame
+---@class Yabai.Frame
 ---@field x number
 ---@field y number
 ---@field w number
 ---@field h number
 
 ---@alias Yabai.Window.toggles 'zoom-fullscreen'|'float'|'sticky'|'pip'|'shadow'|'split'|'zoom-parent'|'zoom-fullscreen'|'native-fullscreen'|'expose'
+
+
+---@class Yabai.Display
+---@field id integer
+---@field uuid string
+---@field index integer
+---@field label string
+---@field frame Yabai.Frame
+---@field spaces integer[]
+---@field has-focus boolean
 
 
 

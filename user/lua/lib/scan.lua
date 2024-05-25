@@ -21,7 +21,7 @@ local scan = {}
 ---@return string[] Table of string filenames (relative or what?)
 function scan.listdir(dirname, ext, depth, max)
 
-  local files, popen = {}, io.popen
+  local files= {}
 
   local primaries = {
     strings.fmt(" -name '*.%s'", ext or 'lua'),
@@ -32,7 +32,7 @@ function scan.listdir(dirname, ext, depth, max)
 
   log.df('Running command [%s]', findcmd)
 
-  local pfind = popen(findcmd)
+  local pfind = io.popen(findcmd)
 
   if (pfind ~= nil) then
     for filename in pfind:lines() do
@@ -64,7 +64,7 @@ function scan.mapdir(dir, pkg)
   local targetdir = path.join(dir, strings.replace(pkg, '.', '/'))
   local luafiles = scan.listdir(targetdir, 'lua')
 
-  local modules = list.reduce({}, luafiles, function(memo, filename)
+  local modules = list.reduce(luafiles, {}, function(memo, filename)
     log.df('loading lua file [%s]', filename)
 
     memo[filename] = filename:sub(dir:len() + 2)

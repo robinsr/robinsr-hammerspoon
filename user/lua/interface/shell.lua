@@ -2,12 +2,15 @@ local run     = require 'user.lua.interface.runnable'
 local logr    = require 'user.lua.util.logger'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
+local types   = require 'user.lua.lib.typecheck'
 local errorf  = require 'user.lua.util'.errorf
 local json    = require 'user.lua.util.json'
 
 local log = logr.new('Shell', 'warning')
 
 local Shell = {}
+
+Shell.IGNORE = '&> /dev/null'
 
 --
 -- Shell execution with some QOL bits
@@ -48,7 +51,7 @@ end
 -- Parses output of Shell.run to a table
 ---@param cmd_str string Shell command string
 ---@param ... string? command string format args
----@return table
+---@return table?, string?
 function Shell.runt(cmd_str, ...)
   local params = {...}
   local ok, output = pcall(function() 
@@ -56,10 +59,10 @@ function Shell.runt(cmd_str, ...)
   end)
 
   if (ok) then
-    return json.parse(output)
+    return json.parse(output), nil
+  else
+    return nil, output
   end
-
-  error(output)
 end
 
 -- Runs formatted command string in a shell, parses JSON output, and returns value at key
@@ -81,22 +84,47 @@ function Shell.runtv(cmd_str, key, ...)
 end
 
 
-function Shell.wrap(cmd)
+---@alias CmdFunc fun(...: any[]): string
+
+--
+-- Returns a function that when called formats the command string and runs the command
+--
+---@param pattern string The command string pattern
+---@return CmdFunc A function to run later to execute the command
+function Shell.wrap(pattern)
   return function(...)
+    local vars = table.pack(...)
     
-    if (#{...} == 0) then
-      log.d('No-args invocation of command: ', cmd)
-      return Shell.run(cmd)
+    if (#vars == 0) then
+      log.d('No-args invocation of command: ', pattern)
+      return Shell.run(pattern)
     end
 
-    local args = {...}
-    if (type(args[0]) == "boolean" and args[0]) then
-      log.d('Unwrapping command string: ', cmd)
-      return cmd;
+    --- Returns the original pattern when first argument is True
+    if (types.isTrue(vars[0])) then
+      log.d('Unwrapping command string: ', pattern)
+      return pattern;
     end
 
-    return Shell.run(cmd, table.unpack{...})
+    return Shell.run(pattern, table.unpack(vars))
   end
+end
+
+--
+-- Returns command-line safe string representations of lua objects
+--
+---@param val any
+---@return string
+function Shell.argEsc(val)
+  if types.isString(val) then
+    return strings.fmt('"%s"', val)
+  end
+
+  if types.isTable(val) then
+    return json.tostring(val)
+  end
+
+  return tostring(val)
 end
 
 
