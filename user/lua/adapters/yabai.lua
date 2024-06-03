@@ -47,7 +47,7 @@ end
 --
 ---@return Yabai.Rule[]
 function Yabai:getRules()
-  local rules, err = sh.runt('yabai -m rules --list')
+  local rules, err = sh.runt('yabai -m rule --list')
 
   if types.notNil(err) then
     log.e(err)

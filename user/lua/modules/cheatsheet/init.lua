@@ -200,7 +200,8 @@ local CS = {}
 
 CS.cmds = {
   {
-    title = "Cheatsheet",
+    title = "Show Cheatsheet",
+    id = "Cheatsheet.Show",
     key = "b",
     mods = "bar",
     exec = function(cmd, ctx)

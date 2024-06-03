@@ -46,28 +46,28 @@ end
 local function mapCommands(sections, cmds)
 
   ---@type MenubarItem[]
-  local mapped = lists.reduce(sections, {}, function(all, section)
+  local mapped = lists(sections):reduce({}, function(all, section)
 
     log.df("Mapping menubar section %s", section)
 
-    local sectionCmds = lists.filter(cmds, function(cmd)
-      return cmd:getMenuSection() == section
-    end)
+    local sectionCmds = lists(cmds)
+      :filter(function(cmd)
+        return cmd:getMenuSection() == section
+      end)
+      :forEach(function(cmd)
+        table.insert(all, {
+          title = cmd.title,
+          shortcut = cmd.key or nil,
+          image = cmd:getMenuIcon() or nil,
+          fn = function()
+            local result = cmd:invoke('menu', {})
 
-    lists.forEach(sectionCmds, function(cmd)
-      table.insert(all, {
-        title = cmd.title,
-        shortcut = cmd.key or nil,
-        image = cmd:getMenuIcon() or nil,
-        fn = function()
-          local result = cmd:invoke('menu', {})
-
-          if result ~= nil then
-            alert:new(result):show()
+            if result ~= nil then
+              alert:new(result):show()
+            end
           end
-        end
-      })
-    end)
+        })
+      end)
 
     return all
   end)
@@ -122,10 +122,10 @@ local function servicesSubmenu()
     return {
       title = strings.fmt("%s %s", service.name, text),
       state = state,
-      onStateImage = ui.icons.running,
-      offStateImage = ui.icons.stopped,
-      mixedStateImage = ui.icons.unknown,
-      menu = subitems,
+      onStateImage = ui.menuIcon('circle.fill', ui.colors.green),
+      offStateImage = ui.menuIcon('circle.fill', ui.colors.red),
+      mixedStateImage = ui.menuIcon('circle.fill', ui.colors.lightgrey),
+      menu = subitems.items,
     }
   end)
 
@@ -133,7 +133,7 @@ local function servicesSubmenu()
 
   return {
     title = "Services",
-    menu = menuitems,
+    menu = menuitems:values(),
     image = ui.menuIcon('term'),
   }
 end
@@ -144,14 +144,13 @@ local MenuBar = {}
 --
 -- Adds the main KS menu to the menubar
 --
----@param cmds Command[]
----@return nil
-function MenuBar.install(cmds)
+function MenuBar.install()
+
+  local cmds = KittySupreme.commands
 
   local getItems = function(keymods)
     log.f('KS menubar clicked with modifier keys: %s', hs.inspect(keymods))
 
-    ---@type MenubarItem[]
     local menuitems = lists({})
       :push(textMenuItem("Just some text"))
       :push(textMenuItem("-"))
@@ -163,7 +162,7 @@ function MenuBar.install(cmds)
 
     log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
 
-    return menuitems
+    return menuitems:values()
   end
 
 

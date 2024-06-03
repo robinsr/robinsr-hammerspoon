@@ -1,7 +1,7 @@
 local desktop    = require 'user.lua.interface.desktop'
 local alert      = require 'user.lua.interface.alert'
 local cmd        = require 'user.lua.model.command'
-local list       = require 'user.lua.lib.list'
+local lists      = require 'user.lua.lib.list'
 local params     = require 'user.lua.lib.params'
 local strings    = require 'user.lua.lib.string'
 local types      = require 'user.lua.lib.typecheck'
@@ -61,7 +61,7 @@ function Spaces.onSpaceChange(cmd, ctx, params)
   local submsg = strings.fmt("(%s - %s)", screen:id(), screen:name())
   local movement = { params.from, params.to }
 
-  if (list.every(movement, types.isString)) then
+  if (lists(movement):every(types.isString)) then
     message = strings.fmt("Moved to space %s", movement[1])
 
     local from, to = tonumber(movement[1]), tonumber(movement[2])

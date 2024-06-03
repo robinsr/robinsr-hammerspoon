@@ -1,6 +1,6 @@
 local hsdia    = require 'hs.dialog'
 local lustache = require 'lustache'
-local list     = require 'user.lua.lib.list'
+local lists    = require 'user.lua.lib.list'
 local paths    = require 'user.lua.lib.path'
 local scan     = require 'user.lua.lib.scan'
 local strings  = require 'user.lua.lib.string'
@@ -25,7 +25,7 @@ local function load()
 
   local files = listdir(TMPL_DIR, 'mustache')
 
-  list.forEach(files, function(filepath)
+  lists(files):forEach(function(filepath)
     local tfile = io.open(filepath, 'r')
 
     if tfile then

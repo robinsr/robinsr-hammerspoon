@@ -24,7 +24,7 @@
 					"Lua.runtime.version": "Lua 5.4",
 					"Lua.diagnostics.globals":
 					[
-						"luasublimeproject", "lfs", "hs", "KittySupreme", "it", "describe"
+						"luasublimeproject", "lfs", "hs", "KittySupreme", "it", "describe", "spy"
 					],
 					"Lua.workspace.library":
 					[

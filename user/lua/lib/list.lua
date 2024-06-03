@@ -1,71 +1,115 @@
 local proto = require 'user.lua.lib.proto'
+local types = require 'user.lua.lib.typecheck'
+local pretty = require 'pl.pretty'
 
 
--- -@generic T: any
--- -@alias TableType T[]
 
-
----@class List<T>: { [integer]: T }
+---@class List
+---@field items any[]
+---@operator call:List
 local List = {}
 
 
----@operator call:List
 local ListMeta = {}
-ListMeta.__index = List
-ListMeta.__call = function(l, items)
-  return setmetatable(items or {}, ListMeta)
+
+
+ListMeta.__index = function(list, arg)
+  if types.isNum(arg) then
+    return list.items[arg]
+  else
+    return List[arg]
+  end
 end
 
 
----@return integer
-function List.len(items)
-  return #items
+
+---@return List
+local function create(ctx, init)
+  if ListMeta.ident(ctx) then
+    error('You meant to call this as a function, not a method')
+  end
+
+  local o = { items = {} }
+  
+  if types.isTable(init) then
+    if init.__index == List then
+      return init
+    end
+
+    if types.isTable(init.items) then
+      o = { items = init.items }
+    end
+
+    o = { items = init }
+  end
+
+  return setmetatable(o, ListMeta)
 end
+
+ListMeta.__call = function(list, init) return create({}, init) end
+
+ListMeta.__len = function(list) return #list.items end
+
+ListMeta.__tostring = function(list) return pretty.write(list.items) end
+
+ListMeta.ident = function(list)
+  return getmetatable(list) == ListMeta
+end
+
 
 
 ---@generic T
----@param t self
----@param items T[]
----@return List<T>
-function List.create(t, items)
-  return setmetatable(items or {}, ListMeta)
+---@param ... T[]
+---@return List
+function List.new(...)
+  local args = table.pack(...)
+  return create(args[1], args[1])
 end
 
 
 ---@return List
 function List.pack(...)
-  local items = table.pack(...)
-  return setmetatable(items or {}, ListMeta)
+  local args = table.pack(...)
+  return create(args[1], args)
 end
 
 
----@param items List|any[]
 ---@return List
-function List.clone(items)
-  local newitems = table.pack(table.unpack(items))
-  return setmetatable(newitems, ListMeta)
+function List:clone()
+  local newitems = table.pack(table.unpack(self.items))
+  return create(newitems)
 end
 
 
----@param items List|any[]
+---@return integer
+function List:len()
+  return #self.items
+end
+
+
+---@param num integer
+---@return string
+function List:at(num)
+  return self.items[num]
+end
+
+
 ---@param separator? string
 ---@return string
-function List.join(items, separator)
+function List:join(separator)
   separator = separator or ''
-  return table.concat(items, separator)
+  return table.concat(self.items, separator)
 end
 
 
----@param itemsB any[]
+---@param newitems any[]
 ---@return List
-function List:concat(itemsB)
-  local items = self
-
-  for i, newitem in ipairs(itemsB) do
-    table.insert(items, newitem)
+function List:concat(newitems)
+  for i, newitem in ipairs(newitems) do
+    table.insert(self.items, newitem)
   end
 
-  return items
+  return self
 end
 
 
@@ -73,15 +117,14 @@ end
 -- WIP! - Adds an item to the end of a list-like table
 --
 ---@generic T
----@param items T[] list-like table
 ---@param ... T The item to add
 ---@return List List with new items appended
-function List.push(items, ...)
+function List:push(...)
   for i, add in ipairs({...}) do
-    table.insert(items, add)
+    table.insert(self.items, add)
   end
 
-  return List.create(nil, items)
+  return self
 end
 
 
@@ -89,14 +132,10 @@ end
 -- WIP! - Removes and returns last item from a list-like table
 --
 ---@generic T
----@param items T[] list-like table
----@retrun List
-function List.pop(items)
-  local last = items[#items]
-  -- local remain = table.pack(select(#items - 1, table.unpack(items)))
-  items[#items] = nil
-  
-  return last
+---@retrun T
+function List:pop()
+  local len = #self.items
+  return table.remove(self.items, len)
 end
 
 
@@ -104,33 +143,31 @@ end
 -- Iterates over item in a list
 --
 ---@generic T : any
----@param items T[] list-like table
 ---@param fn IteratorFn The iteration function
 ---@return List
-function List.forEach(items, fn)
-  for k, v in ipairs(items) do
+function List:forEach(fn)
+  for k, v in ipairs(self.items) do
     fn(v, k)
   end
 
-  return List.create(nil, items)
+  return self
 end
 
 
 --
 -- Maps item in a list
 --
----@generic T : any
----@param items T[] list-like table
----@param fn MappingFn Mapping function
----@return List<T>
-function List.map(items, fn)
+---@generic O : any
+---@param fn MappingFn<any, O> Mapping function
+---@return List : O[]
+function List:map(fn)
   local mapped = {}
 
-  for i, v in ipairs(items) do
+  for i, v in ipairs(self.items) do
     table.insert(mapped, i, fn(v, i))
   end
 
-  return List.create(nil, mapped)
+  return create({}, mapped)
 end
 
 
@@ -138,19 +175,18 @@ end
 -- Filters items in a list to just those that pass predicate
 --
 ---@generic T
----@param items T[] list-like table
 ---@param fn PredicateFn<T> The filter function
----@return List<T> The filtered list
-function List.filter(items, fn)
+---@return List The filtered list
+function List:filter(fn)
   local filtered = {}
 
-  for k, v in ipairs(items) do
+  for k, v in ipairs(self.items) do
     if (fn(v, k)) then
       table.insert(filtered, v)
     end
   end
 
-  return List.create(nil, filtered)
+  return create({}, filtered)
 end
 
 
@@ -158,11 +194,10 @@ end
 -- Finds the first item in a list that passes a predicate
 --
 ---@generic T : any
----@param items T[] list-like table
 ---@param fn PredicateFn The filter function
 ---@return T|nil The matching item or nil
-function List.first(items, fn)
-  for k, v in ipairs(items) do
+function List:first(fn)
+  for k, v in ipairs(self.items) do
     if (fn(v, k)) then
       return v
     end
@@ -173,18 +208,16 @@ end
 --
 -- Reduces items to a single value
 --
----@generic T : any
 ---@generic R : any
----@param items T[] list-like table
 ---@param init R Initial value of reduction
 ---@param reducerFn ReducerFn The reducer function
 ---@return R The filtered list
-function List.reduce(items, init, reducerFn)
-  List.forEach(items, function(item, i)
-    initial = reducerFn(init, item, i)
-  end)
+function List:reduce(init, reducerFn)
+  for i, v in ipairs(self.items) do
+    init = reducerFn(init, v, i)
+  end
 
-  return initial
+  return init
 end
 
 
@@ -192,11 +225,10 @@ end
 -- Tests every item in a list-like table; all must pass
 --
 ---@generic T : any
----@param items T[] list-like table
 ---@param fn PredicateFn The test function
 ---@return boolean
-function List.every(items, fn)
-  for k, v in ipairs(items) do
+function List:every(fn)
+  for k, v in ipairs(self.items) do
     if (fn(v, k) ~= true) then return false end
   end
 
@@ -208,11 +240,10 @@ end
 -- Tests every item in a list-like table; at least one must pass
 --
 ---@generic T : any
----@param items T[] list-like table
 ---@param fn PredicateFn The test function
 ---@return boolean
-function List.any(items, fn)
-  for k, v in ipairs(items) do
+function List:any(fn)
+  for k, v in ipairs(self.items) do
     if (fn(v, k)) then return true end
   end
 
@@ -223,12 +254,10 @@ end
 --
 -- Returns true if list contains an item that is equal to t
 --
----@generic T : any
----@param items T[] list-like table
 ---@param elem any The test item
 ---@return boolean
-function List.includes(items, elem)
-  for k, v in ipairs(items) do
+function List:includes(elem)
+  for k, v in ipairs(self.items) do
     if (v == elem) then return true end
   end
 
@@ -240,10 +269,14 @@ end
 -- Returns a plain list of the items
 --
 ---@return table
-function List.items(items)
-  return table.pack(table.unpack(items))
+function List:values()
+  local vals = {}
+  for i, v in ipairs(self.items) do
+    table.insert(vals, i, v)
+  end
+  return vals
 end
 
 
 
-return setmetatable({}, ListMeta)
+return setmetatable({}, ListMeta) --[[@as List]]

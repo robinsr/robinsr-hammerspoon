@@ -1,8 +1,34 @@
-local tc = require "user.lua.lib.typecheck"
-
-local notNil, is = tc.notNill, tc.is
+local types = require "user.lua.lib.typecheck"
 
 local Params = {}
+
+Params.assert = {}
+
+
+--
+-- Check a function parameter against the isTable typecheck function
+--
+---@param tabl any
+---@param num? integer Parameter position
+function Params.assert.tabl(tabl, num)
+  if (not types.isTable(tabl)) then
+    error(string.format('Parameter #%d is not a table, rather %s', num or 1, type(tabl)))
+  end
+end
+
+
+--
+-- Check a function parameter against any typecheck function
+--
+---@param typefn TypeCheckFn
+---@param obj any
+---@param num? integer Parameter position
+function Params.assert.any(typefn, obj, num)
+  if (not types[typefn](obj)) then
+    error(string.format('Parameter #%d failed check "%s". found type %s', num or 1, typefn))
+  end
+end
+
 
 --
 -- Will null-check first param returning second param if nil
@@ -13,14 +39,14 @@ local Params = {}
 ---@param allowEmpty? boolean Set true to allow empty strings
 ---@return V
 function Params.default(val, default, allowEmpty)
-  local useDefault = is.Nil(val)
+  local useDefault = types.is.Nil(val)
 
-  if (allowEmpty and is.strng(val)) then
+  if (allowEmpty and types.is.strng(val)) then
     useDefault = val ~= ""
   end
 
   if useDefault then
-    if is.func(default) then 
+    if types.is.func(default) then 
       return default()
     else 
       return default

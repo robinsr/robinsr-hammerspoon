@@ -1,7 +1,10 @@
+local alert   = require 'user.lua.interface.alert'
 local shell   = require 'user.lua.interface.shell'
+local lists   = require 'user.lua.lib.list'
 local option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
 local logr    = require 'user.lua.util.logger'
+local json    = require 'user.lua.util.json'
 
 local log = logr.new('yabai-cmd', 'debug')
 
@@ -53,7 +56,8 @@ YabaiCmds.cmds = {
     title = "Show ignore list",
     exec = function(cmd, ctx)
       local rules = yabai:getRules()
-      log.inspect(rules)
+
+      alert:new(json.tostring(rules)):show(alert.timing.LONG)
     end,
   },
   {
@@ -69,36 +73,42 @@ YabaiCmds.cmds = {
 
   {
     id = 'Yabai.Focus.North',
+    title = 'Focus window above',
     mods = 'modB',
     key = 'up',
     exec = runAndReturn('yabai -m window --focus north'),
   },
   {
     id = 'Yabai.Focus.South',
+    title = 'Focus window below',
     mods = 'modB',
     key = 'down',
     exec = runAndReturn('yabai -m window --focus south'),
   },
   {
     id = 'Yabai.Focus.East',
+    title = 'Focus window right',
     mods = 'modB',
     key = 'right',
     exec = runAndReturn('yabai -m window --focus east'),
   },
   {
     id = 'Yabai.Focus.West',
+    title = 'Focus window left',
     mods = 'modB',
     key = 'left',
     exec = runAndReturn('yabai -m window --focus west'),
   },
   {
     id = 'Yabai.Space.Next',
+    title = 'Go to next space (right)',
     mods = 'ctrl',
     key = 'right',
     exec = runAndReturn('yabai -m space mouse --focus next', ''),
   },
   {
     id = 'Yabai.Space.Prev',
+    title = 'Go to previous space (left)',
     mods = 'ctrl',
     key = 'left',
     exec = runAndReturn('yabai -m space mouse --focus prev', ''),

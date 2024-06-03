@@ -44,6 +44,9 @@ function Command:new(config)
   ---@class Command
   local this = config or {}
 
+  assert(types.isString(this.id), strings.fmt('Command ID missing from %q', hs.inspect(this)))
+  assert(string.match(this.id, "^[%w%.]+[%w]+$"), strings.fmt('Command ID %q not good enough', this.id))
+
   this.context = config.setup and config.setup(config) or {}
 
   return proto.setProtoOf(this, Command) --[[@as Command]]
@@ -89,8 +92,9 @@ end
 --
 -- Runs the command's exec callback
 --
----@param from 'hotkey'|'menu'|'url'
+---@param from 'hotkey'|'menu'|'url'|'chooser'|'other'
 ---@param params? table
+---@return nil
 function Command:invoke(from, params)
   ---@type CommandCtx
   local ctx = tables.merge({}, self.context, { trigger = from })

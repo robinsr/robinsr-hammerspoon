@@ -180,8 +180,8 @@ describe('lib/proto.lua', function()
       assert.equal('A banana split with sprinkles and made with ripe bananas', goodNanaSplit:ident())
       assert.equal('A banana split without sprinkles and made with unrippened bananas', badNanaSplit:ident())
 
-      testutil.dump("Good nana: ", goodNanaSplit)
-      testutil.dump("Bad nana: ", badNanaSplit)
+      -- testutil.dump("Good nana: ", goodNanaSplit)
+      -- testutil.dump("Bad nana: ", badNanaSplit)
 
       assert.are_not.same(goodNanaSplit, badNanaSplit, "Class instances should be different objects")
       assert.are.same(goodNanaSplit.__index, badNanaSplit.__index, "Class instances should all have the same __index table")

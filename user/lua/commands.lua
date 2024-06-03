@@ -69,8 +69,14 @@ local command_list = {
     key = "c",
     setup = function(cmd)
 
-      local onCmdChosen = function(cmd)
-        log.f('Chose command : %s', hs.inspect(cmd))
+      local onCmdChosen = function(choice)
+        local cmd = KittySupreme.commands:first(function(cmd) return cmd.id == choice.id end)
+
+        if types.notNil(cmd) then
+          ---@cast cmd Command
+          cmd:invoke('chooser', {})
+        end
+
       end
 
       local cmdChooser = chooser.new(onCmdChosen)
@@ -80,9 +86,9 @@ local command_list = {
           return {
             text = cmd.title or cmd.id,
             subText = cmd.id,
-            command = cmd.id,
+            id = cmd.id,
           }
-        end)
+        end):values()
       end)
 
       cmdChooser:searchSubText(true)

@@ -82,7 +82,7 @@ end
 
 ---@return string[]
 function Hotkey:symbols()
-  return lists.map(self.mods, function(m) return SYMBOLS[m] end)
+  return lists(self.mods):map(function(m) return SYMBOLS[m] end):values()
 end
 
 

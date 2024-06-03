@@ -1,5 +1,9 @@
 local tc = {}
 
+
+---@alias TypeCheckFn fun(i any|nil): boolean
+
+
 -- A very explicit null check for my sanity
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param nil

@@ -45,12 +45,12 @@ function ProxyLogger:new(log_name, level)
       -- Prevents unintentionally bogging down HS with huge objects
       -- Add { depth = N } as last argument to override
       if (is.tabl(lastarg) and notNil(lastarg.depth)) then
-        lists.pop(args)
+        args:pop()
       else
         lastarg = { depth = 1 }
       end
 
-      local bits = lists.map(args, function(bit)
+      local bits = args:map(function(bit)
         if is.strng(bit) then
           return bit
         else
@@ -58,7 +58,7 @@ function ProxyLogger:new(log_name, level)
         end
       end)
 
-      log.d(DEBUG_WARNING, table.unpack(bits))
+      log.d(DEBUG_WARNING, table.unpack(bits:values()))
     end
   end
 

@@ -25,7 +25,7 @@ local icons = {
   default    = symbols.toIcon("tornado", 72, colors.white),
 }
 
-local _icons = tables{
+local icon_aliases = tables{
   kitty      = "cat",
   info       = "info.circle",
   tag        = "tag",
@@ -72,15 +72,15 @@ local UI = {
 --
 -- Returns template hs.image to use in menubars
 --
----@param icon string|hs.image
+---@param icon string
 ---@param hscolor? HS.Color
 ---@return hs.image
 function UI.menuIcon(icon, hscolor)
 
   local cp = 'questionmark'
 
-  if _icons:has(icon) then
-    cp = _icons[icon]
+  if icon_aliases:has(icon) then
+    cp = icon_aliases[icon]
   end
 
   if symbols:has(icon) then

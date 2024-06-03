@@ -19,6 +19,12 @@ local types   = require 'user.lua.lib.typecheck'
 local App = {}
 
 
+---@param app hs.application
+function App.new(self, app)
+  
+end
+
+
 ---@param item HSAppMenuItem
 ---@return App.MenuItem
 function App.menuItem(item)

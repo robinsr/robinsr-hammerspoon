@@ -1,5 +1,5 @@
 local path     = require 'pl.path'
-local list     = require 'user.lua.lib.list'
+local lists    = require 'user.lua.lib.list'
 local strings  = require 'user.lua.lib.string'
 local is       = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
@@ -64,7 +64,7 @@ function scan.mapdir(dir, pkg)
   local targetdir = path.join(dir, strings.replace(pkg, '.', '/'))
   local luafiles = scan.listdir(targetdir, 'lua')
 
-  local modules = list.reduce(luafiles, {}, function(memo, filename)
+  local modules = lists(luafiles):reduce({}, function(memo, filename)
     log.df('loading lua file [%s]', filename)
 
     memo[filename] = filename:sub(dir:len() + 2)

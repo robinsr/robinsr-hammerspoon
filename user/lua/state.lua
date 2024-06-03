@@ -15,7 +15,7 @@ ScreenAlert = nil
 
 ---@class KittySupremeGlobal
 ---@field colors KS.Colors
----@field commands Collection
+---@field commands List
 ---@field boundkeys hs.hotkey[]
 ---@field urlhanders table[]
 ---@field menubar hs.menubar|nil

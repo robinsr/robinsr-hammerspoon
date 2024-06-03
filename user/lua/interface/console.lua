@@ -22,9 +22,9 @@ function console.setDarkMode(isDark)
   log.i("Setting console dark mode:", isDark)
 
   if (isDark) then
-    hs.console.consolePrintColor({ hex = ui.colors.chateau })
+    hs.console.consolePrintColor(ui.colors.lightgrey)
   else
-    hs.console.consolePrintColor({ hex = ui.colors.outerspace })
+    hs.console.consolePrintColor(ui.colors.darkgrey)
   end
   
   hs.console.darkMode(isDark)

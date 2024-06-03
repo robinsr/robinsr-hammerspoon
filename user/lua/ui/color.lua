@@ -3,6 +3,8 @@ local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local logr    = require 'user.lua.util.logger'
 
+local theme = require 'user.lua.ui.mariana'
+
 local log = logr.new('ui:color', 'info')
 
 
@@ -35,18 +37,17 @@ local log = logr.new('ui:color', 'info')
 ---@alias ColorList Dict<HS.Color>
 
 
----@enum KS.Colors
 local colors = {
-  chateau    = '#A5ACBA',
-  bunker     = '#0C1017',
-  outerspace = '#2E3842',
-  carnation  = '#FE4D63',
-  persimmon  = '#FF6F51',
-  yorange    = '#FFAA4B',
-  deyork     = '#8BCA91',
-  pelorous   = '#39B7B5',
-  danube     = '#589ACF',
-  viola      = '#CF90C8',
+  lightgrey  = theme.chateau,
+  gray       = theme.outerspace,
+  darkgrey   = theme.bunker,
+  red        = theme.carnation,
+  orange     = theme.persimmon,
+  yellow     = theme.yorange,
+  green      = theme.deyork,
+  teal       = theme.pelorous,
+  blue       = theme.danube,
+  violet     = theme.viola,
 }
 
 colors.black = {
@@ -75,7 +76,7 @@ colors.transparent = {
 -- Gets all system color lists
 --
 ---@return Dict<ColorList> A table containing all color lists
-function colors.getAllLists()
+function colors.lists()
   return hs.drawing.color.lists() --[[@as Dict<ColorList>]]
 end
 
@@ -83,21 +84,32 @@ end
 --
 -- Gets a specific system color list
 --
----@param name string Name of the color list
+---@param listname string Name of the color list
 ---@return ColorList
-function colors.getListColors(name)
-  return hs.drawing.color.colorsFor(name) --[[@as ColorList]]
+function colors.list(listname)
+  return hs.drawing.color.colorsFor(listname) --[[@as ColorList]]
+end
+
+
+function colors.from(listname, color)
+  local tabl = tables.new(colors.list(listname) or {})
+  
+  if tabl:has(color) then
+    return tabl:get(color)
+  end
+
+  error(strings.fmt("No color %q in list %q", color, listname))
 end
 
 
 
-function colors.getSystemColor(name)
+function colors.system(color)
   local systemColors = hs.drawing.color.colorsFor("System")
   ---@cast systemColors -nil
-  return params.default(systemColors[name], { hex = '#000000' })
+  return params.default(systemColors[color], colors.black)
 end
 
 
-colors.disabled = colors.getSystemColor("disabledControlTextColor")
+colors.disabled = colors.system("disabledControlTextColor")
 
 return colors

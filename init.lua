@@ -22,7 +22,6 @@ KS.commands = require 'user.lua.commands'.getCommands()
 log.i("Setting global hotkeys")
 
 KS.commands:forEach(function(cmd) 
-  log.inspect(cmd, { depth = 3, metatables = true })
   cmd:bindHotkey()
 end)
 
@@ -30,18 +29,16 @@ log.i("Setting up url handlers")
 lists(KS.commands):forEach(function(cmd) cmd:bindURL() end)
 
 log.i("Creating menubar item")
-require('user.lua.interface.menubar').install(KS.commands)
+require('user.lua.interface.menubar').install()
 
 log.i('Running onLoad commands')
 
-local option = require 'user.lua.lib.optional'
+onLoad = KS.commands:first(function(cmd)
+  return cmd.id == "KS.OnLoad"
+end)
 
-local onLoad = option.ofNil(
-  KS.commands:findById('KS.OnLoad'), 'No KS.OnLoad command found'
-)
-
-if onLoad:ispresent() then
-  local loadCmdOK, loadCmd = pcall(onLoad:get().fn)
+if onLoad then
+  local loadCmdOK, loadCmd = pcall(function() onLoad.exec('load', {}) end)
 
   if (not loadCmdOK) then
     log.e('Onload error')
