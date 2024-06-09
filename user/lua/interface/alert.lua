@@ -46,7 +46,7 @@ Alert.timing = {
 -- Returns a builder for a new alert
 --
 ---@param pattern string
----@param ... any[] pattern variables
+---@param ... any pattern variables
 ---@return Alert
 function Alert.new(self, pattern, ...)
   local config = {

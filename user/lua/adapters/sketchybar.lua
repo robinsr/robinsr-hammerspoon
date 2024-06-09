@@ -1,6 +1,5 @@
-
+local shell       = require 'user.lua.adapters.shell'
 local BrewService = require 'user.lua.adapters.base.brew-service'
-local shell       = require 'user.lua.interface.shell'
 local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
 local tables      = require 'user.lua.lib.table'

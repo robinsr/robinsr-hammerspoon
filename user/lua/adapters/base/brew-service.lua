@@ -1,6 +1,5 @@
-local class   = require 'middleclass'
+local shell   = require 'user.lua.adapters.shell'
 local Service = require 'user.lua.adapters.base.service'
-local shell   = require 'user.lua.interface.shell'
 local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
 local tables  = require 'user.lua.lib.table'

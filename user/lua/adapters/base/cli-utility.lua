@@ -1,4 +1,4 @@
-local shell   = require 'user.lua.interface.shell'
+local shell   = require 'user.lua.adapters.shell'
 local strings = require 'user.lua.lib.string'
 local util    = require 'user.lua.util'
 

@@ -40,8 +40,6 @@ local function verify_list(ls, items)
       assert.are.same(v, ls:at(i), msgf('expected item at index [%d] to be %q', i, tostring(v)))
     end
   end)
-
-
 end
 
 
@@ -232,6 +230,58 @@ describe("lib/list.lua", function()
       assert.spy(mapfn).was.called_with(items[2], 2)
       assert.spy(mapfn).was.called_with(items[3], 3)
       assert.spy(mapfn).was.called_with(items[4], 4)
+    end)
+  end)
+
+  describe("flatten", function()
+    it("should flatten a 2d list", function()
+      local ls = lists({
+        { { item = '1' }, { item = '2' } },
+        { { item = '3' } },
+        { { { item = 'deep_item' } } },
+        { { item = '5' }, { item = '6' } }
+      })
+
+      assert.are.same(4, ls:len())
+      assert.are.same({ { item = '1' }, { item = '2' } }, ls:at(1))
+      assert.are.same({ { item = '3' }, }, ls:at(2))
+      assert.are.same({ { { item = 'deep_item' } } }, ls:at(3))
+      assert.are.same({ { item = '5' }, { item = '6' } }, ls:at(4))
+
+      local flatls = ls:flatten()
+      
+      assert.are.same(6, flatls:len())
+
+      for i,v in ipairs({ 1, 2, 3, 5, 6 }) do
+        assert.are.same({ item = tostring(v) }, flatls:at(v))
+      end
+
+      assert.are.same({ { item = 'deep_item' } }, flatls:at(4))
+    end)
+
+    it("should not affect non-iterable items (tables)", function()
+      local ls = lists({
+        { name = 'foo', city = 'oof' },
+        { name = 'bar', city = 'rab' },
+        { name = 'baz', city = 'zab' },
+      })
+
+      local flatls = ls:flatten()
+
+      assert.are.same(3, ls:len())
+      assert.are.same(3, flatls:len())
+    end)
+
+    it("should not affect non-iterable items (strings)", function()
+      local ls = lists({
+        "foo", "bar", { "baz" }
+      })
+
+      local flatls = ls:flatten()
+
+      assert.are.same("foo", flatls[1])
+      assert.are.same("bar", flatls[2])
+      assert.are.same("baz", flatls[3])
     end)
   end)
 

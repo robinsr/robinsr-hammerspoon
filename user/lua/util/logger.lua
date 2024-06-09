@@ -23,13 +23,14 @@ local levels = {
   verbose = 5,
 }
 
-local DEBUG_WARNING = '>>> DEBUG >>>  (warning! hs.inspect is slow)\n'
 
 local ProxyLogger = {}
 
 function ProxyLogger:new(log_name, level)
 
   level = level or 'error'
+  
+  local DEBUG_WARNING = string.format('>>> DEBUG (%s) >>> ', log_name)
 
   local log = hs.logger.new(log_name, level)
 
@@ -38,7 +39,7 @@ function ProxyLogger:new(log_name, level)
 
   ---@cast log ProxyLogger
   log.inspect = function (...)
-    if (log:getLogLevel() > 3) then
+    if (log:getLogLevel() > levels.info) then
       local args = lists.pack(...)
       local lastarg = args[#args]
 

@@ -1,14 +1,16 @@
 local apps        = require 'hs.application'
 local win         = require 'hs.window'
 local winf        = require 'hs.window.filter'
-local sysevnt     = require 'hs.caffeinate.watcher'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
 local desktop     = require 'user.lua.interface.desktop'
-local sh          = require 'user.lua.interface.shell'
+local sh          = require 'user.lua.adapters.shell'
+local system      = require 'user.lua.interface.system'
+local lists       = require 'user.lua.lib.list'
 local params      = require 'user.lua.lib.params'
 local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
 local types       = require 'user.lua.lib.typecheck'
+local tables      = require 'user.lua.lib.table'
 local logr        = require 'user.lua.util.logger'
 
 
@@ -26,18 +28,20 @@ local Yabai = {}
 ---@return Yabai
 function Yabai:new()
   local this = self == Yabai and {} or self
+  
+  LaunchAgent.new(this, 'yabai', 'com.koekeishiya.yabai')
 
-  LaunchAgent.new(this, 'Yabai', 'com.koekeishiya.yabai')
-
-  this.syswatcher = sysevnt.new(function(evt) this:onEnvChange(evt) end):start()
+  local watcher = system.onEvent(function(evt) this:onEnvChange(evt) end)
   
   return proto.setProtoOf(this, Yabai)
 end
 
+
+---@param evt HS.SystemEvent
 function Yabai:onEnvChange(evt)
-  log.f('Yabai event callback; event: %s', tostring(evt))
-  if (evt == sysevnt.screensDidUnlock) then
-      
+  -- lists(tables.vals(hs.caffeinate.watcher)):filter(types.isNum)
+  if (evt == system.sysevents[evt]) then
+    
   end
 end
 
@@ -177,7 +181,13 @@ end
 ---@return Yabai.Space
 function Yabai:getSpace(selector)
   local space = params.default(selector, 'mouse')
-  return sh.runt("yabai -m query --spaces --space %s", tostring(space))
+  local tbl, err = sh.runt("yabai -m query --spaces --space %s", tostring(space))
+
+  if (tbl ~= nil) then
+    return tbl --[[@as Yabai.Space]]
+  end
+  
+  error(strings.fmt('Error getting yabai space [%s] - %s', space, err))
 end
 
 

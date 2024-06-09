@@ -5,7 +5,7 @@ local logr    = require 'user.lua.util.logger'
 
 local theme = require 'user.lua.ui.mariana'
 
-local log = logr.new('ui:color', 'info')
+local log = logr.new('ui-color', 'info')
 
 
 ---@class HS.RGBColor
@@ -92,7 +92,7 @@ end
 
 
 function colors.from(listname, color)
-  local tabl = tables.new(colors.list(listname) or {})
+  local tabl = tables(colors.list(listname) or {})
   
   if tabl:has(color) then
     return tabl:get(color)

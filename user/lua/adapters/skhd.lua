@@ -1,5 +1,5 @@
+local shell       = require 'user.lua.adapters.shell'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
-local shell       = require 'user.lua.interface.shell'
 local proto       = require 'user.lua.lib.proto'
 local logr        = require 'user.lua.util.logger'
 

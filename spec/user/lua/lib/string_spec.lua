@@ -1,11 +1,16 @@
 local assert = require 'luassert'
 local pretty = require 'pl.pretty'
+local tutil  = require 'spec.util'
+
+local fmt = tutil.fmt
+
 
 describe('lib/string.lua', function()
+  
   local strings = require('user.lua.lib.string')
+  
 
   describe('static', function()
-
     describe('String.join(tbl, sep)', function()
       it('joins some strings', function()
         assert.equal('foobarbaz', strings.join{ 'foo', 'bar', 'baz'})
@@ -48,5 +53,259 @@ describe('lib/string.lua', function()
         end)
       end)
     end)
+
+    describe("glob", function()
+
+      describe("(basic glob patterns)", function()
+        -- pending("I should finish this test later")
+
+        local glob_ok = function(pattern, file)
+          local result = strings.glob(pattern)(file)
+          assert.is.True(result, fmt("Expected glob %q to match file %q", pattern, file))
+        end
+
+        local glob_no = function(pattern, file)
+          local result = strings.glob(pattern)(file)
+          assert.is.False(result, fmt("Expected glob %q to not match file %q", pattern, file))
+        end
+
+
+        it("1 should match '**' (/)", function()
+          glob_ok('**', 'this/should/work')
+          glob_ok('**', 'this/could/work')
+        end)
+
+        it("2 should match '**' (.)", function()
+          glob_ok('**', 'this.should.work')
+          glob_ok('**', 'this.could.work')
+        end)
+
+
+        it("3 should match 'this/should/*'", function()
+          local input = 'this/should/*'
+          glob_ok(input, 'this/should/work')
+          glob_no(input, 'this/could/work')
+        end)
+
+        it("4 should match 'this.should.*'", function()
+          local input = 'this.should.*'
+          glob_ok(input, 'this.should.work')
+          glob_no(input, 'this.could.work')
+        end)
+
+
+    	  it("5 should match 'this/should/*' and '**'", function() 
+          local input = { 'this/should/*', '**' }
+
+      	  glob_ok(input, 'this/should/work')
+      	  glob_no(input, 'this/could/work')
+        end)
+
+        it("6 should match '!this/should/work'", function() 
+          local input = '!this/should/*'
+
+          glob_no(input, 'this/should/work')
+          glob_ok(input, 'this/could/work')
+        end)
+
+
+    	  it("7 should match { 'this/should/*', 'this/could/*' }", function()
+          local input = { 'this/should/*', 'this/could/*' }
+
+      	  glob_no(input, 'this/should/work')
+      	  glob_no(input, 'this/could/work')
+        end)
+
+
+    	  it("8 should match { 'this/should/*', '!this/could/*' }", function()
+          local input = { 'this/should/*', '!this/could/*' }
+
+      	  glob_ok(input, 'this/should/work')
+      	  glob_no(input, 'this/could/work')
+        end)
+
+
+    	  it("9 should match { '!this/should/*', '!this/could/*' }", function()
+          local input = { '!this/should/*', '!this/could/*' }
+
+      	  glob_no(input, 'this/should/work')
+      	  glob_no(input, 'this/could/work')
+        end)
+
+
+    	  it("10 should match 'this/*ould/*'", function()
+          local input = { 'this/*ould/*' }
+
+      	  glob_ok(input, 'this/should/work')
+      	  glob_ok(input, 'this/could/work')
+        end)
+
+
+    	  it("11 should match '*/*ould/*'", function()
+          local input = '*/*ould/*'
+
+      	  glob_ok(input, 'this/should/work')
+      	  glob_ok(input, 'this/could/work')
+        end)
+
+
+    	  it("12 should match { '**', '!could' }", function()
+          local input = { '**', '!*could*' }
+
+      	  glob_ok(input, 'this/should/work')
+      	  glob_no(input, 'this/could/work')
+        end)
+
+
+    	  it("13 should match '*/(should|could)/work'", function()
+          local input = '*/(should|could)/work'
+
+      	  glob_ok(input, 'this/should/work')
+      	  glob_ok(input, 'this/could/work')
+        end)
+    	end)
+
+      describe("(filtering from a list)", function()
+
+        local GLOB_STRINGS = {
+          "one.red.foo",
+          "one.red.bar",
+          "one.red.baz",
+          "one.blu.foo",
+          "one.blu.bar",
+          "one.blu.BAZ",
+          "one.grn.foo",
+          "one.GRN.bar",
+          "one.grn.baz",
+          "two.red.foo",
+          "two.red.bar",
+          "two.red.baz",
+          "two.blu.foo",
+          "two.blu.bar",
+          "two.blu.BAZ",
+          "two.grn.foo",
+          "two.GRN.bar",
+          "two.grn.baz",
+        }
+
+        local test_glob = function(pattern, expect, cases)
+          local matcher = strings.glob(pattern)
+          local matches = {}
+
+          for i,v in ipairs(cases or GLOB_STRINGS) do
+            if (matcher(v)) then
+              table.insert(matches, v)
+            end
+          end
+
+          local msg = strings.fmt("results for \"%s\" did not match expected", pretty.write(pattern))
+          assert.are.same(expect, matches, msg)
+        end
+
+        it("should work with permissive wildcards", function()
+          test_glob("*", GLOB_STRINGS)
+          test_glob("*.*", GLOB_STRINGS)
+          test_glob("**.*", GLOB_STRINGS)
+          test_glob("**", GLOB_STRINGS)
+        end)
+
+        it("should work with trailing wildcards", function()
+          test_glob("one.red.*", {
+            "one.red.foo",
+            "one.red.bar",
+            "one.red.baz"
+          })
+        end)
+
+        it("should work with leading wildcards", function()
+          test_glob("*.baz", {
+            "one.red.baz",
+            "one.blu.BAZ",
+            "one.grn.baz",
+            "two.red.baz",
+            "two.blu.BAZ",
+            "two.grn.baz",
+          })
+        end)
+
+        it("should match against multiple patterns including a negation", function()
+          test_glob({ "*", "!*grn*" }, {
+            "one.red.foo",
+            "one.red.bar",
+            "one.red.baz",
+            "one.blu.foo",
+            "one.blu.bar",
+            "one.blu.BAZ",
+            "two.red.foo",
+            "two.red.bar",
+            "two.red.baz",
+            "two.blu.foo",
+            "two.blu.bar",
+            "two.blu.BAZ",
+          })
+        end)
+
+        it("should work with alternation (this OR that) patterns", function()
+          test_glob("*.(red|blu).foo", {
+            "one.red.foo",
+            "one.blu.foo",
+            "two.red.foo",
+            "two.blu.foo",
+          })
+        end)
+      end)
+    end)
   end)
 end)
+
+
+
+      -- it("should work with custom separtor", function ()
+      --   pending("I should finish this test later")
+
+      --   local glob_opts =  { separator = '.' }
+      --   local matcher = strings.glob('**', glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_ok('this.could.work')
+
+      --   matcher = strings.glob('this.should.*', glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_no('this.could.work')
+
+      --   matcher = strings.glob({ 'this.should.*' }, glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_no('this.could.work')
+
+      --   matcher = strings.glob({ 'this.should.*', 'this.could.*' }, glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_ok('this.could.work')
+
+      --   matcher = strings.glob({ 'this.should.*', '!this.could.*' }, glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_no('this.could.work')
+
+      --   matcher = strings.glob({ '!this.should.*', '!this.could.*' }, glob_opts)
+
+      --   glob_no('this.should.work')
+      --   glob_no('this.could.work')
+
+      --   matcher = strings.glob('this.*ould.*', glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_ok('this.could.work')
+
+      --   matcher = strings.glob('*.*ould.*', glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_ok('this.could.work')
+
+      --   matcher = strings.glob({ '**', '!could' }, glob_opts)
+
+      --   glob_ok('this.should.work')
+      --   glob_no('this.could.work')
+      -- end)

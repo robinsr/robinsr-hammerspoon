@@ -1,5 +1,5 @@
-local ui   = require 'user.lua.ui'
-local logr = require 'user.lua.util.logger'
+local colors   = require 'user.lua.ui.color'
+local logr     = require 'user.lua.util.logger'
 
 local log = logr.new('Console', 'error')
 
@@ -22,9 +22,9 @@ function console.setDarkMode(isDark)
   log.i("Setting console dark mode:", isDark)
 
   if (isDark) then
-    hs.console.consolePrintColor(ui.colors.lightgrey)
+    hs.console.consolePrintColor(colors.lightgrey)
   else
-    hs.console.consolePrintColor(ui.colors.darkgrey)
+    hs.console.consolePrintColor(colors.darkgrey)
   end
   
   hs.console.darkMode(isDark)

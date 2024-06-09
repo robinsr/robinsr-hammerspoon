@@ -1,10 +1,10 @@
-local screen = require 'hs.screen'
-local mouse  = require 'hs.mouse'
-local win    = require 'hs.window'
-local logr = require 'user.lua.util.logger'
+local screen  = require 'hs.screen'
+local mouse   = require 'hs.mouse'
+local win     = require 'hs.window'
+local logr    = require 'user.lua.util.logger'
 local strings = require 'user.lua.lib.string'
-local types = require 'user.lua.lib.typecheck'
-local tables = require 'user.lua.lib.table'
+local types   = require 'user.lua.lib.typecheck'
+local tables  = require 'user.lua.lib.table'
 
 local log = logr.new('Desktop', 'debug')
 

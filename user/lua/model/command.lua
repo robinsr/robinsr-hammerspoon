@@ -3,9 +3,10 @@ local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
+local valua   = require 'user.lua.lib.valua'
 local types   = require 'user.lua.lib.typecheck'
 local Hotkey  = require 'user.lua.model.hotkey'
-local ui      = require 'user.lua.ui'
+local icons   = require 'user.lua.ui.icons'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('Command', 'info')
@@ -18,6 +19,7 @@ local log = logr.new('Command', 'info')
 ---@field title? string         - (optional) A title for command
 ---@field icon? hs.image|string - (optional) A icon for the command
 ---@field key? string           - (optional) A key for the hotkey binding
+---@field menukey? string       - (optional) A shortcut key for use in the KS menubar menu
 ---@field mods? string          - (optional) A mods group for the hotkey binding
 ---@field url? string           - (optional) A hammerspoon url to bind to
 
@@ -30,10 +32,24 @@ local log = logr.new('Command', 'info')
 
 
 
+local validate = function(v, msg, ...)
+  if not v then
+    assert(v, strings.fmt(msg, table.unpack({...})))
+  end
+end
+
+
+local valid = {
+  id = {
+    type  = valua:new().type("string"),
+    match = valua:new().match("^%w+%.%w+%.%w+$")
+  }
+}
 
 
 ---@class Command : CommandConfig
 ---@field context any
+---@field hotkey? hs.hotkey
 local Command = {}
 
 
@@ -44,8 +60,8 @@ function Command:new(config)
   ---@class Command
   local this = config or {}
 
-  assert(types.isString(this.id), strings.fmt('Command ID missing from %q', hs.inspect(this)))
-  assert(string.match(this.id, "^[%w%.]+[%w]+$"), strings.fmt('Command ID %q not good enough', this.id))
+  validate(valid.id.type(this.id), 'id missing from %q', hs.inspect(this))
+  validate(valid.id.match(this.id), 'invalid id pattern %q', this.id)
 
   this.context = config.setup and config.setup(config) or {}
 
@@ -66,10 +82,11 @@ function Command:getMenuIcon()
   local icon = self.icon or 'info'
 
   local ok, img = pcall(function()
-    return ui.menuIcon(icon)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    return icons.menuIcon(icon)
   end)
 
-  return ok and img or ui.menuIcon('info') --[[@as hs.image]]
+  return ok and img or icons.menuIcon('info') --[[@as hs.image]]
 end
 
 
@@ -147,7 +164,7 @@ function Command:bindHotkey()
 
   local bind = hs.hotkey.bind(hotkey.mods, hotkey.key, cmd.title, table.unpack(triggers))
 
-  log.f("Command (%s) mapped to hotkey: %s", strings.pad(cmd.id, 20), label)
+  log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(cmd.id, 20), label)
 
 end
 

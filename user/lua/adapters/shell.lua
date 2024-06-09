@@ -1,4 +1,3 @@
-local run     = require 'user.lua.interface.runnable'
 local logr    = require 'user.lua.util.logger'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
@@ -51,7 +50,7 @@ end
 -- Parses output of Shell.run to a table
 ---@param cmd_str string Shell command string
 ---@param ... string? command string format args
----@return table?, string?
+---@return table?, string? A table if cmd output is parsable JSON, or nil and error output
 function Shell.runt(cmd_str, ...)
   local params = {...}
   local ok, output = pcall(function() 

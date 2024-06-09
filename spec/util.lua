@@ -4,6 +4,18 @@ local plstr = require 'pl.stringx'
 
 local testutil = {}
 
+function testutil.fmt(pattern, ...)
+
+  local vars = {}
+
+  for i, v in ipairs({...}) do
+    table.insert(vars, type(v) == 'table' and pretty.write(v) or tostring(v))
+  end
+
+
+  return string.format(pattern, table.unpack(vars))
+end
+
 function testutil.msg(...)
   return table.concat(table.pack(...), " ")
 end

@@ -5,7 +5,7 @@ local lists      = require 'user.lua.lib.list'
 local params     = require 'user.lua.lib.params'
 local strings    = require 'user.lua.lib.string'
 local types      = require 'user.lua.lib.typecheck'
-local ui         = require 'user.lua.ui'
+local icons      = require 'user.lua.ui.icons'
 local text       = require 'user.lua.ui.text'
 local logr       = require 'user.lua.util.logger'
 
@@ -55,7 +55,7 @@ end
 ---@param ctx CommandCtx The event context
 ---@param params SpaceChangeParams to/from index of change
 function Spaces.onSpaceChange(cmd, ctx, params)
-  local disp = { 'Irratic space change...', alert.timing.NORMAL, ui.icons.tornado }
+  local disp = { 'Irratic space change...', alert.timing.NORMAL, icons.tornado }
 
   local screen = desktop.getScreen('active')
   local submsg = strings.fmt("(%s - %s)", screen:id(), screen:name())
@@ -67,11 +67,11 @@ function Spaces.onSpaceChange(cmd, ctx, params)
     local from, to = tonumber(movement[1]), tonumber(movement[2])
 
     if (from - to > 0) then 
-      disp = { 'Moved space left', alert.timing.FAST, ui.icons.spaceLeft }
+      disp = { 'Moved space left', alert.timing.FAST, icons.spaceLeft }
     elseif (from - to < 0) then
-      disp = { 'Moved space right', alert.timing.FAST, ui.icons.spaceRight }
+      disp = { 'Moved space right', alert.timing.FAST, icons.spaceRight }
     else
-      disp = { 'Moved space', alert.timing.NORMAL, ui.icons.tornado }
+      disp = { 'Moved space', alert.timing.NORMAL, icons.tornado }
     end
   end
 
@@ -125,7 +125,7 @@ end
 ---@type CommandConfig[]
 Spaces.cmds = {
   {
-    id = 'Spaces.CycleLayout',
+    id = 'spaces.space.cycle',
     title = "Space → Cycle Layout",
     icon = "tag",
     mods = "modA",
@@ -136,7 +136,7 @@ Spaces.cmds = {
     end,
   },
    {
-    id = 'Spaces.RenameSpace',
+    id = 'spaces.space.rename',
     title = "Label current space",
     icon = "tag",
     mods = "bar",
@@ -150,7 +150,7 @@ Spaces.cmds = {
     end,
   },
   { 
-    id = "Spaces.floatActiveWindow",
+    id = "spaces.space.floatActiveWindow",
     title = "Float active window",
     icon = "float",
     exec = function (cmd, ctx)
@@ -162,27 +162,27 @@ Spaces.cmds = {
     end
   },
   {
-    id = 'Spaces.OnSpaceChange',
+    id = 'spaces.evt.onSpaceChange',
     exec = Spaces.onSpaceChange,
     url = "spaces.changed",
   },
   {
-    id = 'Spaces.OnSpaceCreated',
+    id = 'spaces.evt.onSpaceCreated',
     exec = Spaces.onSpaceCreated,
     url = "spaces.created",
   },
   {
-    id = 'Spaces.OnSpaceDestroyed',
+    id = 'spaces.evt.onSpaceDestroyed',
     exec = Spaces.onSpaceDestroyed,
     url = "spaces.destroyed",
   },
   {
-    id = 'Spaces.OnDisplayChange',
+    id = 'spaces.evt.onDisplayChange',
     exec = function() end,
     url = "display.changed",
   },
   {
-    id = 'Yabai.Window.First3rd',
+    id = 'yabai.window.first3rd',
     title = "Move window: 1st ⅓",
     mods = 'modB',
     key = '1',
@@ -192,7 +192,7 @@ Spaces.cmds = {
     end,
   },
   {
-    id = 'Yabai.Window.Second3rd',
+    id = 'yabai.window.second3rd',
     title = "Move window: 2nd ⅓",
     mods = 'modB',
     key = '2',
@@ -202,7 +202,7 @@ Spaces.cmds = {
     end,
   },
   {
-    id = 'Yabai.Window.Third3rd',
+    id = 'yabai.window.third3rd',
     title = "Move window: 3rd ⅓",
     mods = 'modB',
     key = '3',
@@ -212,7 +212,7 @@ Spaces.cmds = {
     end,
   },
   {
-    id = 'Yabai.Window.FirstTwo3rds',
+    id = 'yabai.window.firstTwo3rds',
     title = "Move window: 1st ⅔",
     mods = 'modB',
     key = '4',
@@ -222,7 +222,7 @@ Spaces.cmds = {
     end,
   },
   {
-    id = 'Yabai.Window.SecondTwo3rds',
+    id = 'yabai.window.secondTwo3rds',
     title = "Move window: 2nd ⅔",
     mods = 'modB',
     key = '5',

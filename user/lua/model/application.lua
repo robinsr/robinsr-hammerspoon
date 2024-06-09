@@ -47,7 +47,7 @@ function App.menuItem(item)
 
   o.has_children = types.isTable(item.AXChildren) and types.isTable(item.AXChildren[1])
 
-  o.children = o.has_children and lists(item.AXChildren[1]):map(App.menuItem):items() or {}
+  o.children = o.has_children and lists(item.AXChildren[1]):map(App.menuItem):values() or {}
 
   return o
 end

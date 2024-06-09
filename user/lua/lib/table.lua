@@ -210,7 +210,24 @@ end
 
 
 --
--- Maps an array of string keys to associated values in a table
+-- Returns the values for specific keys from a table
+--
+---@param tabl table Table to pick values from
+---@param keys string[] List of keys to pick from table
+---@return table
+function Table.extract(tabl, keys)
+  local picked = {}
+
+  for i, key in ipairs(keys) do
+    table.insert(picked, params.default(Table.get(tabl, key), ""))
+  end
+
+  return table.unpack(picked)
+end
+
+
+--
+-- Returns a subset of a larger table
 --
 ---@param tabl table Table to pick values from
 ---@param keys string[] List of keys to pick from table
@@ -219,7 +236,7 @@ function Table.pick(tabl, keys)
   local picked = {}
 
   for i, key in ipairs(keys) do
-    table.insert(picked, params.default(Table.get(tabl, key), ""))
+    picked[key] = Table.get(tabl, key)
   end
 
   return picked

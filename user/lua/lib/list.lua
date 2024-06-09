@@ -1,6 +1,6 @@
-local proto = require 'user.lua.lib.proto'
-local types = require 'user.lua.lib.typecheck'
-local pretty = require 'pl.pretty'
+local pretty   = require 'pl.pretty'
+local proto    = require 'user.lua.lib.proto'
+local types    = require 'user.lua.lib.typecheck'
 
 
 
@@ -275,6 +275,29 @@ function List:values()
     table.insert(vals, i, v)
   end
   return vals
+end
+
+
+--
+-- Returns the list items flattened one degree
+--
+---@return List
+function List:flatten()
+  local flatd = {}
+
+  for i, v1 in ipairs(self.items) do
+    if (types.isTable(v1) and  #v1 > 0) then
+      for i2, v2 in ipairs(v1) do
+        table.insert(flatd, v2)
+      end
+    else
+      table.insert(flatd, v1)
+    end
+  end
+
+  -- print(pretty.write({ self.items, flatd }))
+
+  return create({}, flatd)
 end
 
 

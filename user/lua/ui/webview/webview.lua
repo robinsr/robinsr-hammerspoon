@@ -1,10 +1,15 @@
-local hsdia    = require 'hs.dialog'
+local hsweb    = require 'hs.webview'
 local lustache = require 'lustache'
+local plpath   = require 'pl.path'
+local plfile   = require 'pl.file'
+local alert    = require 'user.lua.interface.alert'
+local desk     = require 'user.lua.interface.desktop'
 local lists    = require 'user.lua.lib.list'
 local paths    = require 'user.lua.lib.path'
 local scan     = require 'user.lua.lib.scan'
 local strings  = require 'user.lua.lib.string'
 local tables   = require 'user.lua.lib.table'
+local types    = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
 
 
@@ -15,79 +20,155 @@ local replace  = strings.replace
 local MOD_NAME = paths.mod('user.lua.ui.webview')
 local TMPL_DIR = paths.join(MOD_NAME, '..', 'templates') 
 
-local log = logr.new('dialog', 'debug')
+local log = logr.new('webview', 'debug')
 
 local templates = {}
 
+local partials = {
+  doeswork = "<p>Does this work: <strong>{{val}}</strong></p>"
+}
 
-local function load()
+
+---@return string
+local function fetchTemplate(filepath)
+  return plfile.read(filepath) or ""
+end
+
+
+local function loadAll()
   log.f('Using template dir [%s]', TMPL_DIR)
 
   local files = listdir(TMPL_DIR, 'mustache')
 
-  lists(files):forEach(function(filepath)
-    local tfile = io.open(filepath, 'r')
-
-    if tfile then
-      templates[paths.pl.basename(filepath)] = tfile:read('a')
-      tfile:close()
-    end
+  local tmpls = lists(files):reduce({}, function(memo, filepath)
+    return tables.merge(memo, { 
+      [plpath.basename(filepath)] = fetchTemplate(filepath)
+    })
   end)
 
-  log.f('Loaded templates:\n', strings.join(tables.keys(templates), '\n- '))
+  log.inspect('Loaded templates:', tables.keys(tmpls))
+
+  return tmpls
 end
 
 
+---@param template string
+---@param viewmodel table
+local function renderCached(template, viewmodel)
+  if tables.isEmpty(templates) then loadAll() end
 
-local function render(tmplname, viewmodel)
-  if tables.isEmpty(templates) then load() end
+  local tmpl_key = format('%s.mustache', template)
 
-  local content = format('<p>No template for name [%s]</p>', tmplname)
-  local tmplkey = format('%s.mustache', tmplname)
-
-  if tables.haspath(templates, tmplkey) then
-    content = lustache:render(templates[tmplkey], viewmodel)
+  if tables.has(templates, tmpl_key) then
+    return lustache:render(templates[tmpl_key], viewmodel, partials)
   else
-  -- error(format('No template for name [%s]', tmplname))
+    error(format('No template for name [%s]', template))
   end
-
-  return render('base', { title = 'KS Webview', content = content })
 end
 
 
-local D = {}
-
-function D.showText()
-  -- todo
+---@param template string
+---@param viewmodel table
+local function renderFile(template, viewmodel)
+  local filepath = plpath.join(TMPL_DIR, template .. '.mustache')
+  
+  if plpath.exists(filepath) then
+    return lustache:render(fetchTemplate(filepath), viewmodel, partials)
+  else
+    error(format('No template found at path: %s', filepath))
+  end
 end
 
-local webviewOpts = {
+
+---@param template string
+---@param viewmodel table
+local function renderPage(template, viewmodel)
+  return renderFile('base', { 
+    title = 'KS Webview',
+    content = renderFile(template, viewmodel)
+  })
+end
+
+
+local WEBVIEW_OPTS = {
   developerExtrasEnabled = true,
 }
 
-function D.test()
-  local viewmodel = {
-    title = 'HS Webview Test',
-    code = hs.inspect(hs.drawing.windowBehaviors, { depth = 4 }),
-  }
-  local content = render('base', viewmodel)
-  local box = hs.geometry.rect(450, 450, 450, 450)
+local FADE_TIME = alert.timing.FAST
 
-  log.i(content)
+
+local Webview = {}
+
+---@type hs.webview|nil
+Webview.current = nil
+
+
+---@param title string
+---@param template string
+---@param viewmodel table
+function Webview.show(title, template, viewmodel)
+
+  if types.notNil(Webview.current) then
+    Webview.current = Webview.current:delete(true, FADE_TIME)
+    return
+  end
+
+  local win_dimensions = desk.getScreen('active'):frame():scale({ w = 0.50, h = 0.90 })
   
-  local webview = hs.webview.new(box, webviewOpts) --[[@as hs.webview]]
 
-  webview:html(content)
+  ---@type hs.webview
+  local view = hsweb.new(win_dimensions, WEBVIEW_OPTS)
 
-  hs.timer.doAfter(0.5, function()
-    webview:show(0.5)
-  end)
-  
-  -- hs.dialog.webviewAlert(webview, testCallbackFn, "Message", "Informative Text", "Button One", "Button Two", "critical")
+  view:html(renderPage(template, viewmodel))
+  view:windowStyle({ "borderless", "closable", "utility" })
+  view:darkMode(true)
+  view:closeOnEscape(true)
+  view:allowGestures(true)
+  view:allowTextEntry(true)
+  view:windowTitle(title)
+  view:show(FADE_TIME)
+
+  Webview.current = view
 end
 
 
-return D
+Webview.cmds = {
+  {
+    id = 'KS.webview.test',
+    title = "Test Webview Alert",
+    key = "F",
+    mods = "bar",
+    exec = function()
+
+      local title = 'Testing HS Webview...'
+      local template = 'content'
+      local model = {
+        name = 'PooPoo McGillicutty',
+        val = function()
+          return "It sure will!"
+        end,
+        date = function(m)
+          log.inspect('model args: ', m, logr.d3)
+          return os.date("%A, %m %B %Y")
+        end,
+        namedate = function(m)
+          return strings.join({ m.name, m.date() }, ' ')
+        end,
+        bolddate = function(text, render)
+          log.inspect('bolddate args:', text, render)
+          return strings.join{ '<b>', render(text),'</b>' }
+        end
+      }
+
+      log.i('Testing HS Webview...')
+
+      Webview.show(title, template, model)
+    end,
+  },
+}
+
+
+return Webview
 
 --[[
 Window Behaviors
@@ -104,5 +185,20 @@ moveToActiveSpace = 2,
 participatesInCycle = 32,
 stationary = 16,
 transient = 8
+
+---
+
+Window Masks:
+
+HUD                 8192
+borderless          0
+closable            2
+fullSizeContentView 32768
+miniaturizable      4
+nonactivating       128
+resizable           8
+texturedBackground  256
+titled              1
+utility             16
 
 ]]

@@ -1,19 +1,28 @@
-local str    = require 'user.lua.lib.string'
-local plpath = require 'pl.path'
+local strings = require 'user.lua.lib.string'
+local types   = require 'user.lua.lib.typecheck'
+local plpath  = require 'pl.path'
 
 local log = require('user.lua.util.logger').new('path', 'error')
 
+---@class Paths
+local Paths = {}
 
-local path = {}
+local PathsMeta = {}
 
-path.pl = plpath
+PathsMeta.__index = function(p, key)
+  if types.notNil(Paths[key]) then
+    return Paths[key]
+  else
+    return plpath[key]
+  end
+end
 
 
 --
 -- Returns the current dir (location of root init.lua file)
 --
 ---@return string 
-function path.cwd()
+function Paths.cwd()
   local dir, err =  plpath.currentdir()
 
   if err then
@@ -29,8 +38,8 @@ end
 --
 ---@param ... string Path components
 ---@return string Joined path
-function path.join(...)
-  return plpath.normpath(str.join({...}, '/'))
+function Paths.join(...)
+  return plpath.normpath(strings.join({...}, '/'))
 end
 
 
@@ -39,19 +48,20 @@ end
 --
 ---@param modname string Module name
 ---@return string 
-function path.mod(modname)
+function Paths.mod(modname)
   local dir, err = plpath.package_path(modname)
   
   if dir then
     return dir
+  end
   
-  elseif err then
+  if err then
     error(err)
   end
 
-  log.ef('No path found for module [%s]', modname)
+  error(strings.fmt('No path found for module [%s]', modname))
 end
 
 
 
-return path
+return setmetatable({}, PathsMeta) --[[@as Paths]]

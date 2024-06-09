@@ -1,5 +1,5 @@
+local shell   = require 'user.lua.adapters.shell'
 local alert   = require 'user.lua.interface.alert'
-local shell   = require 'user.lua.interface.shell'
 local lists   = require 'user.lua.lib.list'
 local option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
@@ -22,20 +22,16 @@ local YabaiCmds = {}
 
 YabaiCmds.cmds = {
   {
-    id = 'Yabai.RestartYabai',
+    id = 'yabai.service.restart',
     title = "Restart Yabai",
     mods = "bar",
     key = "Y",
     exec = function (cmd, ctx)
       yabai:restart()
-      
-      if (ctx.trigger == 'hotkey') then
-        return strings.fmt('%s: %s', cmd:getHotkey():tostring(), cmd.title)
-      end
     end,
   },
   {
-    id = 'Yabai.ManagedApps.Add',
+    id = 'yabai.manage.add',
     title = "Manage app's windows",
     exec = function()
       local active = hs.window.focusedWindow()
@@ -47,12 +43,12 @@ YabaiCmds.cmds = {
     end,
   },
   {
-    id = 'Yabai.ManagedApps.Remove',
+    id = 'yabai.manage.remove',
     title = "Ignore app's windows",
     exec = function() end,
   },
   {
-    id = 'Yabai.ManagedApps.List',
+    id = 'yabai.manage.list',
     title = "Show ignore list",
     exec = function(cmd, ctx)
       local rules = yabai:getRules()
@@ -61,74 +57,74 @@ YabaiCmds.cmds = {
     end,
   },
   {
-    id = 'Yabai.Info.Window',
+    id = 'yabai.info.window',
     title = "Show info for active app",
     exec = function() end,
   },
   {
-    id = 'Yabai.Info.Space',
+    id = 'yabai.info.space',
     title = "Show info current space",
     exec = function() end,
   },
 
   {
-    id = 'Yabai.Focus.North',
+    id = 'yabai.focus.north',
     title = 'Focus window above',
     mods = 'modB',
     key = 'up',
     exec = runAndReturn('yabai -m window --focus north'),
   },
   {
-    id = 'Yabai.Focus.South',
+    id = 'yabai.focus.south',
     title = 'Focus window below',
     mods = 'modB',
     key = 'down',
     exec = runAndReturn('yabai -m window --focus south'),
   },
   {
-    id = 'Yabai.Focus.East',
+    id = 'yabai.focus.east',
     title = 'Focus window right',
     mods = 'modB',
     key = 'right',
     exec = runAndReturn('yabai -m window --focus east'),
   },
   {
-    id = 'Yabai.Focus.West',
+    id = 'yabai.focus.west',
     title = 'Focus window left',
     mods = 'modB',
     key = 'left',
     exec = runAndReturn('yabai -m window --focus west'),
   },
   {
-    id = 'Yabai.Space.Next',
+    id = 'yabai.space.next',
     title = 'Go to next space (right)',
     mods = 'ctrl',
     key = 'right',
     exec = runAndReturn('yabai -m space mouse --focus next', ''),
   },
   {
-    id = 'Yabai.Space.Prev',
+    id = 'yabai.space.prev',
     title = 'Go to previous space (left)',
     mods = 'ctrl',
     key = 'left',
     exec = runAndReturn('yabai -m space mouse --focus prev', ''),
   },
   {
-    id = 'Yabai.Space.RotateWindows',
+    id = 'yabai.space.rotateWindows',
     title = 'Rotate layout clockwise',
     mods = 'modA',
     key = 'r',
     exec = runAndReturn('yabai -m space --rotate 90'),
   },
   {
-    id = 'Yabai.Space.Rebalance',
-    title = 'Rotate layout clockwise',
+    id = 'yabai.space.rebalance',
+    title = 'Rebalance windows in space',
     mods = 'modA',
     key = 'e',
     exec = runAndReturn('yabai -m space --balance'),
   },
   {
-    id = 'Yabai.Active.ToggleFullscreen',
+    id = 'yabai.Active.toggleFullscreen',
     title = 'Maximize active window',
     mods = 'modA',
     key = 'm',

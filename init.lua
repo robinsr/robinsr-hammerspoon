@@ -34,7 +34,7 @@ require('user.lua.interface.menubar').install()
 log.i('Running onLoad commands')
 
 onLoad = KS.commands:first(function(cmd)
-  return cmd.id == "KS.OnLoad"
+  return cmd.id == "ks.evt.onLoad"
 end)
 
 if onLoad then

@@ -1,6 +1,5 @@
-
+local shell = require 'user.lua.adapters.shell'
 local isCli = require 'user.lua.adapters.base.cli-utility'
-local shell = require 'user.lua.interface.shell'
 local proto = require 'user.lua.lib.proto'
 
 --[[

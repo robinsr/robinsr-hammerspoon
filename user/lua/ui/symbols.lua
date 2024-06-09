@@ -4,6 +4,7 @@ local color  = require 'user.lua.ui.color'
 
 
 local symbols = tables{
+  ["doc.on.doc"] = 0x100241,
   ["arrow.counterclockwise"] = 0x100149,
   ["chevron.left.forwardslash.chevron.right"] = 0x10065A, --alias "htmltag"
   ["htmltag"] = 0x10065A,
