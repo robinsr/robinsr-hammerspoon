@@ -10,24 +10,21 @@ local log = logr.new('HotKey', 'info')
 
 
 ---@alias ModKeyCombo "hyper" | "meh" | "bar" | "modA" | "modB" | "shift" | "alt" | "ctrl" | "cmd"
-
 ---@alias ModKeyname "shift" | "alt" | "ctrl" | "cmd"
-
 ---@alias KeyEventType "pressed" | "released" | "repeat"
-
 ---@alias EventHandler fun(): any
 
 ---@type Table
 local STD_MODS = tables{
-  hyper = { "shift", "alt", "ctrl", "cmd" },
-  meh   = { "shift",        "ctrl", "cmd" },
-  bar   = {          "alt", "ctrl", "cmd" },
-  modA  = { "shift", "alt"                },
-  modB  = { "shift", "alt", "ctrl"        },
-  shift = { "shift"                       },
-  alt   = {          "alt"                },
-  ctrl  = {                 "ctrl"        },
-  cmd   = {                         "cmd" },
+  hyper = { "cmd", "ctrl", "alt", "shift" },
+  meh   = { "cmd", "ctrl",        "shift" },
+  bar   = { "cmd", "ctrl", "alt"          },
+  modA  = {                "alt", "shift" },
+  modB  = {        "ctrl", "alt", "shift" },
+  shift = {                       "shift" },
+  alt   = {                "alt"          },
+  ctrl  = {        "ctrl"                 },
+  cmd   = { "cmd"                         },
 }
 
 local SYMBOLS = tables{
@@ -80,17 +77,24 @@ function Hotkey:new(mods, key, keyevents)
 end
 
 
+--
+--
 ---@return string[]
 function Hotkey:symbols()
   return lists(self.mods):map(function(m) return SYMBOLS[m] end):values()
 end
 
 
+--
+--
 ---@return string
 function Hotkey:label()
-  return lists(self:symbols()):push(self.key):join(' ')
+  return lists(self:symbols()):push(self.key):join('')
 end
 
+
+--
+--
 ---@return table
 function Hotkey:toTable()
   return {

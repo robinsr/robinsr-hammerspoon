@@ -153,6 +153,9 @@ function List:forEach(fn)
   return self
 end
 
+-- Alias for foreach
+List.each = List.forEach
+
 
 --
 -- Maps item in a list
@@ -298,6 +301,40 @@ function List:flatten()
   -- print(pretty.write({ self.items, flatd }))
 
   return create({}, flatd)
+end
+
+
+--
+-- Returns the list items flattened one degree
+--
+---@param fn string|CategoryFn - A string which is a key on every item in the list, or a function to return a string key
+---@param ... any - if `fn` is a function property of i, these args are passed to `fn` 
+---@return table
+function List:groupBy(fn, ...)
+  local org = {}
+
+  for i, v in ipairs(self.items) do
+
+    local key
+
+    if type(fn) == 'function' then
+      key = fn(v, i)
+    elseif type(v[fn]) == 'function' then
+      key = v[fn](v, table.unpack({...}))
+    else
+      key = v[fn]
+    end
+
+    if key ~= nil then
+      if org[key] == nil then
+        org[key] = { v }
+      else
+        table.insert(org[key], v)
+      end
+    end
+  end
+
+  return org
 end
 
 

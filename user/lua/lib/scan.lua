@@ -70,6 +70,7 @@ function scan.mapdir(dir, pkg)
     memo[filename] = filename:sub(dir:len() + 2)
       :gsub('%.lua', '')
       :gsub('%/', '.')
+      :gsub('%.init$', '')
 
     return memo
   end)
@@ -93,7 +94,7 @@ function scan.loaddir(dir, pkg)
   local modules = {}
   for file, mod in pairs(luafiles) do
     if (mod ~= THISMOD) then
-      modules[file] = require(mod)
+      modules[mod] = require(mod)
     end
   end
 

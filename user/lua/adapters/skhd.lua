@@ -19,19 +19,19 @@ end
 
 function SKHD:start()
   log.i('Starting SKHD...')
-  return shell.run("skhd --start-service")
+  return shell.run({ 'skhd', '--start-service' })
 end
 
 
 function SKHD:stop()
   log.i('Stopping SKHD...')
-  return shell.run("skhd --stop-service")
+  return shell.run({ 'skhd', '--stop-service' })
 end
 
 
 function SKHD:restart()
   log.i('Restarting SKHD...')
-  return shell.run("skhd --restart-service")
+  return shell.run({ 'skhd', '--restart-service' })
 end
 
 return proto.setProtoOf(SKHD, LaunchAgent)

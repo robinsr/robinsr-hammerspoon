@@ -13,9 +13,18 @@ local PROC_UID = nil
 local LaunchAgent = {}
 
 
+local UID
 
 function LaunchAgent.getUID()
-  return shell.run('id -u')
+  if (UID == nil) then
+    local uid = shell.run({ 'id', '-u' })
+
+    if uid then
+      UID = uid
+    end
+  end
+
+  return UID
 end
 
 
@@ -39,6 +48,22 @@ function LaunchAgent.list()
 end
 
 
+---@return ServiceStatus
+function LaunchAgent.query(label)
+  local qs = strings.fmt('* where label == "%s"', label)
+
+  local listing = LaunchAgent.list()
+
+  local proc = listing:copy_select(qs)
+
+  if (proc ~= nil and proc.pid) then
+    return Service.STATUS.running
+  else
+    return Service.STATUS.not_running
+  end
+end
+
+
 --
 -- Creates a new LaunchAgent instance for a service
 --
@@ -52,18 +77,22 @@ function LaunchAgent:new(name, servicename)
 
   this.service_name = servicename
 
-  local uid = LaunchAgent:getUID()
 
-  this.domain_target = strings.fmt('gui/%s', uid)
-  this.service_target = strings.fmt('gui/%s/%s', uid, this.service_name)
+  local status = LaunchAgent.query(servicename)
 
-  local ok, launchinfo = pcall(function()
-    return shell.run('launchctl print %s', this.service_target)
-  end)
+  if (status == Service.STATUS.running) then
+    local uid = LaunchAgent:getUID()
 
-  if (ok) then
-    this.plistfile = launchinfo:match("path%s=%s([^%s]*)")
-    this.pid = launchinfo:match("pid%s=%s([^%s]*)")
+    this.domain_target = strings.fmt('gui/%s', uid)
+    this.service_target = strings.fmt('gui/%s/%s', uid, this.service_name)
+
+    local stdout, result = shell.run({ 'launchctl', 'print', this.service_target })
+
+    if (result.status == 0) then
+      ---@cast stdout string
+      this.plistfile = stdout:match("path%s=%s([^%s]*)")
+      this.pid = stdout:match("pid%s=%s([^%s]*)")
+    end
   end
 
   return proto.setProtoOf(this, LaunchAgent)
@@ -71,12 +100,12 @@ end
 
 
 function LaunchAgent:restart()
-  local ok, msg = pcall(function()
-    return shell.run('launchctl kickstart -kp %s', self.service_target)
-  end)
+  local stdout, result = shell.run({ 'launchctl', 'kickstart', '-kp', self.service_target })
 
-  if (ok and msg ~= nil) then
-    local pid = msg:match("(%d+)")
+  if (result.status == 0) then
+
+    ---@cast stdout string
+    local pid = stdout:match("(%d+)")
 
     log.df("Restarted service [%s] (pid: %s)", self.name, pid)
 

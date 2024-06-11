@@ -1,4 +1,5 @@
 local shell       = require 'user.lua.adapters.shell'
+-- local shell       = require 'shell-games'
 local BrewService = require 'user.lua.adapters.base.brew-service'
 local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
@@ -31,17 +32,17 @@ end
 
 
 function SketchyBar:update()
-  return shell.run("sketchybar --update")
+  return shell.run({ 'sketchybar', '--update' })
 end
 
 
 function SketchyBar:restart()
-  return shell.run("sketchybar --reload")
+  return shell.run({ 'sketchybar', '--reload' })
 end
 
 
 function SketchyBar:reload()
-  return shell.run("sketchybar --reload")
+  return shell.run({ 'sketchybar', '--reload' })
 end
 
 ---@param event string The event name
@@ -52,7 +53,7 @@ function SketchyBar:trigger(event, ...)
   end
   
   if SketchyBar.events:has(event) then
-    return shell.run('sketchybar --trigger ' .. SketchyBar.events[event], ...)
+    return shell.run({ 'sketchybar', '--trigger', SketchyBar.events[event] })
   else
     log.ef("Event not found: %s", event)
   end
@@ -64,7 +65,7 @@ function SketchyBar:setFrontApp(app)
     error('Invalid app name: ' .. tostring(app))
   end
 
-  return shell.run("sketchybar --set front_app label='%s'", app)
+  shell.run({ 'sketchybar', '--set', 'front_app', 'label='..app })
 end
 
 --
@@ -78,7 +79,12 @@ function SketchyBar:setSpaceLabel(space, label)
     error('Missing parameter #1 (space index)')
   end
 
-  return shell.run('sketchybar --set "space.%d" icon="%s"', space, strings.ifEmpty(label, space))
+  local space_str = tostring(space)
+
+  local space_arg = shell.fmt('space.%d', space)
+  local icon_arg = shell.kv('icon', strings.ifEmpty(label, space_str))
+
+  return shell.run({ 'sketchybar', '--set', space_arg, icon_arg }) --[[@as string]]
 end
 
 
@@ -110,13 +116,13 @@ function SketchyBar:onSpaceEnvChange(space)
     sym = symbols.toText(layout_icons.cols)
   end
 
-  label = strings.fmt('label="%s %d"', sym, count)
-  icon  = strings.fmt('icon="%s"', strings.ifEmpty(space.label, space.index))
+  local space_str = tostring(space)
 
-  -- For some reason the shell module eats icons and/or text. Using popen is more reliable
-  io.popen(strings.fmt('sketchybar --set "space.%d" %s %s', space.index, label, icon))
+  local space_arg = shell.fmt('space.%d', space)
+  local icon_arg  = shell.kv('icon', strings.ifEmpty(label, space_str))
+  local label_arg = shell.kv('label', shell.fmt('"%s %d"', { sym, count }))
 
-  -- return self:setSpaceIcon(space.index, strings.fmt('%s %d', icon, count))  
+  shell.run({ 'sketchybar', '--set', space_arg, label_arg, icon_arg })
 end
 
 

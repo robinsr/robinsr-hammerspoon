@@ -13,6 +13,8 @@ local types       = require 'user.lua.lib.typecheck'
 local tables      = require 'user.lua.lib.table'
 local logr        = require 'user.lua.util.logger'
 
+local qt = sh.quote
+
 
 local log = logr.new('Yabai', 'debug')
 
@@ -51,12 +53,8 @@ end
 --
 ---@return Yabai.Rule[]
 function Yabai:getRules()
-  local rules, err = sh.runt('yabai -m rule --list')
+  local rules = sh.run('yabai -m rule --list', sh.JSON)
 
-  if types.notNil(err) then
-    log.e(err)
-    return {}
-  end
 
   ---@cast rules Yabai.Rule[]
   return rules
@@ -71,7 +69,7 @@ function Yabai:removeRule()
 end
 
 function Yabai:setConfig(propname, propval)
-  sh.run('yabai -m config %s %s', propname, sh.argEsc(propval))
+  sh.run({ 'yabai','-m','config', propname, qt(propval) })
 end
 
 --
@@ -98,11 +96,11 @@ function Yabai:shiftWindow(windowId, start, span, gridrows, gridcols)
 
   local gridargs = { gridrows or 1, gridcols or 3, start.x, start.y, span.x, span.y }
 
-  local cmd = strings.fmt('yabai -m window %s --grid %s', windowId, strings.join(gridargs, ':'))
+  local yargs = { 'yabai', '-m', 'window', windowId, '--grid', strings.join(gridargs, ':') }
 
-  log.f('Yabai#shiftWindow: %s', cmd)
+  log.f('Yabai#shiftWindow: %s', sh.join(yargs))
 
-  sh.run(cmd)
+  sh.run(yargs)
 end
 
 
@@ -113,7 +111,9 @@ end
 ---@return Yabai.Window
 function Yabai:getWindow(windowId)
   if types.isString(windowId) or types.isNum(windowId) then
-    return sh.runt('yabai -m query --windows --window %s', tostring(windowId)) --[[@as Yabai.Window]]
+    local result = sh.run({ 'yabai', '-m', 'query', '--windows', '--window', windowId }, sh.JSON)
+    
+    return result--[[@as Yabai.Window]]
   end
 
   error('Invalid window id: ' .. tostring(windowId))
@@ -129,7 +129,7 @@ function Yabai:scratchWindow(windowId)
   local windowId = params.default(windowId, desktop.activeWindow)
 
   if windowId ~= nil then
-    sh.run('yabai -m window %s --scratchpad %s', windowId, 'hs-scratch')
+    sh.run({ 'yabai', '-m', 'window', windowId, '--scratchpad', 'hs-scratch' })
   end
 end
 
@@ -142,7 +142,7 @@ function Yabai:descratchWindow(id)
   local windowId = params.default(id, desktop.activeWindow)
 
   if windowId ~= nil then
-    sh.run('yabai -m window %s --scratchpad', windowId)
+    sh.run({ 'yabai', '-m', 'window', windowId, '--scratchpad' })
   end
 end
 
@@ -153,18 +153,6 @@ function Yabai:floatActiveWindow()
   log.inspect{ 'Yabai Rules:', rules }
 
   local active = hs.window.focusedWindow()
-
-  -- if (active ~= nil) then
-  --   active:title()
-  -- end
-
-  -- local app = option.ofNil(active:application())
-  
-  -- local title
-  -- if (app:ispresent()) then
-  --   title = app:get():title()
-  -- end
-
   local title = active:title()
   local id = active:id()
 
@@ -181,7 +169,7 @@ end
 ---@return Yabai.Space
 function Yabai:getSpace(selector)
   local space = params.default(selector, 'mouse')
-  local tbl, err = sh.runt("yabai -m query --spaces --space %s", tostring(space))
+  local tbl, err = sh.run({ 'yabai', '-m', 'query', '--spaces', '--space', space }, sh.JSON)
 
   if (tbl ~= nil) then
     return tbl --[[@as Yabai.Space]]
@@ -197,7 +185,9 @@ end
 ---@return string
 function Yabai:setSpaceLabel(space, label)
   log.df("Setting label for space [%s] to [ %s ]", tostring(space), label)
-  return sh.run("yabai -m space %s --label %s", tostring(space), label)
+  local out, result = sh.run({ 'yabai', '-m', 'space', space, '--label', label })
+
+  return out --[[@as string]]
 end
 
 
@@ -208,10 +198,10 @@ end
 ---@return string
 function Yabai:getLayout(num)
   local space = params.default(num, 'mouse')
-  local layout = sh.run("yabai -m config --space %s layout", tostring(space))
+  local layout = sh.run({ 'yabai', '-m', 'config', '--space', space, 'layout' })
   log.df("Current yabai layout: [%s]", layout)
 
-  return layout
+  return layout --[[@as string]]
 end
 
 
@@ -223,10 +213,12 @@ end
 ---@return string
 function Yabai:setLayout(layout, selector)
   local space = params.default(selector, 'mouse')
-  local layout = sh.run("yabai -m space %s --layout %s", tostring(space), layout)
-  log.df("Setting layout for space [%s] to [%s]", tostring(space), layout)
+  
+  log.df("Setting layout for space [%q] to [%s]", space, layout)
+  
+  local layout = sh.run({ 'yabai', '-m', 'space', space, '--layout', layout })
 
-  return layout
+  return layout --[[@as string]]
 end
 
 

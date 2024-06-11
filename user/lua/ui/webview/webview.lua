@@ -1,17 +1,18 @@
-local hsweb    = require 'hs.webview'
-local lustache = require 'lustache'
+local etlua    = require 'etlua'
 local plpath   = require 'pl.path'
 local plfile   = require 'pl.file'
+local plseq    = require 'pl.seq'
+local pltabl   = require 'pl.tablex'
 local alert    = require 'user.lua.interface.alert'
 local desk     = require 'user.lua.interface.desktop'
 local lists    = require 'user.lua.lib.list'
+local params   = require 'user.lua.lib.params'
 local paths    = require 'user.lua.lib.path'
 local scan     = require 'user.lua.lib.scan'
 local strings  = require 'user.lua.lib.string'
 local tables   = require 'user.lua.lib.table'
 local types    = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
-
 
 local listdir  = scan.listdir
 local format   = strings.fmt
@@ -22,11 +23,40 @@ local TMPL_DIR = paths.join(MOD_NAME, '..', 'templates')
 
 local log = logr.new('webview', 'debug')
 
-local templates = {}
+local FADE_TIME = alert.timing.FAST
 
-local partials = {
-  doeswork = "<p>Does this work: <strong>{{val}}</strong></p>"
+local renderers = {}
+local template_cache = {}
+
+local conf = {}
+
+conf.base_model = {
+  title = 'KS Webview',
+  stylesheet = "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.lime.min.css",
+  css = {
+    plpath.join(TMPL_DIR, 'pico-adjust.css'),
+  },
+  _strings = strings,
+  _lists = lists,
+  _tables = tables,
+  _entries = pltabl.sort,
+  _inspect = function(item) return hs.inspect(item) end,
+  _load = function(filepath)
+    return plfile.read(filepath) or ""
+  end,
 }
+
+conf.webview = {
+  developerExtrasEnabled = true,
+}
+
+--
+-- Merges viewmodels into one table
+--
+---@return table
+local function merge_models(...)
+  return tables.merge({}, conf.base_model, table.unpack({...}))
+end
 
 
 ---@return string
@@ -35,14 +65,32 @@ local function fetchTemplate(filepath)
 end
 
 
+---@return hs.webview
+local function new_webview()
+  local win_dimensions = desk.getScreen('active'):frame():scale({ w = 0.50, h = 0.90 })
+
+  local view = hs.webview.new(win_dimensions, conf.webview) --[[@as hs.webview]]
+
+  view:windowStyle({ "borderless", "closable", "utility" })
+  -- view:windowStyle("closable")
+  view:transparent(true)
+  view:darkMode(false)
+  view:closeOnEscape(true)
+  view:allowGestures(true)
+  view:allowTextEntry(true)
+
+  return view
+end
+
+
 local function loadAll()
   log.f('Using template dir [%s]', TMPL_DIR)
 
-  local files = listdir(TMPL_DIR, 'mustache')
+  local files = listdir(TMPL_DIR, 'etlua')
 
   local tmpls = lists(files):reduce({}, function(memo, filepath)
     return tables.merge(memo, { 
-      [plpath.basename(filepath)] = fetchTemplate(filepath)
+      [plpath.basename(filepath)] = etlua.compile(fetchTemplate(filepath))
     })
   end)
 
@@ -54,47 +102,65 @@ end
 
 ---@param template string
 ---@param viewmodel table
-local function renderCached(template, viewmodel)
-  if tables.isEmpty(templates) then loadAll() end
+function renderers.cached(template, viewmodel)
+  if tables.isEmpty(template_cache) then loadAll() end
 
-  local tmpl_key = format('%s.mustache', template)
+  local tmpl_key = format('%s.etlua', template)
 
-  if tables.has(templates, tmpl_key) then
-    return lustache:render(templates[tmpl_key], viewmodel, partials)
+  if tables.has(template_cache, tmpl_key) then
+    return template_cache[tmpl_key](viewmodel)
   else
     error(format('No template for name [%s]', template))
   end
 end
 
 
----@param template string
+-- Renders a etlua template at the specified path. The following are valid for `filepath`
+-- - basename, eg 'mytemplate'
+-- - base + extension, eg 'mytemplate.etlua'
+-- - full absolute path, eg `/YUsers/bob/whatever/mytemplate.etlua'
+--
+---@param filepath string
 ---@param viewmodel table
-local function renderFile(template, viewmodel)
-  local filepath = plpath.join(TMPL_DIR, template .. '.mustache')
+function renderers.file(filepath, viewmodel)
+  params.assert.string(filepath, 1)
+
+  if not filepath:match('^.*%.etlua$') then
+    filepath = filepath .. '.etlua'
+  end
+
+  if not plpath.isabs(filepath) then
+    filepath = plpath.join(TMPL_DIR, filepath)
+  end
   
   if plpath.exists(filepath) then
-    return lustache:render(fetchTemplate(filepath), viewmodel, partials)
+    log.i('Compiling template file: ', filepath)
+
+    local template = etlua.compile(fetchTemplate(filepath))
+
+    if template == nil then
+      error('Error compiling template: ' .. filepath)
+    end
+
+    return template(viewmodel)
   else
     error(format('No template found at path: %s', filepath))
   end
 end
 
 
----@param template string
+-- Renders `template` as the content portion of base.etlua
+--
+---@param template string 
 ---@param viewmodel table
-local function renderPage(template, viewmodel)
-  return renderFile('base', { 
-    title = 'KS Webview',
-    content = renderFile(template, viewmodel)
-  })
+function renderers.page(template, viewmodel)
+  local content = renderers.file(template, merge_models(viewmodel))
+
+  return renderers.file('base', merge_models(viewmodel, {
+    content = content
+  }))
 end
 
-
-local WEBVIEW_OPTS = {
-  developerExtrasEnabled = true,
-}
-
-local FADE_TIME = alert.timing.FAST
 
 
 local Webview = {}
@@ -103,72 +169,57 @@ local Webview = {}
 Webview.current = nil
 
 
----@param title string
+--
+--
 ---@param template string
----@param viewmodel table
-function Webview.show(title, template, viewmodel)
+---@param viewmodel? table
+---@param title? string
+function Webview.page(template, viewmodel, title)
 
   if types.notNil(Webview.current) then
     Webview.current = Webview.current:delete(true, FADE_TIME)
     return
   end
 
-  local win_dimensions = desk.getScreen('active'):frame():scale({ w = 0.50, h = 0.90 })
-  
+  viewmodel = viewmodel or {}
+  title = title or conf.base_model.title
 
   ---@type hs.webview
-  local view = hsweb.new(win_dimensions, WEBVIEW_OPTS)
+  local view = new_webview()
 
-  view:html(renderPage(template, viewmodel))
-  view:windowStyle({ "borderless", "closable", "utility" })
-  view:darkMode(true)
-  view:closeOnEscape(true)
-  view:allowGestures(true)
-  view:allowTextEntry(true)
   view:windowTitle(title)
+  view:html(renderers.page(template, viewmodel))
   view:show(FADE_TIME)
 
   Webview.current = view
 end
 
+--
+--
+---@param file string
+---@param viewmodel? table
+---@param title? string
+function Webview.file(file, viewmodel, title)
+  if types.notNil(Webview.current) then
+    Webview.current = Webview.current:delete(true, FADE_TIME)
+    return
+  end
 
-Webview.cmds = {
-  {
-    id = 'KS.webview.test',
-    title = "Test Webview Alert",
-    key = "F",
-    mods = "bar",
-    exec = function()
+  viewmodel = viewmodel or {}
+  title = title or conf.base_model.title
 
-      local title = 'Testing HS Webview...'
-      local template = 'content'
-      local model = {
-        name = 'PooPoo McGillicutty',
-        val = function()
-          return "It sure will!"
-        end,
-        date = function(m)
-          log.inspect('model args: ', m, logr.d3)
-          return os.date("%A, %m %B %Y")
-        end,
-        namedate = function(m)
-          return strings.join({ m.name, m.date() }, ' ')
-        end,
-        bolddate = function(text, render)
-          log.inspect('bolddate args:', text, render)
-          return strings.join{ '<b>', render(text),'</b>' }
-        end
-      }
+  ---@type hs.webview
+  local view = new_webview()
 
-      log.i('Testing HS Webview...')
+  view:windowTitle(title)
+  view:html(renderers.file(file, viewmodel))
+  view:show(FADE_TIME)
 
-      Webview.show(title, template, model)
-    end,
-  },
-}
-
+  Webview.current = view
+end
 
 return Webview
+
 
 --[[
 Window Behaviors

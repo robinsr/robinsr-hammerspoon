@@ -1,18 +1,14 @@
-local luaglob  = require 'glob'
-local lustache = require 'lustache'
-local penstr   = require 'pl.stringx'
-local pretty   = require 'pl.pretty'
-local pldir    = require 'pl.dir'
-local plpath   = require 'pl.path'
-local plutils  = require 'pl.utils'
-local types    = require 'user.lua.lib.typecheck'
-local lists    = require 'user.lua.lib.list'
-local params   = require 'user.lua.lib.params'
+local regex      = require 'rex_pcre'
+local lustache   = require 'lustache'
+local plstring   = require 'pl.stringx'
+local pretty     = require 'pl.pretty'
+local pldir      = require 'pl.dir'
+local plpath     = require 'pl.path'
+local plutils    = require 'pl.utils'
+local types      = require 'user.lua.lib.typecheck'
+local lists      = require 'user.lua.lib.list'
 
-local regex = require 'rex_pcre'
-
-local inspect = require('inspect')
-
+---@module 'lib.string'
 local strings = {}
 
 local function assert_string(str, num)
@@ -28,14 +24,27 @@ end
 ---@param str string Untrimmed input string
 ---@return string The trimmed string
 function strings.trim(str)
-  return penstr.strip(str)
+  return plstring.strip(str)
 end
 
+
+--
+-- Shorten a string to a specified length
+--
+---@param str string
+---@param len integer 
+---@return string
 function strings.truncate(str, len)
-  return penstr.shorten(str, len)
+  return plstring.shorten(str, len)
 end
 
 
+--
+-- Guaranteed string returned
+--
+---@param str string|nil
+---@param replace string
+---@return string
 function strings.ifEmpty(str, replace)
   if (types.isNil(str) or not types.isString(str)) then
     return tostring(replace or '')
@@ -45,8 +54,9 @@ function strings.ifEmpty(str, replace)
     return tostring(replace)
   end
 
-  return str
+  return str --[[@as string]]
 end
+
 
 --
 -- Builds out a format string with parameters
@@ -196,7 +206,7 @@ end
 ---@param old string String to remove
 ---@param new string String to 
 function strings.replace(str, old, new)
-  return penstr.replace(str, old, new)
+  return plstring.replace(str, old, new)
 end
 
 --

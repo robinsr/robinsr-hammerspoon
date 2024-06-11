@@ -1,5 +1,4 @@
-local watchable   = require "hs.watchable"
-local timer       = require "hs.timer"
+-- local watchable   = require "hs.watchable"
 local BrewService = require 'user.lua.adapters.base.brew-service'
 local logr        = require 'user.lua.util.logger'
 
@@ -14,7 +13,6 @@ ScreenAlert = nil
 
 
 ---@class KittySupremeGlobal
----@field colors KS.Colors
 ---@field commands List
 ---@field boundkeys hs.hotkey[]
 ---@field urlhanders table[]
@@ -23,7 +21,6 @@ ScreenAlert = nil
 
 ---@type KittySupremeGlobal
 KittySupreme = {
-  colors = require('user.lua.ui.color'),
   commands = {},
   boundkeys = {},
   urlhanders = {},
@@ -36,7 +33,7 @@ KittySupreme = {
 }
 
 
-for i,v in ipairs(BrewService:list()) do
+for i,v in ipairs(BrewService.list()) do
   if (KittySupreme.services[v.name] == nil) then
     KittySupreme.services[v.name] = BrewService:new(v.name)
   end

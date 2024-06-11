@@ -1,5 +1,5 @@
 local shell = require 'user.lua.adapters.shell'
-local isCli = require 'user.lua.adapters.base.cli-utility'
+local cli   = require 'user.lua.adapters.base.cli-utility'
 local proto = require 'user.lua.lib.proto'
 
 --[[
@@ -24,7 +24,7 @@ karabiner_cli [OPTION...] positional parameters
 ]]
 
 
----@class KarabinerCLI: CliUtility
+---@class KarabinerCLI
 local Kcli = {}
 
 Kcli._path = "karabiner_cli"
@@ -34,12 +34,17 @@ function Kcli:initialize()
 end
 
 
+--
+--
 function Kcli:getCurrentProfile()
-  return shell.run('karabiner_cli --show-current-profile-name')
+  return shell.run({ 'karabiner_cli', '--show-current-profile-name' })
 end
 
-function Kcli:setCurrentProfile()
-  return shell.run('karabiner_cli --select-profile arg')
+
+--
+--
+function Kcli:setCurrentProfile(profile)
+  return shell.run({ 'karabiner_cli', '--select-profile', profile })
 end
 
-return proto.setProtoOf(Kcli, isCli)
+return Kcli

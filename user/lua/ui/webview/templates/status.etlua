@@ -1,0 +1,54 @@
+<header class="container-fluid">
+  <h1 class="title">
+    <small>
+    <%= title -%>
+    </small>
+  </h1>
+</header>
+
+<hr />
+
+<main class="container-fluid card-grid">
+  <% for key, cmds in _entries(groups) do %>
+    <article>
+      <header>
+        <h3>
+          <small><%= key -%></small>
+        </h3>
+      </header>
+      <table>
+        <% for i, cmd in _entries(cmds) do %>
+          <% if cmd:hasHotkey() then %>
+            <% local hotkey = cmd:getHotkey():toTable() %>
+            <tr>
+              <td>
+                <kbd>
+                  <%= _strings.join(hotkey.symbols, ' ') -%>
+                  <%= hotkey.key -%>
+                </kbd>
+              </td>
+              <td>
+                <%= cmd.title -%>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </table>
+    </article>
+  <% end %>
+</main>
+
+<footer class="container-fluid">
+  <hr />
+  <nav>
+    <ul>
+      <li><strong>Acme Corp</strong></li>
+    </ul>
+    <ul>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Services</a></li>
+      <li><a href="#">Products</a></li>
+    </ul>
+  </nav>
+</footer>
+

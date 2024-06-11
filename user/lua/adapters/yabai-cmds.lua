@@ -1,4 +1,4 @@
-local shell   = require 'user.lua.adapters.shell'
+local sh      = require 'user.lua.adapters.shell'
 local alert   = require 'user.lua.interface.alert'
 local lists   = require 'user.lua.lib.list'
 local option  = require 'user.lua.lib.optional'
@@ -11,15 +11,21 @@ local log = logr.new('yabai-cmd', 'debug')
 local yabai = KittySupreme.services.yabai
 
 local function runAndReturn(cmd, msg)
+  local args = { 'yabai', '-m', table.unpack(sh.split(cmd)) }
+  
   return function(ctx)
-    shell.run(cmd .. ' ' .. shell.IGNORE)
-    return msg or ctx.title or ctx.id
+    local _, result = sh.run(args)
+
+    log.df('cmd "%s" exited with code %q', result.command, result.status)
+
+    return nil
   end
 end
 
 
 local YabaiCmds = {}
 
+---@type CommandConfig[]
 YabaiCmds.cmds = {
   {
     id = 'yabai.service.restart',
@@ -54,6 +60,8 @@ YabaiCmds.cmds = {
       local rules = yabai:getRules()
 
       alert:new(json.tostring(rules)):show(alert.timing.LONG)
+
+      return {}
     end,
   },
   {
@@ -72,63 +80,63 @@ YabaiCmds.cmds = {
     title = 'Focus window above',
     mods = 'modB',
     key = 'up',
-    exec = runAndReturn('yabai -m window --focus north'),
+    exec = runAndReturn('window --focus north'),
   },
   {
     id = 'yabai.focus.south',
     title = 'Focus window below',
     mods = 'modB',
     key = 'down',
-    exec = runAndReturn('yabai -m window --focus south'),
+    exec = runAndReturn('window --focus south'),
   },
   {
     id = 'yabai.focus.east',
     title = 'Focus window right',
     mods = 'modB',
     key = 'right',
-    exec = runAndReturn('yabai -m window --focus east'),
+    exec = runAndReturn('window --focus east'),
   },
   {
     id = 'yabai.focus.west',
     title = 'Focus window left',
     mods = 'modB',
     key = 'left',
-    exec = runAndReturn('yabai -m window --focus west'),
+    exec = runAndReturn('window --focus west'),
   },
   {
     id = 'yabai.space.next',
     title = 'Go to next space (right)',
     mods = 'ctrl',
     key = 'right',
-    exec = runAndReturn('yabai -m space mouse --focus next', ''),
+    exec = runAndReturn('space mouse --focus next'),
   },
   {
     id = 'yabai.space.prev',
     title = 'Go to previous space (left)',
     mods = 'ctrl',
     key = 'left',
-    exec = runAndReturn('yabai -m space mouse --focus prev', ''),
+    exec = runAndReturn('space mouse --focus prev'),
   },
   {
     id = 'yabai.space.rotateWindows',
     title = 'Rotate layout clockwise',
     mods = 'modA',
     key = 'r',
-    exec = runAndReturn('yabai -m space --rotate 90'),
+    exec = runAndReturn('space --rotate 90'),
   },
   {
     id = 'yabai.space.rebalance',
     title = 'Rebalance windows in space',
     mods = 'modA',
     key = 'e',
-    exec = runAndReturn('yabai -m space --balance'),
+    exec = runAndReturn('space --balance'),
   },
   {
     id = 'yabai.Active.toggleFullscreen',
     title = 'Maximize active window',
     mods = 'modA',
     key = 'm',
-    exec = runAndReturn('yabai -m window --toggle zoom-fullscreen'),
+    exec = runAndReturn('window --toggle zoom-fullscreen'),
   },
 }
 

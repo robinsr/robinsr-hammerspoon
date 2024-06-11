@@ -1,0 +1,21 @@
+:root {
+  --pico-font-size: 90%;
+}
+
+[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  --pico-background-color: rgba(255,255,255,0.8)
+}
+
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 2em 2em;
+  grid-auto-flow: row;
+  grid-template-areas:
+    ". . ."
+    ". . ."
+    ". . .";
+}

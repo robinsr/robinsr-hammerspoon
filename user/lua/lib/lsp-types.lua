@@ -14,6 +14,9 @@
   lightuserdata
 ]]
 
+
+---@class Array<T>: { [integer]: T }
+
 ---@class Dict<T>: { [string]: T }
 
 ---@class Record<N, T>: { [N]: T }
@@ -26,6 +29,9 @@
 
 ---@generic T: any
 ---@alias PredicateFn fun(item: T, index: integer): boolean
+
+---@generic T: any
+---@alias CategoryFn fun(item: T, index: integer): string
 
 
 ---@generic I: any Input type

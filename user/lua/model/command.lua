@@ -15,6 +15,7 @@ local log = logr.new('Command', 'info')
 ---@class CommandConfig<T>
 ---@field id string             - Unique string to identify command
 ---@field exec ExecFn           - A callback function for the command, optionally returning an alert string
+---@field module string         - source module of the command
 ---@field setup? SetupFn        - (optional) A setup function, the return value passed to fn
 ---@field title? string         - (optional) A title for command
 ---@field icon? hs.image|string - (optional) A icon for the command
@@ -22,6 +23,10 @@ local log = logr.new('Command', 'info')
 ---@field menukey? string       - (optional) A shortcut key for use in the KS menubar menu
 ---@field mods? string          - (optional) A mods group for the hotkey binding
 ---@field url? string           - (optional) A hammerspoon url to bind to
+
+
+---@class NextAction
+---@field message? string
 
 ---@alias ExecFn<T> fun(cmd: Command, ctx: T, params: table): string|nil
 
@@ -68,6 +73,18 @@ function Command:new(config)
   return proto.setProtoOf(this, Command) --[[@as Command]]
 end
 
+function Command:getGroup(num)
+  if (num == nil or num <= 1) then
+    return self.id:match('^(%w+)%.%w+%.%w+$')
+  end
+
+  if (num == nil or num == 2) then
+    return self.id:match('^%w+%.(%w+)%.%w+$')
+  end
+
+  return ''
+end
+
 
 function Command:getMenuSection()
   return strings.split(self.id, ".")[1]
@@ -87,6 +104,16 @@ function Command:getMenuIcon()
   end)
 
   return ok and img or icons.menuIcon('info') --[[@as hs.image]]
+end
+
+
+--
+--
+--
+---@return string
+function Command:hotkeyLabel()
+  local prefix = self:hasHotkey() and self:getHotkey():label() or ''
+  return strings.join({ prefix, ': ', self.title })
 end
 
 
@@ -116,22 +143,22 @@ function Command:invoke(from, params)
   ---@type CommandCtx
   local ctx = tables.merge({}, self.context, { trigger = from })
 
-  local ok, msg = pcall(function()
+  local ok, post_msg = pcall(function()
     if types.is_not.func(self.exec) then
       error(strings.fmt('No exec function on command "%s"', self.id))
     end
 
-    return self.exec(self, ctx, params or {})
+    return self.exec(self, ctx, params or {}) --[[@as string]]
   end)
 
   if not ok then
-    log.ef('Error while executing command "%s" - %s', self.id, msg)
-    error(msg)
+    log.ef('Error while executing command "%s" - %s', self.id, post_msg)
+    error(next)
   end
 
   -- todo: command callback alert logic moved up somewhere
-  if types.is_not.empty(msg) then
-    alert:new(msg):show()
+  if (types.notNil(post_msg) and post_msg ~= '') then
+    alert:new(post_msg):show()
   end
 end
 
@@ -149,8 +176,6 @@ end
 -- Binds the command hotkey
 --
 function Command:bindHotkey()
-  local cmd = self
-
   if (not self:hasHotkey()) then
     return
   end
@@ -162,10 +187,13 @@ function Command:bindHotkey()
     self:invoke('hotkey', {})
   end)
 
-  local bind = hs.hotkey.bind(hotkey.mods, hotkey.key, cmd.title, table.unpack(triggers))
+  -- todo, how to configure this
+  local show_message = false
+  local message = show_message and self.title or nil
 
-  log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(cmd.id, 20), label)
+  local bind = hs.hotkey.bind(hotkey.mods, hotkey.key, message, table.unpack(triggers))
 
+  log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(self.id, 20), label)
 end
 
 return Command

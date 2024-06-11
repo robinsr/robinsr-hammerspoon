@@ -40,8 +40,9 @@ local command_list = {
     icon = "reload",
     key = "W",
     mods = "bar",
-    exec = function()
+    exec = function(cmd)
       delay(0.75, hs.reload)
+      return cmd:hotkeyLabel()
     end,
   },
   {
@@ -50,8 +51,9 @@ local command_list = {
     icon = "reload",
     key = "X",
     mods = "bar",
-    exec = function()
+    exec = function(cmd)
       delay(0.75, hs.relaunch)
+      return cmd:hotkeyLabel()
     end,
   },
   {
@@ -68,14 +70,12 @@ local command_list = {
           ---@cast cmd Command
           cmd:invoke('chooser', {})
         end
-
       end
 
-      local cmdChooser = chooser.new(onCmdChosen)
-        
+      local cmd_chooser = chooser.new(onCmdChosen)
       local not_events_glob = strings.glob(EVT_FILTER)
 
-      cmdChooser:choices(function()
+      cmd_chooser:choices(function()
         return lists(KittySupreme.commands)
           :filter(function(cmd) return not_events_glob(cmd.id) end)
           :map(function(cmd)
@@ -88,9 +88,9 @@ local command_list = {
           :values()
       end)
 
-      cmdChooser:searchSubText(true)
+      cmd_chooser:searchSubText(true)
 
-      return { chooser = cmdChooser }
+      return { chooser = cmd_chooser }
     end,
     exec = function(cmd, ctx, params)
       ctx.chooser:refreshChoicesCallback()
@@ -108,10 +108,13 @@ local function scanForCmds()
   local mods = scan.loaddir(rootdir, 'user.lua')
 
   local commands = {}
-  for file, mod in pairs(mods) do
-    if (types.isTable(mod) and tables.has(mod, 'cmds')) then
-      for i, cmd in ipairs(mod.cmds) do
-        table.insert(commands, cmd)
+  for module, exports in pairs(mods) do
+
+    print(hs.inspect(module))
+
+    if (types.isTable(exports) and tables.has(exports, 'cmds')) then
+      for i, cmd in ipairs(exports.cmds) do
+        table.insert(commands, tables.merge({}, cmd, { module = module }))
       end
     end
   end

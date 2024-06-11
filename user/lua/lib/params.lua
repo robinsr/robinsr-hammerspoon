@@ -16,6 +16,17 @@ function Params.assert.tabl(tabl, num)
   end
 end
 
+--
+-- Check a function parameter against the isTable typecheck function
+--
+---@param arg any
+---@param num? integer Parameter position
+function Params.assert.string(arg, num)
+  if (not types.isString(arg)) then
+    error(string.format('Parameter #%d is not a string, rather %s', num or 1, type(arg)))
+  end
+end
+
 
 --
 -- Check a function parameter against any typecheck function
@@ -34,9 +45,9 @@ end
 -- Will null-check first param returning second param if nil
 --
 ---@generic V
----@param val V | nil Possible nil value
----@param default V | fun():V The default value to return
----@param allowEmpty? boolean Set true to allow empty strings
+---@param val V|nil           - Possible nil value
+---@param default V|fun():V   - The default or a default supplier function
+---@param allowEmpty? boolean - Set true to accept empty strings as valid
 ---@return V
 function Params.default(val, default, allowEmpty)
   local useDefault = types.is.Nil(val)
@@ -55,6 +66,9 @@ function Params.default(val, default, allowEmpty)
 
   return val
 end
+
+Params.fallback = Params.default
+Params.orUse = Params.default
 
 --
 -- Does a spread operation
