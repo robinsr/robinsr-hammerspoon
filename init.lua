@@ -9,9 +9,10 @@ local log = logger.new('user:init', 'debug')
 log.i("Starting...")
 
 local console = require 'user.lua.interface.console'
+local desk    = require 'user.lua.interface.desktop'
 
 console.configureHSConsole()
-console.setDarkMode(true)
+console.setDarkMode(desk.darkMode())
 
 local KS = require 'user.lua.state'
 
@@ -33,12 +34,12 @@ require('user.lua.interface.menubar').install()
 
 log.i('Running onLoad commands')
 
-onLoad = KS.commands:first(function(cmd)
+local post_loaded_cmd = KS.commands:first(function(cmd)
   return cmd.id == "ks.evt.onLoad"
 end)
 
-if onLoad then
-  local loadCmdOK, loadCmd = pcall(function() onLoad.exec('load', {}) end)
+if post_loaded_cmd then
+  local loadCmdOK, loadCmd = pcall(function() post_loaded_cmd:exec('load', {}) end)
 
   if (not loadCmdOK) then
     log.e('Onload error')
@@ -50,11 +51,14 @@ log.i('Init complete')
 
 ---@type hs.distributednotifications|nil
 local nsDistNotes = hs.distributednotifications.new(function(name, object, userInfo)
+  print('[distributednotifications] ...')
   print(string.format("name: %s\nobject: %s\nuserInfo: %s\n", name, object, hs.inspect(userInfo)))
 end)
 if (nsDistNotes ~= nil) then
   nsDistNotes:start()
 end
+
+
 
 
 --- init_d app container WIP

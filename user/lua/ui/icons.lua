@@ -27,8 +27,8 @@ local icon_aliases = tables{
 --
 -- Preconfigured SF Symbol code points, see symbols.lua for more
 --
----@module 'ui.icons'
-local icons = {
+---@type Hash<string, hs.image>
+local static_icons = tables{
   kitty      = symbols.toIcon("cat", 12, colors.black),
   info       = symbols.toIcon("info.circle", 13, colors.disabled),
   tag        = symbols.toIcon("tag", 13, colors.black),
@@ -46,13 +46,34 @@ local icons = {
 }
 
 
+---@type Table
+local key_symbols = tables{
+  cmd   = "⌘",
+  ctrl  = "⌃",
+  alt   = "⌥",
+  shift = "⇧",
+  right = '→',
+  left = '←',
+  up = '↑',
+  down = '↓',
+}
+
+
+
+---@module 'ui.icons'
+local Ico = {}
+Ico.static = static_icons
+Ico.keys = key_symbols
+Ico.replace = utf8.char(0xFFFD)
+
+
 --
 -- Returns template hs.image to use in menubars
 --
 ---@param icon string
 ---@param hscolor? HS.Color
 ---@return hs.image
-function icons.menuIcon(icon, hscolor)
+function Ico.menuIcon(icon, hscolor)
 
   local cp = 'questionmark'
 
@@ -76,4 +97,4 @@ function icons.menuIcon(icon, hscolor)
   return img
 end
 
-return icons
+return Ico

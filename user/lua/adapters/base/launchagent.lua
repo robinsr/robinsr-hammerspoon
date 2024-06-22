@@ -7,7 +7,6 @@ local data    = require 'pl.data'
 
 local log = logr.new('LaunchAgent', 'info')
 
-local PROC_UID = nil
 
 ---@class LaunchAgent: Service
 local LaunchAgent = {}
@@ -49,18 +48,44 @@ end
 
 
 ---@return ServiceStatus
-function LaunchAgent.query(label)
-  local qs = strings.fmt('* where label == "%s"', label)
+function LaunchAgent.queryStatus(label)
+  local qs = strings.fmt('pid where label == "%s"', label)
 
   local listing = LaunchAgent.list()
 
+  
+
   local proc = listing:copy_select(qs)
+
+  print(qs)
+  print(hs.inspect(proc))
 
   if (proc ~= nil and proc.pid) then
     return Service.STATUS.running
   else
     return Service.STATUS.not_running
   end
+end
+
+
+---@class LaunchctlListItem
+---@field pid integer
+---@field exit integer
+---@field label string
+
+
+---@return LaunchctlListItem?
+function LaunchAgent.query(label)
+  local qs = strings.fmt('* where label == "%s"', label)
+
+  local listing = LaunchAgent.list()
+
+  local proc = listing:copy_select(qs) --[[@as LaunchctlListItem]]
+
+  print(qs)
+  print(hs.inspect(proc))
+
+  return proc
 end
 
 
@@ -71,28 +96,21 @@ end
 ---@param servicename string The name the services uses within launchctl
 ---@return LaunchAgent
 function LaunchAgent:new(name, servicename)
+  local uid = LaunchAgent:getUID()
 
   ---@class LaunchAgent
   local this = Service.new(self == LaunchAgent and {} or self, name)
 
   this.service_name = servicename
-
+  this.domain_target = strings.fmt('gui/%s', uid)
+  this.service_target = strings.fmt('gui/%s/%s', uid, this.service_name)
 
   local status = LaunchAgent.query(servicename)
 
-  if (status == Service.STATUS.running) then
-    local uid = LaunchAgent:getUID()
-
-    this.domain_target = strings.fmt('gui/%s', uid)
-    this.service_target = strings.fmt('gui/%s/%s', uid, this.service_name)
-
-    local stdout, result = shell.run({ 'launchctl', 'print', this.service_target })
-
-    if (result.status == 0) then
-      ---@cast stdout string
-      this.plistfile = stdout:match("path%s=%s([^%s]*)")
-      this.pid = stdout:match("pid%s=%s([^%s]*)")
-    end
+  print(hs.inspect(status))
+  
+  if (status and status.pid) then
+    this.pid = status.pid
   end
 
   return proto.setProtoOf(this, LaunchAgent)
@@ -132,24 +150,16 @@ end
 
 ---@return ServiceStatus
 function LaunchAgent:status(name)
-  local ok, services = pcall(function()
-    return LaunchAgent.list()
-  end)
+  local proc = LaunchAgent.query(self.service_name)
+  
+  if (proc and proc.pid) then
+    self.pid = proc.pid
 
-  if not ok then
-    error("Failed to get status of "..self.service_name)
-  end
-
-  if services ~= nil then
-    local proc = services:copy_select(strings.fmt('* where label == "%s"'))
-
-    if (proc ~= nil and proc.pid) then
-      return Service.STATUS.running
-    end
+    return Service.STATUS.running
   end
 
   return Service.STATUS.not_running
 end
 
 
-return LaunchAgent
+return proto.setProtoOf(LaunchAgent, Service)

@@ -68,14 +68,13 @@ function BrewService:new(name)
   ---@class BrewService
   local this = Service.new(self == BrewService and {} or self, name)
 
-  local exec = sh.run({ 'brew', 'services', 'info', name, '--json' }, { json = true })
+  local exec = sh.result({ 'brew', 'services', 'info', name, '--json' })
 
   if (exec == nil) then
-    log.ef("Error retrieving brew service [%s]", name)
+    error("Error retrieving brew service [" .. name .. "]")
   end
 
-  ---@cast exec BrewCLI.Service[]
-  local brewinfo = exec[1] 
+  local brewinfo = exec:jq('.[0]'):json() --[[@as BrewCLI.Service]]
 
   ---@cast brewinfo -nil
   this.service_name = brewinfo.service_name or 'unknown'
@@ -84,24 +83,25 @@ function BrewService:new(name)
   this.pid = brewinfo.pid
   this.plist = brewinfo.file
 
+  log.i(hs.inspect(exec), hs.inspect(this))
+
   return proto.setProtoOf(this, BrewService, { locked = true })
 end
 
 function BrewService:start()
-  return sh.run({ 'brew', 'service', 'start', self.name })
+  return sh.result({ 'brew', 'services', 'start', self.name }).code
 end
 
 function BrewService:stop()
-  return sh.run({ 'brew', 'services', 'stop', self.name })
+  return sh.result({ 'brew', 'services', 'stop', self.name }).code
 end
 
 function BrewService:restart()
-  return sh.run({ 'brew', 'services', 'restart', self.name })
+  return sh.result({ 'brew', 'services', 'restart', self.name }).code
 end
-
 
 function BrewService:status()
-  return sh.run({ 'brew', 'services', 'info', self.name, '--json' })
+  return sh.result({ 'brew', 'services', 'info', self.name, '--json' }):jq('.[0]'):table():get('pid')
 end
 
-return BrewService
+return proto.setProtoOf(BrewService, Service)

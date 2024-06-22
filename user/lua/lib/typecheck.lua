@@ -1,7 +1,8 @@
+---@module 'lib.types'
 local tc = {}
 
 
----@alias TypeCheckFn fun(i any|nil): boolean
+---@alias TypeCheckFn fun(item: any): boolean
 
 
 -- A very explicit null check for my sanity
@@ -65,6 +66,18 @@ end
 ---@return boolean true when param is boolean false
 function tc.isEmpty(i)
   if (i == '') then return true else return false end
+end
+
+
+-- Checks if a string represents a true value (only "true" == true) (whitespace permitted)
+---@param i any|nil Possibly a nil value
+---@return boolean true when param is "true"
+function tc.tobool(str)
+  if tostring(str):match("^%s*true%s*$") then
+    return true
+  else
+    return false
+  end
 end
 
 

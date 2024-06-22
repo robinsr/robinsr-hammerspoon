@@ -6,6 +6,7 @@
   "Lua.workspace.library": [
     "${3rd}/lfs/library",
     "./Spoons",
-    "/opt/homebrew/share/lua/5.4"
+    "/opt/homebrew/share/lua/5.4",
+    "/opt/homebrew/share/lua/5.4/addons",
   ]
 }

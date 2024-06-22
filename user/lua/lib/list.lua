@@ -298,8 +298,6 @@ function List:flatten()
     end
   end
 
-  -- print(pretty.write({ self.items, flatd }))
-
   return create({}, flatd)
 end
 

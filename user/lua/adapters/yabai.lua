@@ -15,7 +15,6 @@ local logr        = require 'user.lua.util.logger'
 
 local qt = sh.quote
 
-
 local log = logr.new('Yabai', 'debug')
 
 
@@ -39,12 +38,54 @@ function Yabai:new()
 end
 
 
+function Yabai:start()
+  return sh.result({ 'yabai', '--start-service' }).code
+end
+
+function Yabai:stop()
+  return sh.result({ 'yabai', '--stop-service' }).code
+end
+
+function Yabai:restart()
+  return sh.result({ 'yabai', '--restart-service' }).code
+end
+
+
 ---@param evt HS.SystemEvent
 function Yabai:onEnvChange(evt)
   -- lists(tables.vals(hs.caffeinate.watcher)):filter(types.isNum)
-  if (evt == system.sysevents[evt]) then
-    
+  -- if (evt == system.sysevents[evt]) then
+  -- end
+end
+
+
+function Yabai:message(args, msg)
+  local args = { 'yabai', '-m', table.unpack(sh.split(args)) }
+  
+  return function(cmd, ctx)
+    local result = sh.result(args)
+    log.df('Yabai cmd "%s" exited with code %q', result.command, result.status or 'none')
+    return msg
   end
+end
+
+
+--
+-- TODO - WIP
+--
+function Yabai:suggest()
+
+  local screens = lists(desktop.screens())
+
+  local has_external   = screens:any(function(screen) return screen:frame().w > 2000 end)
+  local has_laptop     = screens:any(function(screen) return screen:frame().w < 2000 end)
+  local borders_active = LaunchAgent.query('homebrew.mxcl.borders') ~= nil
+
+  
+  if has_external then
+    return { layout = 'bsp' }
+  end
+
 end
 
 
@@ -53,15 +94,27 @@ end
 --
 ---@return Yabai.Rule[]
 function Yabai:getRules()
-  local rules = sh.run('yabai -m rule --list', sh.JSON)
-
-
+  local rules = sh.result('yabai -m rule --list'):json()
+  
   ---@cast rules Yabai.Rule[]
   return rules
 end
 
+
+--
+-- TODO - WIP
+--
 function Yabai:addRule()
   error('not implemented')
+  
+  local rule_args = { 'yabai', '-m', 'rule', '--add', 'app="^Calculator$"', 'manage=off' }
+  local rule_tmpl = 'yabai -m rule --add app="<%= app %>" manage=<%= off %>'
+
+  local rule_tmpl_vars = {
+    app = '^Calculator$',
+    manage = 'off'
+  }
+
 end
 
 function Yabai:removeRule()

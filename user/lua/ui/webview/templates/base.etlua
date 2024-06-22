@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title -%></title>
-  <% if stylesheet then %>
-    <link rel="stylesheet" href="<%- stylesheet -%>">
-  <% else %>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/spcss@0.9.0">
+  
+  <% for i, tag in pairs(header_tags or {}) do -%>
+    <%- tag -%>
   <% end %>
-  <% for i, resource in pairs(css) do %>
+  
+  <% for i, resource in pairs(css) do -%>
     <style type="text/css">
       <%- _load(resource) -%>
     </style>
   <% end %>
+
 </head>
 <body>
   <% if content ~= nil then %>
@@ -21,5 +22,37 @@
   <% else %>
     ###CONTENT###
   <% end %>
+
+
+  <% for i, tag in pairs(footer_tags or {}) do -%>
+    <%- tag -%>
+  <% end %>
+
+  <script type="text/javascript">
+    const doKsMsg = (data) => {
+      if (typeof data != 'string') {
+        data = JSON.stringify(data)
+      }
+
+      try { 
+        webkit.messageHandlers.kittysupreme.postMessage(data);
+      } catch(err) {
+        console.log('The controller does not exist yet');
+      }
+    }
+
+    window.addEventListener('keyup', (evt) => {
+      evt.preventDefault()
+      evt.stopPropagation()
+
+      doKsMsg(evt)
+
+      if (evt.key == 'Escape') {
+        doKsMsg('close')
+      }
+    })
+
+    doKsMsg("Hello from webview");
+  </script>
 </body>
 </html>

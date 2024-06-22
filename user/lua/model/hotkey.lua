@@ -4,6 +4,7 @@ local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
+local icons   = require 'user.lua.ui.icons'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('HotKey', 'info')
@@ -15,11 +16,12 @@ local log = logr.new('HotKey', 'info')
 ---@alias EventHandler fun(): any
 
 ---@type Table
-local STD_MODS = tables{
+local preset_mods = tables{
   hyper = { "cmd", "ctrl", "alt", "shift" },
   meh   = { "cmd", "ctrl",        "shift" },
+  ctcmd = { "cmd", "ctrl",                },
   bar   = { "cmd", "ctrl", "alt"          },
-  modA  = {                "alt", "shift" },
+  modA  = {        "ctrl", "alt"          },
   modB  = {        "ctrl", "alt", "shift" },
   shift = {                       "shift" },
   alt   = {                "alt"          },
@@ -27,12 +29,6 @@ local STD_MODS = tables{
   cmd   = { "cmd"                         },
 }
 
-local SYMBOLS = tables{
-  cmd   = "⌘",
-  ctrl  = "⌃",
-  alt   = "⌥",
-  shift = "⇧",
-}
 
 
 ---@class Hotkey
@@ -61,8 +57,8 @@ function Hotkey:new(mods, key, keyevents)
 
   if types.isString(mods) then
     ---@cast mods string
-    if STD_MODS:has(mods) then
-      hotkey.mods = STD_MODS:get(mods) --[[ @as ModKeyname[] ]]
+    if preset_mods:has(mods) then
+      hotkey.mods = preset_mods:get(mods) --[[ @as ModKeyname[] ]]
     else
       error('Unrecognized modifiers: '..mods)
     end
@@ -77,11 +73,16 @@ function Hotkey:new(mods, key, keyevents)
 end
 
 
+local function get_key_symbol(key)
+  return icons.keys:has(key) and icons.keys:get(key) or icons.replace
+end
+
+
 --
 --
 ---@return string[]
 function Hotkey:symbols()
-  return lists(self.mods):map(function(m) return SYMBOLS[m] end):values()
+  return lists(self.mods):map(get_key_symbol):values()
 end
 
 
@@ -89,7 +90,9 @@ end
 --
 ---@return string
 function Hotkey:label()
-  return lists(self:symbols()):push(self.key):join('')
+  local key = icons.keys:get(self.key) or self.key
+
+  return lists(self:symbols()):push(key):join(' ')
 end
 
 
@@ -126,5 +129,5 @@ end
 
 return {
   new = function(...) return Hotkey:new(...) end,
-  MODS = STD_MODS,
+  presets = preset_mods,
 }

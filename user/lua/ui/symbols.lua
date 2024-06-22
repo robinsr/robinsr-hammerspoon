@@ -201,7 +201,6 @@ end
 symbols.toIcon = function(code, textsize, textcolor)
 
   if (not hs.fnutils.every({ code, textsize, textcolor }, types.notNil)) then
-    print(code, textsize, textcolor)
     error("Missing parameters to create icon from symbol", 2)
   end
 

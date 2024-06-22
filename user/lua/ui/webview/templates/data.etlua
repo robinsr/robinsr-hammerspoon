@@ -1,0 +1,34 @@
+<% _insert(header_tags, _script("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js")) -%>
+<% _insert(header_tags, _script("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/lua.min.js")) -%>
+<% _insert(header_tags, _stylesheet("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/stackoverflow-dark.min.css")) -%>
+
+<header class="container-fluid">
+  <h1 class="title">
+    <small>
+    <%= title -%>
+    </small>
+  </h1>
+</header>
+
+<hr />
+
+<main class="container-fluid">
+  <pre><code class="language-json"><%= _json(data) -%></code></pre>
+</main>
+
+<footer class="container-fluid">
+  <hr />
+  <nav>
+    <ul>
+      <li><strong>Acme Corp</strong></li>
+    </ul>
+    <ul>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Services</a></li>
+      <li><a href="#">Products</a></li>
+    </ul>
+  </nav>
+
+  <script>hljs.highlightAll();</script>
+</footer>
+

@@ -1,3 +1,5 @@
+---@meta
+
 --[[
   REFERENCE - Lua-LSP types
 
@@ -18,6 +20,8 @@
 ---@class Array<T>: { [integer]: T }
 
 ---@class Dict<T>: { [string]: T }
+
+---@class Hash<N, T>: Table : { [N]: T }
 
 ---@class Record<N, T>: { [N]: T }
 

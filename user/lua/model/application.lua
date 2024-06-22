@@ -34,15 +34,17 @@ function App.menuItem(item)
   
   o.title = item.AXTitle or '[no title]'
 
-  local mods = item.AXMenuItemCmdModifiers
-  local char = item.AXMenuItemCmdChar
+  local mods = item['AXMenuItemCmdModifiers']
+  local char = item['AXMenuItemCmdChar']
+
+  local hk = hotkey.new(mods, char):toTable()
 
   if (not types.isEmpty(char)) then
-    o.key = char
-    o.mods = mods
-    o.hotkey = hotkey.new(mods, char):toTable()
+    o.hasHotkey = function() return true end
+    o.getHotkey = function() return hk end
   else
-    o.mods = {}
+    o.hasHotkey = function() return false end
+    o.getHotkey = function() return hk end
   end
 
   o.has_children = types.isTable(item.AXChildren) and types.isTable(item.AXChildren[1])

@@ -15,7 +15,7 @@ local log = logr.new('Command', 'info')
 ---@class CommandConfig<T>
 ---@field id string             - Unique string to identify command
 ---@field exec ExecFn           - A callback function for the command, optionally returning an alert string
----@field module string         - source module of the command
+---@field module? string        - source module of the command
 ---@field setup? SetupFn        - (optional) A setup function, the return value passed to fn
 ---@field title? string         - (optional) A title for command
 ---@field icon? hs.image|string - (optional) A icon for the command
@@ -43,11 +43,13 @@ local validate = function(v, msg, ...)
   end
 end
 
+local id_alpha = "[%-%_%w]+"
+local id_pattern =  strings.replace('^X%.X%.X$', 'X', id_alpha)
 
 local valid = {
   id = {
     type  = valua:new().type("string"),
-    match = valua:new().match("^%w+%.%w+%.%w+$")
+    match = valua:new().match(id_pattern)
   }
 }
 
@@ -75,11 +77,11 @@ end
 
 function Command:getGroup(num)
   if (num == nil or num <= 1) then
-    return self.id:match('^(%w+)%.%w+%.%w+$')
+    return self.id:match(strings.replace('^(X)%.X%.X$', 'X', id_alpha))
   end
 
   if (num == nil or num == 2) then
-    return self.id:match('^%w+%.(%w+)%.%w+$')
+    return self.id:match(strings.replace('^X%.(X)%.X$', 'X', id_alpha))
   end
 
   return ''
@@ -145,19 +147,27 @@ function Command:invoke(from, params)
 
   local ok, post_msg = pcall(function()
     if types.is_not.func(self.exec) then
-      error(strings.fmt('No exec function on command "%s"', self.id))
+      error(strings.fmt('No exec function on command "%s"', self.id or 'none'))
     end
 
     return self.exec(self, ctx, params or {}) --[[@as string]]
   end)
 
   if not ok then
-    log.ef('Error while executing command "%s" - %s', self.id, post_msg)
-    error(next)
+    error(strings.fmt('Cmd exec error %q: %s', self.id, post_msg or ''))
+  end
+
+  if types.isNil(post_msg) then
+    return
   end
 
   -- todo: command callback alert logic moved up somewhere
-  if (types.notNil(post_msg) and post_msg ~= '') then
+  if (post_msg == 'default') then
+    alert:fmt('%s: %s', self:getHotkey():label(), self.title):show()
+    return
+  end
+
+  if (post_msg ~= '') then
     alert:new(post_msg):show()
   end
 end

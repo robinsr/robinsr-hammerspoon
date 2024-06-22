@@ -57,6 +57,12 @@ function Alert.new(self, pattern, ...)
 end
 
 
+--
+-- Alias for `Alert.new` (both a format string as first parameter)
+--
+Alert.fmt = Alert.new
+
+
 ---@param style HS.AlertStyle
 ---@return Alert
 function Alert.style(self, style)

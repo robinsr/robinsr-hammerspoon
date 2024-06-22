@@ -1,113 +1,84 @@
-local webview = require 'user.lua.ui.webview'
-
-------------------------------------------------------------------------
---/ Cheatsheet Copycat /--
-------------------------------------------------------------------------
-
-local commandEnum = {
-  [0] = '⌘',
-  [1] = '⇧ ⌘',
-  [2] = '⌥ ⌘',
-  [3] = '⌥ ⇧ ⌘',
-  [4] = '⌃ ⌘',
-  [5] = '⇧ ⌃ ⌘',
-  [6] = '⌃ ⌥ ⌘',
-  [7] = '',
-  [8] = '⌦',
-  [9] = '',
-  [10] = '⌥',
-  [11] = '⌥ ⇧',
-  [12] = '⌃',
-  [13] = '⌃ ⇧',
-  [14] = '⌃ ⌥',
-}
-
-function getAllMenuItemsTable(t)
-  local menu = {}
-  for pos, val in pairs(t) do
-    if (type(val) == "table") then
-      if (val['AXRole'] == "AXMenuBarItem" and type(val['AXChildren']) == "table") then
-        menu[pos] = {}
-        menu[pos]['AXTitle'] = val['AXTitle']
-        menu[pos][1] = getAllMenuItems(val['AXChildren'][1])
-      elseif (val['AXRole'] == "AXMenuItem" and not val['AXChildren']) then
-        if (val['AXMenuItemCmdModifiers'] ~= '0' and val['AXMenuItemCmdChar'] ~= '') then
-          menu[pos] = {}
-          menu[pos]['AXTitle'] = val['AXTitle']
-          menu[pos]['AXMenuItemCmdChar'] = val['AXMenuItemCmdChar']
-          menu[pos]['AXMenuItemCmdModifiers'] = val['AXMenuItemCmdModifiers']
-        end
-      elseif (val['AXRole'] == "AXMenuItem" and type(val['AXChildren']) == "table") then
-        menu[pos] = {}
-        menu[pos][1] = getAllMenuItems(val['AXChildren'][1])
-      end
-    end
-  end
-  return menu
-end
+local lists   = require 'user.lua.lib.list'
+local strings = require 'user.lua.lib.string'
+local appls   = require 'user.lua.model.application'
+local hotkey  = require 'user.lua.model.hotkey'
+local webview = require 'user.lua.ui.webview.webview'
+local icons   = require 'user.lua.ui.icons'
 
 
-local list_partial = [==[
-  {{#has_children}}
-    <ul class='col col {{pos}}>
-      <li class='title'><strong>{{title}}</strong></li>
-      {{>list_partial}}
-    </ul>
-  {{/has_children}}
-  {{^has_children}}
-    <li>
-      <div class='cmdModifiers'>{{mods}}</div></div>{{title}}<div class='cmdtext'>
-    </li>
-  {{/has_children}}
-]==]
+local cheat = {}
 
-function getAllMenuItems(t)
-
-  local template = lustache:render([[
-    <div>
-      {{#items}
-        {{>list_partial}}
-      {{/item}}
-    </div>
-  ]], {}, { list_partial = list_partial })
-
-end
-
-function generateHtml()
-  --local focusedApp= hs.window.frontmostWindow():application()
-  local focusedApp = hs.application.frontmostApplication()
-  local appTitle = focusedApp:title()
-  local allMenuItems = focusedApp:getMenuItems();
-  local myMenuItems = getAllMenuItems(allMenuItems)
-
-  local html = webview.show('Cheatsheet', 'cheatsheet', {})
-end
-
-local myView = nil
-
-local CS = {}
-
-CS.cmds = {
+cheat.cmds = {
   {
-    title = "Show Cheatsheet",
+    id = 'cheatsheet.show.kitty',
+    title = "Show Hotkeys for KittySupreme",
+    key = "\\",
+    mods = "bar",
+    exec = function(cmd)
+      local model = {
+        title = "KittySupreme Hotkeys",
+        mods = hotkey.presets,
+        symbols = icons.keys:values(),
+        groups = KittySupreme.commands:filter(function(cmd) return cmd:hasHotkey() end)
+          :groupBy(function(cmd)
+              local key = (cmd.module or '')
+              :gsub('user%.lua%.', '')
+              :gsub('modules%.', '')
+              :gsub('%.', ' → ')
+
+            return strings.ifEmpty(key, 'Init')
+          end)
+      }
+
+      webview.page("status", model, model.title)
+    end,
+  },
+  {
+    title = "Show Hotkeys for current app",
     id = "cheatsheet.show.active",
     key = "b",
     mods = "bar",
     exec = function(cmd, ctx)
-      if not myView then
-        myView = hs.webview.new({ x = 100, y = 100, w = 1080, h = 600 }, { developerExtrasEnabled = true })
-            :windowStyle("utility")
-            :closeOnEscape(true)
-            :html(generateHtml())
-            :allowGestures(true)
-            :windowTitle("CheatSheets")
-            :show()
-      else
-        myView:delete()
-        myView = nil
-      end
+
+      --local focusedApp= hs.window.frontmostWindow():application()
+      local app = hs.application.frontmostApplication()
+      local title = app:title()
+      
+      local menus = lists(app:getMenuItems()):map(function(m)
+        local item =  appls.menuItem(m)
+
+        local function reduce(memo, child_item)
+          if child_item.has_children then
+            for i,child in ipairs(child_item.children) do
+              reduce(memo, child)
+            end
+          else
+            table.insert(memo, { 
+              title = child_item.title,
+              hasHotkey = child_item.hasHotkey,
+              getHotkey = child_item.hasHotkey,
+            })
+          end
+          return memo
+        end
+
+        return { title = item.title, cmds = reduce({}, item.children) }
+      end):groupBy('title')
+
+
+      print(hs.inspect(menus))
+
+      local model = {
+        title = "Hotkeys for " .. title,
+        mods = hotkey.presets,
+        symbols = icons.keys:values(),
+        groups = menus,
+      }
+
+
+      webview.page("status", model, model.title)
     end
   }
 }
 
-return CS
+return cheat

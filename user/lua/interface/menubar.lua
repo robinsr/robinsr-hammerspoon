@@ -12,13 +12,13 @@ local logr    = require 'user.lua.util.logger'
 
 
 
----@class MenubarItem
+---@class HS.MenubarItem
 ---@field title string
----@field fn? fun(mods: table, thisItem: MenubarItem)
+---@field fn? fun(mods: table, thisItem: HS.MenubarItem)
 ---@field checked? boolean
 ---@field state? 'on'|'off'|'mixed'
 ---@field disabled? boolean
----@field menu? MenubarItem[] 
+---@field menu? HS.MenubarItem[] 
 ---@field image? hs.image
 ---@field tooltip? string
 ---@field shortcut? string
@@ -31,7 +31,7 @@ local logr    = require 'user.lua.util.logger'
 local log = logr.new('menubar', 'info')
 
 
-local ICONS = {
+local service_state_icons = {
   onStateImage = icons.menuIcon('circle.fill', colors.green),
   offStateImage = icons.menuIcon('circle.fill', colors.red),
   mixedStateImage = icons.menuIcon('circle.fill', colors.lightgrey),
@@ -39,18 +39,12 @@ local ICONS = {
 
 local EVT_FILTER = '!*.(evt|event|events).*'
 
----@enum KS.MODS
-local MODS = {
-  alt = '⌥',
-  cmd = '⌘',
-  ctrl = '⌃',
-  fn = 'fn',
-  shift = '⇧',
-}
 
-
+--
+-- Creates a text-only, placeholder-like menu item
+--
 ---@param text string
----@return MenubarItem
+---@return HS.MenubarItem
 local function textMenuItem(text)
   return {
     title = text,
@@ -60,12 +54,40 @@ local function textMenuItem(text)
 end
 
 
+
+--
+-- Creates a HS.MenubarItem for a Command
+--
+---@param cmd Command
+---@return HS.MenubarItem
+local function mapCommand(cmd)
+  local title = cmd.title or cmd.id
+  local subtext = cmd:hasHotkey() and cmd:getHotkey():label() or ''
+
+  ---@type HS.MenubarItem
+  local menuitem = {
+    title = text.textAndHint(title, subtext),
+    shortcut = cmd.menukey,
+    image = cmd:getMenuIcon() or nil,
+    fn = function()
+      cmd:invoke('menu', {})
+    end
+  }
+  
+  return menuitem
+end
+
+
+
+--
+-- Maps a set of `Command` items to `HS.MenubarItem` items.
+--
 ---@param sections string[]
 ---@param cmds Command[]
----@return MenubarItem[]
-local function mapCommands(sections, cmds)
+---@return HS.MenubarItem[]
+local function getMenuitemsForSection(sections, cmds)
 
-  ---@type MenubarItem[]
+  ---@type HS.MenubarItem[]
   return lists(sections):map(function(section)
 
     local section_glob = strings.glob({ section, EVT_FILTER })
@@ -73,22 +95,8 @@ local function mapCommands(sections, cmds)
     log.df("Mapping menubar section %s", section)
 
     return lists(cmds)
-      :filter(function(cmd)
-        return section_glob(cmd.id)
-      end)
-      :map(function(cmd)
-        local title = cmd.title or cmd.id
-        local subtext = cmd:hasHotkey() and cmd:getHotkey():label() or ''
-        
-        return {
-          title = text.textAndHint(title, subtext),
-          shortcut = cmd.menukey,
-          image = cmd:getMenuIcon() or nil,
-          fn = function()
-            cmd:invoke('menu', {})
-          end
-        }
-      end):values()
+      :filter(function(cmd) return section_glob(cmd.id) end)
+      :map(mapCommand):values()
   end):flatten():values()
 end
 
@@ -104,46 +112,54 @@ local function serviceMenuProps(service)
 end
 
 
----@return MenubarItem
+---@return HS.MenubarItem
 local function servicesSubmenu()
   local services = lists(tables.vals(KittySupreme.services))
 
   local menuitems = services:map(function(service)
     local state, text = serviceMenuProps(service)
 
-    local subitems = lists()
+    local subitems = lists({})
 
-    local servicecmds = mapCommands({ service.name .. '.*' }, KittySupreme.commands)
+    local servicecmds = getMenuitemsForSection({ service.name .. '.*' }, KittySupreme.commands)
 
     if (#servicecmds > 0) then
       subitems:concat(servicecmds)
       subitems:push(textMenuItem'-')
     end
 
+    local add_menuitem_for = function(service_fn, fn_name)
+      local menuitem = {}
 
-    subitems:push({ 
-      title = strings.fmt("Start %s", service.name),
-      fn = function() service:start() end,
-    },
-    { 
-      title = strings.fmt("Stop %s", service.name),
-      fn = function()  service:stop() end,
-    },
-    { 
-      title = strings.fmt("Restart %s", service.name),
-      fn = function() service:restart() end
-    })
+      menuitem.title = strings.tfmt("%s %s", fn_name, service.name)
+      menuitem.disabled = true
+      menuitem.fn = function() 
+        log.ef('No method "%s" on service %s', fn_name, service.name)
+      end
+
+      if types.isFunc(service_fn) then
+        menuitem.disabled = false
+        menuitem.fn = function() 
+          log.f('Calling function %s on service %s', fn_name, service.name)
+          service_fn(service)
+        end
+      end
+
+      return menuitem
+    end
+
+    subitems:push(add_menuitem_for(service.start, "start"))
+    subitems:push(add_menuitem_for(service.stop, "stop"))
+    subitems:push(add_menuitem_for(service.restart, "restart"))
 
 
-    ---@type MenubarItem
-    return tables.merge({}, ICONS, {
+    ---@type HS.MenubarItem
+    return tables.merge({}, service_state_icons, {
       title = strings.fmt("%s %s", service.name, text),
       state = state,
       menu = subitems.items,
     })
   end)
-
-  log.inspect(menuitems, { depth = 5 })
 
   return {
     title = "Services",
@@ -168,11 +184,11 @@ function MenuBar.install()
     local menuitems = lists({})
       :push(textMenuItem("Just some text"))
       :push(textMenuItem("-"))
-      :concat(mapCommands({ "spaces.*", "apps.*" }, cmds))
+      :concat(getMenuitemsForSection({ "spaces.space.*", "apps.*" }, cmds))
       :push(textMenuItem("-"))
       :push(servicesSubmenu())
       :push(textMenuItem("-"))
-      :concat(mapCommands({ "ks.commands.*" }, cmds))
+      :concat(getMenuitemsForSection({ "ks.commands.*" }, cmds))
 
     log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
 

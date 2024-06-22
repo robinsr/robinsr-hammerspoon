@@ -19,20 +19,22 @@ end
 
 
 ---@class Table
+---@operator call:Table
 local Table = {}
 
-
 local TablMeta = {}
+
 TablMeta.__index = Table
 
 --
 -- Returns a new table instance
 --
----@operator call:Table
 ---@return Table
-TablMeta.__call = function(t, init)
+ local function create(t, init)
   return setmetatable(init or {}, TablMeta)
 end
+
+TablMeta.__call = function(tabl, init) return create(tabl, init) end
 
 --
 -- Returns a list keys found in `tabl`
@@ -58,7 +60,7 @@ end
 ---@param tabl table
 ---@param strict? boolean Throw error if table is nil
 ---@return any[] list of keys
-function Table.vals(tabl, strict)
+function Table.values(tabl, strict)
   assert_tabl(tabl)
 
   local vals = {}
@@ -69,6 +71,9 @@ function Table.vals(tabl, strict)
 
   return vals
 end
+
+-- Alias for Table:values
+Table.vals = Table.values
 
 
 --

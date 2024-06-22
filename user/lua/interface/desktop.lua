@@ -1,6 +1,6 @@
-local screen  = require 'hs.screen'
-local mouse   = require 'hs.mouse'
-local win     = require 'hs.window'
+local screen  = require 'hs.screen' --[[@as hs.screen]]
+local mouse   = require 'hs.mouse' --[[@as hs.mouse]]
+local win     = require 'hs.window' --[@as hs.window]
 local logr    = require 'user.lua.util.logger'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
@@ -9,8 +9,13 @@ local tables  = require 'user.lua.lib.table'
 local log = logr.new('Desktop', 'debug')
 
 
+-- local SysEvents = hs.application
+
+--
 -- Desktop/environment utilities
----@class desktop
+--
+
+---@class KS.Desktop
 local desktop = {}
 
 
@@ -20,7 +25,7 @@ local desktop = {}
 ---| 'mouse' # The screen containing the pointer
 ---| 'primary' # The primary screen contains the menubar and dock
 
----@type Dict<ScreenSelector, fun(...: any):hs.screen>
+---@type { [ScreenSelector]: fun(): hs.screen }
 local selectors = {
   main = screen.mainScreen,
   mouse = mouse.getCurrentScreen,
@@ -34,15 +39,26 @@ local selectors = {
 ---@param sel ScreenSelector
 ---@return hs.screen
 function desktop.getScreen(sel)
+  ---@type hs.screen
+  local default = screen.allScreens()[1] 
+
   if (types.isString(sel) and tables.has(selectors, sel)) then
-    return selectors[sel]();
+    return selectors[sel]() or default
   else
     error(strings.fmt("Invalid screen selector [%q]", sel), 2)
   end
 end
 
 
----@return number windowId The numerical ID of the currently active window, or nil if none exists
+function desktop.screens()
+  return screen.allScreens()
+end
+
+
+--
+-- Returns the numerical ID of the currently active window, or nil if none exists
+--
+---@return integer windowId
 function desktop.activeWindow()
   return win.focusedWindow():id()
 end
@@ -56,52 +72,33 @@ function desktop.bundleIDs()
 
   local bundles = {}
 
-  for i,v in pairs(apps) do
-    local b = v:bundleID() or v:name()
+  for i, app in ipairs(apps) do
+    local no_key = strings.join{'unknown_', i}
+    local app_bid = app:bundleID() or no_key
+    local app_name = app:name() or no_key
 
-    if (b and not bundles[b]) then
-      if (bundles[b]) then
-        table.insert(bundles[b], v)  
-      else
-        bundles[b] = { v }
-      end
-    else
-      log.w("No bundle for app:", v)
-    end
-
+    bundles[app_bid] = app_name
+    bundles[app_name] = app_bid
   end
-
-  log.d(hs.inspect(bundles))
 
   return bundles
 end
 
-function desktop.allWindows()
-  -- local winfilter = hs.window.filter
-  -- local windows = winfilter.new(false):setFilters{}
-  -- local windowList = hs.window.list(windows)
 
+--
+-- Returns the current state of dark mode
+--
+---@return boolean
+function desktop.darkMode()
+  local ok, darkModeState = hs.osascript.javascript(
+    'Application("System Events").appearancePreferences.darkMode()'
+  )
 
-  -- local windowChain = M.chain(windowList)
+  if not ok then
+    error('Error executing osascript (js):' .. darkModeState)
+  end
 
-  -- local L0windows = windowChain:filter(function(winId, ...)
-  --   log.d(winId, table.unpack{...})
-  --   hsWin = hs.window.get(winId)
-
-  --   if (hsWin ~= nil) then
-  --     log.d(hs.inspect(hsWin:application()))
-  --   end
-
-  --   return false
-  -- end)
-  -- :value()
-
-  -- M.each(L0windows, function(hswin)
-  --   log.d("A window:", hswin)
-  -- end)
-
-  -- return windows
-  return {}
+  return types.tobool(darkModeState)
 end
 
 

@@ -9,33 +9,57 @@
 <hr />
 
 <main class="container-fluid card-grid">
-  <% for key, cmds in _entries(groups) do %>
-    <article>
-      <header>
-        <h3>
-          <small><%= key -%></small>
-        </h3>
-      </header>
-      <table>
-        <% for i, cmd in _entries(cmds) do %>
-          <% if cmd:hasHotkey() then %>
-            <% local hotkey = cmd:getHotkey():toTable() %>
-            <tr>
-              <td>
-                <kbd>
-                  <%= _strings.join(hotkey.symbols, ' ') -%>
-                  <%= hotkey.key -%>
-                </kbd>
-              </td>
-              <td>
-                <%= cmd.title -%>
-              </td>
-            </tr>
-          <% end %>
-        <% end %>
-      </table>
-    </article>
-  <% end %>
+  <% for key, cmds in _entries(groups) do -%>
+    <% if #cmds > 0 then -%>
+      <article>
+        <header>
+          <h3>
+            <small><%= _stringx.title(key) -%></small>
+          </h3>
+        </header>
+        <table>
+          <% for i, cmd in _entries(cmds) do -%>
+            <% if cmd:hasHotkey() then -%>
+              <% local hotkey = cmd:getHotkey():label() -%>
+              <tr>
+                <td>
+                  <kbd>
+                    <%= hotkey %>
+                  </kbd>
+                </td>
+                <td>
+                  <%= cmd.title %>
+                </td>
+              </tr>
+            <% end -%>
+          <% end -%>
+        </table>
+      </article>
+    <% end -%>
+  <% end -%>
+  <article>
+    <header>
+      <h3>
+        <small>Mods</small>
+      </h3>
+    </header>
+    <table>
+      <% for name, keys in _entries(mods) do -%>
+        <% if #keys > 1 then %>
+          <tr>
+            <td>
+            <% for k, key in ipairs(keys) do -%>
+              <kbd><%= symbols[key] or symbol -%></kbd>
+            <% end -%>
+            </td>
+            <td>
+              <%= name -%>
+            </td>
+          </tr>
+        <% end -%>
+      <% end -%>
+    </table>
+  </article>
 </main>
 
 <footer class="container-fluid">

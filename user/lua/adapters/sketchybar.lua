@@ -32,17 +32,17 @@ end
 
 
 function SketchyBar:update()
-  return shell.run({ 'sketchybar', '--update' })
+  return shell.result({ 'sketchybar', '--update' }).code
 end
 
 
 function SketchyBar:restart()
-  return shell.run({ 'sketchybar', '--reload' })
+  return shell.result({ 'sketchybar', '--reload' }).code
 end
 
 
 function SketchyBar:reload()
-  return shell.run({ 'sketchybar', '--reload' })
+  return shell.result({ 'sketchybar', '--reload' }).code
 end
 
 ---@param event string The event name
@@ -53,7 +53,7 @@ function SketchyBar:trigger(event, ...)
   end
   
   if SketchyBar.events:has(event) then
-    return shell.run({ 'sketchybar', '--trigger', SketchyBar.events[event] })
+    return shell.result({ 'sketchybar', '--trigger', SketchyBar.events[event] }).code
   else
     log.ef("Event not found: %s", event)
   end
@@ -65,7 +65,9 @@ function SketchyBar:setFrontApp(app)
     error('Invalid app name: ' .. tostring(app))
   end
 
-  shell.run({ 'sketchybar', '--set', 'front_app', 'label='..app })
+  local setresult = shell.result({ 'sketchybar', '--set', 'front_app', 'label='..app })
+
+  log.d(hs.inspect(setresult))
 end
 
 --
@@ -81,10 +83,12 @@ function SketchyBar:setSpaceLabel(space, label)
 
   local space_str = tostring(space)
 
-  local space_arg = shell.fmt('space.%d', space)
+  local space_arg = shell.fmt('space.%d', { space })
   local icon_arg = shell.kv('icon', strings.ifEmpty(label, space_str))
 
-  return shell.run({ 'sketchybar', '--set', space_arg, icon_arg }) --[[@as string]]
+  local result = shell.run({ 'sketchybar', '--set', space_arg, icon_arg }) --[[@as string]]
+
+  return result
 end
 
 
@@ -111,18 +115,22 @@ function SketchyBar:onSpaceEnvChange(space)
   count = #space.windows or 0
 
   if (layout_icons:has(space.type)) then
-    sym = symbols.toText(layout_icons[space.type])
+    sym = symbols.toText(layout_icons:get(space.type))
   else
-    sym = symbols.toText(layout_icons.cols)
+    sym = symbols.toText(layout_icons:get('cols'))
   end
 
-  local space_str = tostring(space)
+  local space_str = tostring(space.index)
 
-  local space_arg = shell.fmt('space.%d', space)
-  local icon_arg  = shell.kv('icon', strings.ifEmpty(label, space_str))
-  local label_arg = shell.kv('label', shell.fmt('"%s %d"', { sym, count }))
+  local space_arg = shell.fmt('space.%d', { space.index })
+  local icon_arg  = shell.kv('icon', strings.ifEmpty(space.label, space.index))
+  local label_arg = shell.fmt('%s %d', { sym, count })
 
-  shell.run({ 'sketchybar', '--set', space_arg, label_arg, icon_arg })
+  local args = { 'sketchybar', '--set', space_arg, 'label='..label_arg, icon_arg }
+
+  print(shell.join(args))
+
+  shell.run(args)
 end
 
 

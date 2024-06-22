@@ -47,4 +47,32 @@ robinsr's hammerspoon
 - forgot what prompted that idea...
 
 
+## Generating docs
 
+Install lua-language-server 
+
+```
+brew install lua-language-server
+```
+
+Generate docs with `--docs` path, `--doc_out_path` path, and the entry point
+
+
+```
+/opt/homebrew/bin/lua-language-server --doc ./user/lua --doc_out_path ~/Desktop init.lua
+```
+
+
+---
+
+Scratch pad 
+
+```
+name: ApplePrivateInterfaceThemeChangedNotification
+object: nil
+userInfo: nil
+
+2024-06-20 16:59:10: name: AppleInterfaceThemeChangedNotification
+object: nil
+userInfo: nil
+```

@@ -1,5 +1,7 @@
-local types = require 'user.lua.lib.typecheck'
-local lists = require 'user.lua.lib.list'
+local console = require 'user.lua.interface.console'
+local types   = require 'user.lua.lib.typecheck'
+local lists   = require 'user.lua.lib.list'
+local ansi    = require 'user.lua.util.ansicolors'
 
 local is, notNil = types.is, types.notNil
 
@@ -32,10 +34,42 @@ function ProxyLogger:new(log_name, level)
   
   local DEBUG_WARNING = string.format('>>> DEBUG (%s) >>> ', log_name)
 
-  local log = hs.logger.new(log_name, level)
+  local _log = hs.logger.new(log_name, level)
+
+  local log = {}
+
+  local lname = '(' .. log_name .. ') '
+
 
   setmetatable(log, self)
   self.__index = self
+
+  log.log_instance = _log
+
+  local l = function(ansi_str)
+    return function(...)
+      console.print(ansi(ansi_str..lname..table.concat({...})))
+    end
+  end
+
+  local lf = function(ansi_str)
+    return function(pattern, ...)
+      console.print(ansi(ansi_str..lname..string.format(pattern, table.unpack({...}))))
+    end
+  end
+
+  log.d = l("%{blue}[debug] ")
+  log.df = lf("%{blue}[debug] ")
+  log.e = l("%{red}[ERROR] ")
+  log.ef = lf("%{red}[ERROR] ")
+  log.i = l("%{black}[info] ")
+  log.f = lf("%{black}[info] ")
+  log.v = l("%{green}[verbose] ")
+  log.vf = lf("%{green}[verbose] ")
+  log.w = l("%{yellow}[warn] ")
+  log.wf = lf("%{yellow}[warn] ")
+
+  log.getLogLevel = _log.getLogLevel
 
   ---@cast log ProxyLogger
   log.inspect = function (...)
@@ -59,7 +93,10 @@ function ProxyLogger:new(log_name, level)
         end
       end)
 
-      log.d(DEBUG_WARNING, table.unpack(bits:values()))
+      console.print(
+        ansi('%{blue}'..DEBUG_WARNING),
+        ansi('%{blue}'..table.concat(bits:values()))
+      )
     end
   end
 

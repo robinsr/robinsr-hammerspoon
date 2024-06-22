@@ -1,38 +1,36 @@
 {
-	"folders":
-	[
-		{
-			"path": ".",
-		},
-		{
-			"path": "/Users/ryan/dotfiles/config/skhd",
-		},
-		{
-			"path": "/Users/ryan/dotfiles/config/yabai",
-			"folder_exclude_patterns": ["node_modules"],
-		},
-	],
-	"settings":
-	{
-		"LSP":
-		{
-			"LSP-lua":
-			{
-				"settings":
-				{
-					"Lua.workspace.checkThirdParty": false,
-					"Lua.runtime.version": "Lua 5.4",
-					"Lua.diagnostics.globals":
-					[
-						"luasublimeproject", "lfs", "hs", "KittySupreme", "it", "describe", "spy"
-					],
-					"Lua.workspace.library":
-					[
-						"${3rd}/lfs/library", "./Spoons", "/opt/homebrew/share/lua/5.4"
-					],
-				},
-				"enabled": true,
-			},
-		},
-	},
+  "folders": [
+    { "path": "." },
+    { "path": "/Users/ryan/dotfiles/config/skhd" },
+    { "path": "/Users/ryan/dotfiles/config/yabai" },
+  ],
+  "build_systems": [{
+    "name": "Generate Docs",
+    "shell_cmd": "lua-language-server --doc $project_path/user/lua/lib --doc_out_path $project_path/docs"
+  }],
+  "settings": {
+    "tab_size": 2,
+    "rulers": [88],
+    "LSP": {
+      "LSP-lua": {
+        "settings": {
+          "Lua.workspace.checkThirdParty": false,
+          "Lua.runtime.version": "Lua 5.4",
+          "Lua.diagnostics.globals": [
+            "luasublimeproject",
+            "lfs",
+            "hs",
+            "KittySupreme"
+          ],
+          "Lua.workspace.library": [
+            "${3rd}/lfs/library",
+            "./Spoons",
+            "/opt/homebrew/share/lua/5.4",
+            "/opt/homebrew/share/lua/5.4/addons"
+          ]
+        },
+        "enabled": true
+      }
+    }
+  }
 }

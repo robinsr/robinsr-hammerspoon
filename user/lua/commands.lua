@@ -1,4 +1,6 @@
 local chooser    = require 'hs.chooser'
+local console    = require 'user.lua.interface.console'
+local desk       = require 'user.lua.interface.desktop'
 local collect    = require 'user.lua.lib.collection'
 local lists      = require 'user.lua.lib.list'
 local scan       = require 'user.lua.lib.scan'
@@ -10,7 +12,7 @@ local logr       = require 'user.lua.util.logger'
 local delay      = require 'user.lua.util'.delay
 
 
-local log = logr.new('commands', 'debug')
+local log = logr.new('commands', 'info')
 
 local EVT_FILTER = '!*.(evt|event|events).*'
 
@@ -32,6 +34,14 @@ local command_list = {
     mods = "bar",
     exec = function()
       hs.openConsole(true)
+    end,
+  },
+  {
+    id = 'ks.commands.toggle_darkmode',
+    title = "Toggle dark mode",
+    icon = "code",
+    exec = function()
+      console.setDarkMode(desk.darkMode())
     end,
   },
   {
@@ -109,9 +119,6 @@ local function scanForCmds()
 
   local commands = {}
   for module, exports in pairs(mods) do
-
-    print(hs.inspect(module))
-
     if (types.isTable(exports) and tables.has(exports, 'cmds')) then
       for i, cmd in ipairs(exports.cmds) do
         table.insert(commands, tables.merge({}, cmd, { module = module }))

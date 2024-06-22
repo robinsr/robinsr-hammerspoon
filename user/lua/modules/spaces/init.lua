@@ -1,12 +1,10 @@
 local desktop    = require 'user.lua.interface.desktop'
 local alert      = require 'user.lua.interface.alert'
-local cmd        = require 'user.lua.model.command'
 local lists      = require 'user.lua.lib.list'
 local params     = require 'user.lua.lib.params'
 local strings    = require 'user.lua.lib.string'
 local types      = require 'user.lua.lib.typecheck'
 local icons      = require 'user.lua.ui.icons'
-local text       = require 'user.lua.ui.text'
 local logr       = require 'user.lua.util.logger'
 
 
@@ -80,12 +78,20 @@ function Spaces.onSpaceChange(cmd, ctx, params)
   return alert:new(text):icon(icon):show(timing)
 end
 
+
+--
+--
+--
 function Spaces.onSpaceCreated(ctx, params)
   log.inspect("space created:", params)
 
   sketchybar:update()
 end
 
+
+--
+--
+--
 function Spaces.onSpaceDestroyed(ctx, params)
   log.inspect("space destroyed:", params)
 
@@ -113,9 +119,6 @@ function Spaces.cycleLayout()
   log.i('next yabai layout:', nextlayout)
 
   yabai:setLayout(nextlayout)
-
-  print(tostring(#space.windows), hs.inspect(space))
-
   sketchybar:onSpaceEnvChange(space)
 
   return nextlayout
@@ -124,48 +127,11 @@ end
 
 ---@type CommandConfig[]
 Spaces.cmds = {
-  {
-    id = 'spaces.space.cycle',
-    title = "Space → Cycle Layout",
-    icon = "tag",
-    mods = "modA",
-    key = "space",
-    exec = function(cmd)
-      local layout = Spaces.cycleLayout()
-      return strings.fmt("Changed layout to %s", layout)
-    end,
-  },
-   {
-    id = 'spaces.space.rename',
-    title = "Label current space",
-    icon = "tag",
-    mods = "bar",
-    key = "L",
-    exec = function(cmd, ctx)
-      Spaces.rename()
-
-      if (ctx.trigger == 'hotkey') then
-        return strings.fmt('%s: %s', cmd:getHotkey().label, cmd.title)
-      end
-    end,
-  },
-  { 
-    id = "spaces.space.floatActiveWindow",
-    title = "Float active window",
-    icon = "float",
-    exec = function (cmd, ctx)
-      yabai:floatActiveWindow()
-
-      if (ctx.trigger == 'hotkey') then
-        return strings.fmt('%s: %s', cmd:getHotkey().label, cmd.title)
-      end
-    end
-  },
-  {
-    id = 'spaces.evt.onSpaceChange',
-    exec = Spaces.onSpaceChange,
-    url = "spaces.changed",
-  },
+  -- {
+  --   id = 'spaces.evt.onSpaceChange',
+  --   exec = Spaces.onSpaceChange,
+  --   url = "spaces.changed",
+  -- },
   {
     id = 'spaces.evt.onSpaceCreated',
     exec = Spaces.onSpaceCreated,
@@ -180,56 +146,6 @@ Spaces.cmds = {
     id = 'spaces.evt.onDisplayChange',
     exec = function() end,
     url = "display.changed",
-  },
-  {
-    id = 'yabai.window.first3rd',
-    title = "Move window: 1st ⅓",
-    mods = 'modB',
-    key = '1',
-    exec = function(cmd)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 0, y = 0 }, { x = 1, y = 1 })
-      return cmd.title
-    end,
-  },
-  {
-    id = 'yabai.window.second3rd',
-    title = "Move window: 2nd ⅓",
-    mods = 'modB',
-    key = '2',
-    exec = function(cmd)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 1, y = 0 }, { x = 1, y = 1 })
-      return cmd.title
-    end,
-  },
-  {
-    id = 'yabai.window.third3rd',
-    title = "Move window: 3rd ⅓",
-    mods = 'modB',
-    key = '3',
-    exec = function(cmd)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 2, y = 0 }, { x = 1, y = 1 })
-      return cmd.title
-    end,
-  },
-  {
-    id = 'yabai.window.firstTwo3rds',
-    title = "Move window: 1st ⅔",
-    mods = 'modB',
-    key = '4',
-    exec = function(cmd)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 0, y = 0 }, { x = 2, y = 1 })
-      return cmd.title
-    end,
-  },
-  {
-    id = 'yabai.window.secondTwo3rds',
-    title = "Move window: 2nd ⅔",
-    mods = 'modB',
-    key = '5',
-    exec = function(cmd)
-      yabai:shiftWindow(desktop.activeWindow(), { x = 1, y = 0 }, { x = 2, y = 1 })
-      return cmd.title
-    end,
   },
 }
 

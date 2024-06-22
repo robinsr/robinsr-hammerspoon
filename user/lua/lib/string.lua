@@ -70,6 +70,26 @@ end
 
 
 --
+-- Applies title case to a string
+--
+---@param str string
+---@return string
+function strings.title(str, ...)
+  return plstring.title(str)
+end
+
+
+--
+-- Builds out a format string with parameters and applies title casing
+--
+---@param msg string
+---@return string
+function strings.tfmt(msg, ...)
+  return plstring.title(string.format(msg, table.unpack{...}))
+end
+
+
+--
 -- Compiles a template string
 --
 function strings.tmpl(tmplstr)
@@ -231,9 +251,8 @@ end
 local function fnmatch(filename, pattern)
   local fpattern = filemask(pattern)
   local match = regex.new(fpattern, 'i'):find(plpath.normcase(filename)) ~= nil
-  
-  -- print(string.format('%s → %s ... %s=%q ', pattern, fpattern, filename, match))
 
+  
   return match
 end
 

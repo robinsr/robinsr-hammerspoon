@@ -49,6 +49,11 @@ end
 ---@param modname string Module name
 ---@return string 
 function Paths.mod(modname)
+  local debug_info = debug.getinfo(2)
+
+  print(hs.inspect(debug_info))
+
+
   local dir, err = plpath.package_path(modname)
   
   if dir then

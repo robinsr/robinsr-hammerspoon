@@ -14,6 +14,10 @@ function Food:ident()
   return 'Edible'
 end
 
+function Food:digest()
+  return "rumble rumble rumble"
+end
+
 describe('lib/proto.lua', function()
   describe('setProtoOf', function()
     it('Uses setProtoOf to create a prototype chain', function()
@@ -195,6 +199,9 @@ describe('lib/proto.lua', function()
       end)
 
       assert.is_not.True(ok, "Should NOT be able to set properties on this class instance")
+
+      assert.is_function(goodNanaSplit.digest, "Special foods should still digest")
+      assert.are.same(goodNanaSplit:digest(), "rumble rumble rumble")
     end)
   end)
 end)
