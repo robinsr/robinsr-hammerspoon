@@ -1,83 +1,67 @@
----@module 'lib.types'
-local tc = {}
-
-
 ---@alias TypeCheckFn fun(item: any): boolean
 
 
 -- A very explicit null check for my sanity
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param nil
-function tc.isNil(i)
+local function isNil(i)
   if (type(i) == 'nil') then return true else return false end
 end
 
 -- Another very explicit null check for my sanity
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param nil
-function tc.notNil(i)
+local function notNil(i)
   if (type(i) ~= 'nil') then return true else return false end
 end
 
 -- Type-check is string
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is a string
-function tc.isString(i)
+local function isString(i)
   if (type(i) == 'string') then return true else return false end
 end
 
 -- Type-check is number
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is a string
-function tc.isNum(i)
+local function isNum(i)
   if (type(i) == 'number') then return true else return false end
 end
 
 -- Type-check is table
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is a table
-function tc.isTable(i)
+local function isTable(i)
   if (type(i) == 'table') then return true else return false end
 end
 
 -- Type-check is function
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is a table
-function tc.isFunc(i)
+local function isFunc(i)
   if (type(i) == 'function') then return true else return false end
 end
 
 -- Type-check is boolean true
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is boolean true
-function tc.isTrue(i)
+local function isTrue(i)
   if (type(i) == 'boolean' and i == true) then return true else return false end
 end
 
 -- Type-check is boolean false
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is boolean false
-function tc.isFalse(i)
+local function isFalse(i)
   if (type(i) == 'boolean' and i == false) then return true else return false end
 end
 
 -- Type-check is empty sttring
 ---@param i any|nil Possibly a nil value
 ---@return boolean true when param is boolean false
-function tc.isEmpty(i)
+local function isEmpty(i)
   if (i == '') then return true else return false end
-end
-
-
--- Checks if a string represents a true value (only "true" == true) (whitespace permitted)
----@param i any|nil Possibly a nil value
----@return boolean true when param is "true"
-function tc.tobool(str)
-  if tostring(str):match("^%s*true%s*$") then
-    return true
-  else
-    return false
-  end
 end
 
 
@@ -93,36 +77,66 @@ return function(arg)
   end
 end
 
-local function onlyFirst(fnA, fnB)
+local function first_not_second(fnA, fnB)
   return function(arg)
     return fnA(arg) == true and fnB(arg) == false
   end
 end
 
 
+---@class KS.Types
+local tc = {
+  isNil = isNil,
+  notNil = notNil,
+  isString = isString,
+  isNum = isNum,
+  isTable = isTable,
+  isFunc = isFunc,
+  isTrue = isTrue,
+  isFalse = isFalse,
+  isEmpty = isEmpty,
+  invert = invert,
+  both = both,
+  first_not_second = first_not_second,
+}
+
+
 tc.is = {
-  Nil = tc.isNil,
-  True = tc.isTrue,
-  False = tc.isFalse,
-  strng = tc.isString,
-  func = tc.isFunc,
-  tabl = tc.isTable,
-  empty = both(tc.isString, tc.isEmpty),
+  Nil = isNil,
+  True = isTrue,
+  False = isFalse,
+  strng = isString,
+  func = isFunc,
+  tabl = isTable,
+  empty = both(isString, isEmpty),
 }
 
 tc.is_not = {
-  Nil = invert(tc.isNil),
-  True = tc.isTrue,
-  False = tc.isFalse,
-  strng = invert(tc.isString),
-  func = invert(tc.isFunc),
-  tabl = invert(tc.isTable),
-  empty = onlyFirst(tc.isString, tc.isEmpty)
-
+  Nil = invert(isNil),
+  True = isTrue,
+  False = isFalse,
+  strng = invert(isString),
+  func = invert(isFunc),
+  tabl = invert(isTable),
+  empty = first_not_second(isString, isEmpty),
 }
 
 tc.no = {
-  nill = tc.notNil,
+  nill = notNil,
 }
+
+
+
+-- Checks if a string represents a true value (only "true" == true) (whitespace permitted)
+---@param str any|nil Possibly a nil value
+---@return boolean true when param is "true"
+function tc.tobool(str)
+  if tostring(str):match("^%s*true%s*$") then
+    return true
+  else
+    return false
+  end
+end
+
 
 return tc

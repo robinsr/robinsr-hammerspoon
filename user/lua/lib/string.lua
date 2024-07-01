@@ -8,6 +8,16 @@ local plutils    = require 'pl.utils'
 local types      = require 'user.lua.lib.typecheck'
 local lists      = require 'user.lua.lib.list'
 
+
+--
+-- DO NOT extend Lua's native `string`. Breakage includes:
+--  - Aspect templates
+--
+-- string.replace = strings.replace
+-- string.startswith = strings.startswith
+-- string.endswith = strings.endswith
+
+
 ---@module 'lib.string'
 local strings = {}
 
@@ -58,13 +68,36 @@ function strings.ifEmpty(str, replace)
 end
 
 
+function strings.contains(str, sub)
+    return string.find(str, sub, 1, true) ~= nil
+end
+
+function strings.startswith(str, start)
+    return string.sub(str, 1, #start) == start
+end
+
+function strings.endswith(str, ending)
+    return ending == "" or string.sub(str, -#ending) == ending
+end
+
+
 --
 -- Builds out a format string with parameters
 --
 ---@param msg string The format string
 ---@param ... any Format string variables
----@return string The final string
+---@return string
 function strings.fmt(msg, ...)
+  return string.format(msg, table.unpack{...})
+end
+
+--
+-- Gonna try something here
+--
+---@param ... any Format string variables
+---@return string
+function string:fmt(...)
+  local msg = self --[[@as string]]
   return string.format(msg, table.unpack{...})
 end
 
@@ -84,7 +117,7 @@ end
 --
 ---@param msg string
 ---@return string
-function strings.tfmt(msg, ...)
+function strings.titlefmt(msg, ...)
   return plstring.title(string.format(msg, table.unpack{...}))
 end
 
@@ -230,10 +263,9 @@ function strings.replace(str, old, new)
 end
 
 --
+--
 -- Pattern Matcher
 --
---
-
 
 --- escape any Lua 'magic' characters in a string
 -- @param s The input string
@@ -293,5 +325,20 @@ function strings.glob(patterns)
     end)
 	end
 end
+
+
+--
+-- Given a non-wildcard pattern, returns a list of matching strings
+--
+function strings.expand(pattern)
+  local matches = {}
+
+
+
+end
+
+
+
+
 
 return strings

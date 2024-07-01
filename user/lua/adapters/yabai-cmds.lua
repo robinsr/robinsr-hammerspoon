@@ -2,10 +2,9 @@ local sh      = require 'user.lua.adapters.shell'
 local alert   = require 'user.lua.interface.alert'
 local option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
+local webview = require 'user.lua.ui.webview'
 local logr    = require 'user.lua.util.logger'
 local json    = require 'user.lua.util.json'
-
-local webview = require 'user.lua.ui.webview.webview'
 
 local log = logr.new('yabai-cmd', 'debug')
 
@@ -16,6 +15,14 @@ local YabaiCmds = {}
 
 ---@type CommandConfig[]
 YabaiCmds.cmds = {
+  {
+    id = 'yabai.service.restart',
+    title = 'Restart Yabai',
+    exec = function()
+      local code = yabai and yabai:restart()
+      return code == 0 and 'Restarted yabai' or ("Yabai:restart exit code %q"):format(code)
+    end,
+  },
   {
     id = 'yabai.manage.add',
     title = "Manage app's windows",
@@ -36,30 +43,40 @@ YabaiCmds.cmds = {
   {
     id = 'yabai.manage.list',
     title = "Show ignore list",
-    mods = "bar",
+    mods = "btms",
     key = "/",
     exec = function(cmd, ctx)
-      local rules = yabai:getRules()
-
       local vm = {
         title = 'Yabai Rules!',
-        data = rules,
+        data = yabai:getRules(),
       }
 
-      webview.page('data', vm, vm.title)
-      
-      return nil
+      webview.file('json.view', vm, vm.title)
     end,
   },
   {
     id = 'yabai.info.window',
     title = "Show info for active app",
-    exec = function() end,
+    exec = function()
+      local vm = {
+        title = 'Yabai - active window',
+        data = yabai:getWindow(''),
+      }
+
+      webview.file('json.view', vm, vm.title)
+    end,
   },
   {
     id = 'yabai.info.space',
     title = "Show info current space",
-    exec = function() end,
+    exec = function()
+      local vm = {
+        title = 'Yabai - current space',
+        data = yabai:getSpace('mouse'),
+      }
+
+      webview.file('json.view', vm, vm.title)
+    end,
   },
 }
 

@@ -47,4 +47,52 @@ describe('lib/table.lua', function()
       assert.True(indexOf(coolkeys, 'baz') > 0, 'Could not find item `baz` in ' .. pretty.write(coolkeys))
     end)
   end)
+
+
+  describe("merged", function()
+    it("simple merge", function()
+
+      local ta = {
+        variables = 'are'
+      }
+
+      local tb = {
+        very = 'cool'
+      }
+
+      local result = Tabl.merge({}, ta, tb)
+
+      assert.are.same('are', result.variables)
+      assert.are.same('cool', result.very)
+    end)
+
+    it("depth merge", function()
+      local tA = {
+        foo = 'foo',
+        bar = {
+          baz = 'baz@tA',
+          tA_only = 'only on tA'
+        },
+        tA_only = 'tA rules!'
+      }
+
+      local tB = {
+        foo = 'foo@tB',
+        bar = {
+          baz = 'baz@tB',
+          tB_only = 'only on tB',
+        },
+        tB_only = 'tA stinks!'
+      }
+
+      local result = Tabl.merge({}, tA, tB)
+
+      assert.are.same('foo@tB', result.foo)
+      assert.are.same('tA rules!', result.tA_only)
+      assert.are.same('tA stinks!', result.tB_only)
+      assert.are.same('baz@tB', result.bar.baz)
+      assert.are.same('only on tA', result.bar.tA_only)
+      assert.are.same('only on tB', result.bar.tB_only)
+    end)
+  end)
 end)

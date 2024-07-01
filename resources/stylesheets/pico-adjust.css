@@ -1,0 +1,17 @@
+:root {
+  --pico-font-size: 93%;
+/*  --pico-spacing: 0.8rem;*/
+}
+
+
+[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  --pico-background-color: rgba(255,255,255,0.82)
+}
+
+@media only screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --pico-background-color: rgba(19,23,31,0.94)
+  }
+}
+

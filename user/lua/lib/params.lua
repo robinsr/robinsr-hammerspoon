@@ -1,4 +1,5 @@
-local types = require "user.lua.lib.typecheck"
+local types  = require "user.lua.lib.typecheck"
+local plpath = require "pl.path"
 
 local Params = {}
 
@@ -12,9 +13,10 @@ Params.assert = {}
 ---@param num? integer Parameter position
 function Params.assert.tabl(tabl, num)
   if (not types.isTable(tabl)) then
-    error(string.format('Parameter #%d is not a table, rather %s', num or 1, type(tabl)))
+    error(('Parameter #%d is not a table, rather a %s'):format(num or 1, type(tabl)), 2)
   end
 end
+
 
 --
 -- Check a function parameter against the isTable typecheck function
@@ -23,7 +25,38 @@ end
 ---@param num? integer Parameter position
 function Params.assert.string(arg, num)
   if (not types.isString(arg)) then
-    error(string.format('Parameter #%d is not a string, rather %s', num or 1, type(arg)))
+    error(('Parameter #%d is not a string, rather a %s'):format(num or 1, type(arg)), 2)
+  end
+end
+
+
+--
+-- Check a function parameter against the isTable typecheck function
+--
+---@param checkpath any
+---@param num? integer Parameter position
+function Params.assert.path(checkpath, num)
+  if (not types.isString(checkpath)) then
+    error(('Parameter #%d is not a string, rather a %s'):format(num or 1, type(checkpath)), 2)
+  end
+
+  local isDir = plpath.isdir(checkpath)
+  local isFile = plpath.isfile(checkpath)
+
+  if not isDir and not isFile then
+    error(("Parameter #%d is not a file or directory: %s"):format(num or 1, checkpath), 2)
+  end
+end
+
+
+--
+-- Check a function parameter against the isTable typecheck function
+--
+---@param arg any
+---@param num? integer Parameter position
+function Params.assert.number(arg, num)
+  if (not types.isNum(arg)) then
+    error(('Parameter #%d is not a number, rather a %s'):format(num or 1, type(arg)), 2)
   end
 end
 
@@ -36,7 +69,7 @@ end
 ---@param num? integer Parameter position
 function Params.assert.any(typefn, obj, num)
   if (not types[typefn](obj)) then
-    error(string.format('Parameter #%d failed check "%s". found type %s', num or 1, typefn))
+    error(('Parameter #%d failed check "%s". found type %s'):format(num or 1, typefn), 2)
   end
 end
 

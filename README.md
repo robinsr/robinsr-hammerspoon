@@ -1,6 +1,24 @@
 robinsr's hammerspoon
 =====================
 
+## Todos
+
+- Startup errors related to executing shell commands. See [issues item 1](#item1)
+- Add/Remove rules to/from yabai config
+    - I want to stop yabai from managing an app's windows
+    - I don't know this until the app is running
+    - Stopping to add a rule to the yabai config is a pain so I usually dont
+    - This results in annoying window issues
+    - Add a command 'Yabai: Ignore current app'
+    - Items to add
+        - TextEdit
+        - Various preference panes - AltTab, Bartender,
+        - Most Finder Windows.
+            - I just dont want a single gigantic finder window. So if window is a finder, and no others window in space, ignore window
+            - If the space type is "stack" (all big windows), ignore finder
+- 
+
+
 
 ## Organization
 
@@ -63,7 +81,29 @@ Generate docs with `--docs` path, `--doc_out_path` path, and the entry point
 ```
 
 
----
+## Issues
+
+### item1
+
+Config errors on startup
+
+
+```brew: command not found```
+
+```
+[ERROR] (shell) Shell result:{
+  command = "brew services info sketchybar --json 2>&1",
+  output = "sh: brew: command not found\n",
+  status = 127
+}
+```
+
+***
+
+
+
+
+***
 
 Scratch pad 
 
@@ -76,3 +116,81 @@ userInfo: nil
 object: nil
 userInfo: nil
 ```
+
+
+```bash
+
+# copy
+https://img.icons8.com/ios/100/copy--v1.png
+https://img.icons8.com/ios/100/cut.png
+
+### Keys ###
+
+# alphas
+https://img.icons8.com/ios/100/a-key.png
+
+# numbers
+https://img.icons8.com/ios/100/1-key.png
+
+# f-keys
+https://img.icons8.com/ios/100/f6-key.png
+
+
+# mods
+https://img.icons8.com/ios/100/fn-key.png
+https://img.icons8.com/ios/100/shift--v1.png
+https://img.icons8.com/ios/100/shift--v2.png
+https://img.icons8.com/ios/100/tab-key--v1.png
+https://img.icons8.com/ios/100/ctrl.png
+https://img.icons8.com/ios-filled/50/shift--v1.png
+
+
+# space
+https://img.icons8.com/ios/100/space-key.png
+
+# forward-slash
+https://img.icons8.com/ios/100/solidus-key.png 
+
+# dot ('dor')
+https://img.icons8.com/ios/100/dor-key.png
+
+# others
+https://img.icons8.com/ios/100/del-key.png
+
+# plus
+https://img.icons8.com/ios/100/plus-key.png
+
+# minus
+https://img.icons8.com/ios/100/minus-key.png
+
+# backspace
+https://img.icons8.com/ios/100/backspace.png
+
+# equal-key
+https://img.icons8.com/ios/100/equal-key
+
+# right-angle-parentheses-key
+https://img.icons8.com/ios/100/right-angle-parentheses-key.png
+
+# left-angle-parentheses-key
+https://img.icons8.com/ios/100/left-angle-parentheses-key.png
+
+# asterisk-key--v1
+https://img.icons8.com/ios/100/asterisk-key--v1.png
+
+# asterisk-key--v2
+https://img.icons8.com/ios/100/asterisk-key--v2.png
+
+# toggle-off
+https://img.icons8.com/ios/100/toggle-off.png
+https://img.icons8.com/ios-filled/100/toggle-off.png
+
+# toggle-on
+https://img.icons8.com/ios/100/toggle-on.png
+https://img.icons8.com/ios-filled/100/toggle-on.png
+
+
+# close
+https://img.icons8.com/ios-filled/100/close-window.png
+```
+

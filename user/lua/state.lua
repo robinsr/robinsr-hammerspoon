@@ -1,5 +1,6 @@
 -- local watchable   = require "hs.watchable"
 local BrewService = require 'user.lua.adapters.base.brew-service'
+local lists       = require 'user.lua.lib.list'
 local logr        = require 'user.lua.util.logger'
 
 local log = logr.log('KS-State', 'debug')
@@ -21,7 +22,7 @@ ScreenAlert = nil
 
 ---@type KittySupremeGlobal
 KittySupreme = {
-  commands = {},
+  commands = lists({}),
   boundkeys = {},
   urlhanders = {},
   menubar = nil,

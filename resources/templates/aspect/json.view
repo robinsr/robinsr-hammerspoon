@@ -1,0 +1,28 @@
+{% extends "base.view" %}
+
+
+{% block page_content %}
+  <main class="container-fluid">
+    <pre>
+      <code class="language-json">
+        {{ data|json_encode() }}
+      </code>
+    </pre>
+  </main>
+{% endblock %}
+
+
+{% block page_end %}
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/lua.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/stackoverflow-dark.min.css"></script>
+
+  <script>
+    window.addEventListener('load', function() {
+      hljs.highlightAll();
+    })
+  </script>
+{% endblock %}
+
+</footer>
+

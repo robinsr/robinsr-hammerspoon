@@ -1,9 +1,11 @@
+local params = require 'user.lua.lib.params'
 local tables = require 'user.lua.lib.table'
 local types  = require 'user.lua.lib.typecheck'
 local color  = require 'user.lua.ui.color'
 
-
-local symbols = tables{
+local sf_symbol_map = {
+  ["filemenu.and.selection"] = 0x100C62,
+  ["questionmark.app.dashed"] = 0x100FEA,
   ["doc.on.doc"] = 0x100241,
   ["arrow.counterclockwise"] = 0x100149,
   ["chevron.left.forwardslash.chevron.right"] = 0x10065A, --alias "htmltag"
@@ -158,17 +160,60 @@ local symbols = tables{
   ["questionmark"] = 0x10014D,
 }
 
-local function doColor(input)
-  if types.isString(input) then
-    return { hex = input }
-  end
 
-  if types.isTable(input) then
-    return input
-  end
+-- Symbol Aliases
+local symbol_aliases = {
+  default    = sf_symbol_map["cat"],
+  kitty      = sf_symbol_map["cat"],
+  info       = sf_symbol_map["info.circle"],
+  tag        = sf_symbol_map["tag"],
+  reload     = sf_symbol_map["arrow.counterclockwise"],
+  term       = sf_symbol_map["terminal"],
+  code       = sf_symbol_map["htmltag"],
+  command    = sf_symbol_map["command"],
+  running    = sf_symbol_map["circle.fill"],
+  stopped    = sf_symbol_map["circle.fill"],
+  unknown    = sf_symbol_map["circle.fill"],
+  float      = sf_symbol_map["macwindow.on.rectangle"],
+  spaceLeft  = sf_symbol_map["rectangle.righthalf.inset.filled.arrow.right"],
+  spaceRight = sf_symbol_map["rectangle.lefthalf.inset.filled.arrow.left"],
+  copy       = sf_symbol_map["doc.on.doc"],
+  not_found  = sf_symbol_map["questionmark.app.dashed"],
+  arrangement = sf_symbol_map["rectangle.split.2x2.fill"],
+}
 
-  return { hex = color.black }
+
+local symbol_map = tables(tables.merge(sf_symbol_map, symbol_aliases))
+
+
+local symbols = {}
+
+
+---@param symbol_name string
+---@return boolean
+symbols.has_codepoint = function(symbol_name)
+  return symbol_map:has(symbol_name)
 end
+
+
+---@param symbol_name string
+---@return integer
+symbols.get_codepoint = function(symbol_name)
+  params.assert.string(symbol_name)
+
+  if not symbol_map:has(symbol_name) then
+    error(('No symbol for %s'):format('symbol_name'))
+  end
+
+  return symbol_map:get(symbol_name)
+end
+
+
+---@deprecated
+symbols.has = symbols.has_codepoint
+
+---@deprecated
+symbols.get = symbols.get_codepoint
 
 
 --
@@ -182,54 +227,17 @@ function symbols.toText(code)
     return utf8.char(code) 
   end
 
-  if symbols:has(code) then
-    return utf8.char(symbols[code])
+  if types.isString(code) then
+    ---@cast code string
+    if symbol_map:has(code) then
+      return utf8.char(symbol_map:get(code))
+    end
   end
 
   return ''
 end
 
-
---
--- Creates a usable HS Image from a SF-Symbols codepoint; basically screenshots
--- a single glyph unsing SF-Pro as the font, at a particular font-size
---
----@param code string|integer Either a string that is a valid key in the Symbols.all table, or the unicode codepoint corresponding to a SF Symbol (integer)
----@param textsize integer Desired size of image (literally the font-size to apply to icon)
----@param textcolor string|table Either a hex code, or a one of the table structures described in `hs.drawing.color`
----@return hs.image # Image to use
-symbols.toIcon = function(code, textsize, textcolor)
-
-  if (not hs.fnutils.every({ code, textsize, textcolor }, types.notNil)) then
-    error("Missing parameters to create icon from symbol", 2)
-  end
-
-  local text_style = {
-    font = {
-      size = textsize,
-      name = 'SF Pro',
-    },
-    color = doColor(textcolor)
-  }
-
-  if (type(code) == "string" and symbols:has(code)) then
-    code = symbols[code]
-  end
-
-  ---@cast code integer
-  local char = hs.styledtext.new(utf8.char(code), text_style)
-
-  local canvas = hs.canvas.new({ x = 0, y = 0, h = 0, w = 0 }) --[[@as hs.canvas]]
-
-  canvas:size(canvas:minimumTextSize(char))
-
-  canvas[#canvas + 1] = {
-      type = "text",
-      text = char
-  }
-
-  return canvas:imageFromCanvas()
-end
+-- console.log(symbols)
 
 
 return symbols

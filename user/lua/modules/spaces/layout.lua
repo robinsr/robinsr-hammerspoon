@@ -16,21 +16,21 @@ shift.cmds = {
   {
     id = 'spaces.layout.rotate_windows',
     title = 'Rotate layout clockwise',
-    mods = 'modA',
+    mods = 'peace',
     key = 'r',
     exec = send_message('space --rotate 90'),
   },
   {
     id = 'spaces.layout.rebalance',
     title = 'Rebalance windows in space',
-    mods = 'modA',
+    mods = 'peace',
     key = 'e',
     exec = send_message('space --balance', 'Rebalanced windows'),
   },
   {
     id = 'spaces.layout.toggle_fullscreen',
     title = 'Maximize active window',
-    mods = 'modA',
+    mods = 'peace',
     key = 'm',
     exec = send_message('window --toggle zoom-fullscreen'),
   },
@@ -38,7 +38,7 @@ shift.cmds = {
     id = 'spaces.space.cycle',
     title = "Cycle current space layout (bsp, float, stack)",
     icon = "tag",
-    mods = "modA",
+    mods = "peace",
     key = "space",
     exec = function(cmd)
       local layout = spaces.cycleLayout()
@@ -49,7 +49,7 @@ shift.cmds = {
     id = 'spaces.space.rename',
     title = "Label current space",
     icon = "tag",
-    mods = "bar",
+    mods = "btms",
     key = "L",
     exec = function(cmd, ctx)
       spaces.rename()

@@ -1,10 +1,14 @@
+--
+-- NO IMPORTS!!!
+--
+
 local U = {}
 
 local fmt = string.format
 local pack = table.pack
 local upack = table.unpack
 
-U.log = require('user.lua.util.logger').log
+-- U.log = require('user.lua.util.logger').log
 
 U.d1 = { depth = 1 }
 U.d2 = { depth = 2 }
@@ -49,6 +53,28 @@ end
 function U.noop() 
   -- do nothing
 end
+
+function U.date_table_utc()
+  return os.date('!*t')
+end
+
+
+function U.date_table_local()
+  return os.date('*t')
+end
+
+
+--
+-- Returns date string like "Saturday, January 09 2018 at 12:42:19 AM"
+--
+---@param pattern? string Override default date format string
+---@return string
+function U.date_str(pattern)
+  pattern = pattern or '%A, %B %d %Y at %I:%M:%S %p'
+  return os.date(pattern) --[[@as string]]
+end
+
+
 
 
 return U

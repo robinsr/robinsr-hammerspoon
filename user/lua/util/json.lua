@@ -1,7 +1,11 @@
 local path    = require 'pl.path'
 local plutils = require 'pl.utils'
+local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
+local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
+
+local dkjson = require 'dkjson'
 
 local json = {}
 
@@ -23,13 +27,30 @@ end
 ---@param compact? boolean
 ---@return string A JSON string
 function json.tostring(tabl, compact)
-  ---@type boolean
-  local prettyprint = plutils.choose(types.isTrue(compact), false, true)
+  params.assert.tabl(tabl)
 
-  local jsonstr = hs.json.encode(tabl, prettyprint)
+  compact = compact or false
+
+  local keys = tables.keys(tabl)
+  table.sort(keys)
+
+  local json_config = {
+    indent = not compact,
+    keyorder = keys,
+  }
+
+
+  local jsonstr
+
+  if types.isFunc(tabl.__tojson) then
+    jsonstr = dkjson.encode(tabl, json_config)
+  else  
+    jsonstr = dkjson.encode(tables.toplain(tabl), json_config)
+  end
+
   
   if types.isString(jsonstr) then
-    return jsonstr
+    return jsonstr --[[@as string]]
   end
 
   error('Could not encode Lua table: ' .. strings.truncate(hs.inspect(tabl), 1000))

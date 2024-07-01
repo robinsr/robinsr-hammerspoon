@@ -1,20 +1,74 @@
----@alias Yabai.Selector.Dir
+---@alias Yabai.Selector.NumId
+---| integer # Either a numerical ID, mission control index value, or arrangement index value
+
+
+---@alias Yabai.Selector.Label
+---| string # arbitrary string/text used as an identifier
+
+---@alias Yabai.Selector.Empty
+---| '' # empty selects the currently focused window
+
+
+---@alias Yabai.Selector.Bool
+---| 'on'
+---| 'off'
+
+
+---@alias Yabai.Selector.Cardinal
 ---| 'north'
 ---| 'east'
 ---| 'south'
 ---| 'west'
 
 
+---@alias Yabai.Selector.Relative
+---| 'prev'
+---| 'next'
+---| 'first'
+---| 'last'
+
+
+---@alias Yabai.Selector.Stack
+---| 'stack.prev'
+---| 'stack.next'
+---| 'stack.first'
+---| 'stack.last'
+---| 'stack.recent'
+
+
 ---@alias Yabai.Selector.Space
----| Yabai.Selector.Dir
----| 'prev' 
----| 'next' 
----| 'first' 
----| 'last' 
----| 'recent' 
----| 'mouse' 
----| string 
----| number
+---| Yabai.Selector.Cardinal
+---| Yabai.Selector.Relative
+---| Yabai.Selector.NumId
+---| Yabai.Selector.Label
+---| 'recent'
+---| 'mouse'
+
+
+---@alias Yabai.Selector.Window
+---| Yabai.Selector.Cardinal
+---| Yabai.Selector.Relative
+---| Yabai.Selector.NumId
+---| Yabai.Selector.Empty
+---| 'recent'
+---| 'mouse'
+---| 'largest'
+---| 'smallest'
+---| 'sibling'
+---| 'first_nephew'
+---| 'second_nephew'
+---| 'uncle'
+---| 'first_cousin'
+---| 'second_cousin'
+
+
+---@alias Yabai.Selector.Display
+---| Yabai.Selector.Cardinal
+---| Yabai.Selector.Relative
+---| Yabai.Selector.NumId
+---| Yabai.Selector.Label
+---| 'recent'
+---| 'mouse'
 
 
 ---@class Yabai.Space
@@ -30,24 +84,6 @@
 ---@field type string The layout type
 ---@field uuid string
 ---@field windows number[]
-
-
----@alias Yabai.Selector.Window
----| Yabai.Selector.Dir
----| 'prev' 
----| 'next' 
----| 'first' 
----| 'last' 
----| 'recent' 
----| 'mouse' 
----| 'largest' 
----| 'smallest' 
----| 'sibling' 
----| 'first_nephew' 
----| 'second_nephew' 
----| 'uncle' 
----| 'first_cousin' 
----| 'second_cousin'
 
 
 ---@class Yabai.Window
@@ -110,18 +146,6 @@
 ---| 'zoom-fullscreen'
 ---| 'native-fullscreen'
 ---| 'expose'
-
-
----@alias Yabai.Selector.Display
----| Yabai.Selector.Dir
----| 'prev' 
----| 'next' 
----| 'first' 
----| 'last' 
----| 'recent' 
----| 'mouse' 
----| string 
----| number
 
 
 ---@class Yabai.Display

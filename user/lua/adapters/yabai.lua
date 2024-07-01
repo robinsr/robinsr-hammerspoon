@@ -6,6 +6,7 @@ local desktop     = require 'user.lua.interface.desktop'
 local sh          = require 'user.lua.adapters.shell'
 local system      = require 'user.lua.interface.system'
 local lists       = require 'user.lua.lib.list'
+local paths       = require 'user.lua.lib.path'
 local params      = require 'user.lua.lib.params'
 local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
@@ -33,6 +34,10 @@ function Yabai:new()
   LaunchAgent.new(this, 'yabai', 'com.koekeishiya.yabai')
 
   local watcher = system.onEvent(function(evt) this:onEnvChange(evt) end)
+
+  local config_path = paths.join(os.getenv("HOME"), ".config/yabai/")
+  local config_watcher = hs.pathwatcher.new(config_path, function() this:restart() end):start()
+
   
   return proto.setProtoOf(this, Yabai)
 end
@@ -144,7 +149,7 @@ function Yabai:shiftWindow(windowId, start, span, gridrows, gridcols)
   local space = self:getSpace(window.space)
 
   if (space.type ~= 'float') then
-    self:setLayout('float', space.id)
+    self:setLayout(space.id, 'float')
   end
 
   local gridargs = { gridrows or 1, gridcols or 3, start.x, start.y, span.x, span.y }
@@ -160,16 +165,18 @@ end
 --
 -- Returns the yabai window object for a windowId
 --
----@param windowId string|number
+---@param selector Yabai.Selector.Window
 ---@return Yabai.Window
-function Yabai:getWindow(windowId)
-  if types.isString(windowId) or types.isNum(windowId) then
-    local result = sh.run({ 'yabai', '-m', 'query', '--windows', '--window', windowId }, sh.JSON)
-    
-    return result--[[@as Yabai.Window]]
-  end
+function Yabai:getWindow(selector)
+  selector = selector or ''
 
-  error('Invalid window id: ' .. tostring(windowId))
+  local result = sh.result({ 'yabai', '-m', 'query', '--windows', '--window', selector })
+
+  if result:ok() then
+    return result:json()--[[@as Yabai.Window]]
+  else
+    error(result:error_msg())
+  end
 end
 
 
@@ -177,12 +184,12 @@ end
 -- Removes value to window.scratchpad for the given window
 -- thus re-adding it to normal management by Yabai
 --
----@param windowId? string
-function Yabai:scratchWindow(windowId)
-  local windowId = params.default(windowId, desktop.activeWindow)
+---@param selector? Yabai.Selector.Window
+function Yabai:scratchWindow(selector)
+  selector = selector or desktop.activeWindowId()
 
-  if windowId ~= nil then
-    sh.run({ 'yabai', '-m', 'window', windowId, '--scratchpad', 'hs-scratch' })
+  if selector ~= nil then
+    sh.run({ 'yabai', '-m', 'window', selector, '--scratchpad', 'hs-scratch' })
   end
 end
 
@@ -190,88 +197,99 @@ end
 -- Adds a value to window.scratchpad for the given window
 -- thus removing it from normal management by Yabai
 --
----@param id string
-function Yabai:descratchWindow(id)
-  local windowId = params.default(id, desktop.activeWindow)
+---@param selector? Yabai.Selector.Window
+function Yabai:descratchWindow(selector)
+  selector = selector or desktop.activeWindowId()
 
-  if windowId ~= nil then
-    sh.run({ 'yabai', '-m', 'window', windowId, '--scratchpad' })
+  if selector ~= nil then
+    sh.run({ 'yabai', '-m', 'window', selector, '--scratchpad' })
   end
 end
 
 
 function Yabai:floatActiveWindow()
-  local rules = sh.runt('yabai -m rule --list')
+  local rules = self:getRules()
 
   log.inspect{ 'Yabai Rules:', rules }
 
-  local active = hs.window.focusedWindow()
+  local active = desktop:activeWindow()
   local title = active:title()
   local id = active:id()
 
   local label = strings.fmt('hsfloat-%s', title:gsub("%s", ""):lower())
 
-  log.df('Active window: "%s" "%s" "%s";', id, title)
-  log.df('Created label: "%s"', label) 
+  log.f('Active window: "%s" "%s" "%s";', id, title)
+  log.f('Created label: "%s"', label) 
 end
 
 --
 -- Returns a yabai space
 --
----@param selector? Yabai.Selector.Space Yabai space selector
+---@param selector? Yabai.Selector.Space
 ---@return Yabai.Space
 function Yabai:getSpace(selector)
-  local space = params.default(selector, 'mouse')
-  local tbl, err = sh.run({ 'yabai', '-m', 'query', '--spaces', '--space', space }, sh.JSON)
+  selector = selector or 'mouse'
 
-  if (tbl ~= nil) then
-    return tbl --[[@as Yabai.Space]]
+  local space = sh.result({ 'yabai', '-m', 'query', '--spaces', '--space', selector })
+
+  if (space ~= nil and space.code == 0) then
+    return space:json() --[[@as Yabai.Space]]
   end
   
-  error(strings.fmt('Error getting yabai space [%s] - %s', space, err))
+  error(strings.fmt('Error getting yabai space [%s] - %s', selector, hs.inspect(space)))
 end
 
 
 -- Sets the label of a Yabai space
 ---@param space Yabai.Selector.Space
 ---@param label string Label to apply to space
----@return string
 function Yabai:setSpaceLabel(space, label)
-  log.df("Setting label for space [%s] to [ %s ]", tostring(space), label)
-  local out, result = sh.run({ 'yabai', '-m', 'space', space, '--label', label })
+  log.f("Setting label for space [%s] to [ %s ]", tostring(space), label)
 
-  return out --[[@as string]]
+  if types.notNil(space) then
+    local result = sh.result({ 'yabai', '-m', 'space', space, '--label', label })
+
+    if not result:ok() then
+      error(result:error_msg())
+    end
+  end
 end
 
 
 --
 -- Returns the layout value for a specific Yabai space; Deprecated, use Yabai:getSpace(...).type
 --
----@deprecated
+---@param selector? Yabai.Selector.Space
 ---@return string
-function Yabai:getLayout(num)
-  local space = params.default(num, 'mouse')
-  local layout = sh.run({ 'yabai', '-m', 'config', '--space', space, 'layout' })
-  log.df("Current yabai layout: [%s]", layout)
-
-  return layout --[[@as string]]
+function Yabai:getLayout(selector)
+  selector = selector or 'mouse'
+  
+  local result = sh.result({ 'yabai', '-m', 'config', '--space', selector, 'layout' })
+  
+  if (result:ok()) then
+    log.f("Current yabai layout: [%s]", result.output)
+    return result.output
+  else
+    error(result:error_msg())
+  end
 end
 
 
 --
 -- Sets the layout value for a specific Yabai space
 --
----@param layout string
 ---@param selector? Yabai.Selector.Space
----@return string
-function Yabai:setLayout(layout, selector)
-  local space = params.default(selector, 'mouse')
+---@param layout string
+function Yabai:setLayout(selector, layout)
+  selector = selector or 'mouse'
   
-  log.df("Setting layout for space [%q] to [%s]", space, layout)
+  log.f("Setting layout for space [%q] to [%s]", selector, layout)
   
-  local layout = sh.run({ 'yabai', '-m', 'space', space, '--layout', layout })
+  local result = sh.result({ 'yabai', '-m', 'space', selector, '--layout', layout })
 
-  return layout --[[@as string]]
+  if not result:ok() then
+    error(result:error_msg())
+  end
 end
 
 

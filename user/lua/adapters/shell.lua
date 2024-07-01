@@ -5,12 +5,16 @@ local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
+local webview = require 'user.lua.ui.webview' -- REMOVE LATER
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
+
+
 
 local fmt = strings.fmt
 local pack = table.pack
 local unpack = table.unpack
+local quote_arg = shellg.quote
 
 
 local log = logr.new('shell', 'info')
@@ -24,57 +28,138 @@ local function cmd_error(sh_result, sh_err)
   local code = sh_result["status"]
   local out = sh_result["output"]
 
-  log.e('Shell error:', sh_err)
-  log.e('Shell result:', hs.inspect(sh_result))
+  log.e('Shell error:\n\t', sh_err)
+  log.e('Shell result:\n\t', hs.inspect(sh_result))
 
   return fmt(ERR_MSG, cmd, code, out)
 end
 
+local PATHS = {
+ '/opt/homebrew/bin',
+ '/opt/homebrew/sbin',
+ '/usr/local/bin',
+ '/usr/bin',
+ '/bin',
+ '/usr/sbin',
+ '/sbin',
+}
 
-
+local ENV = {
+  PATH = strings.join(PATHS, ':'),
+  XDG_CACHE_HOME = '/Users/ryan/.config/.cache',
+  XDG_CONFIG_HOME = '/Users/ryan/.config',
+  XDG_DATA_HOME = '/Users/ryan/.config/.local/share',
+}
 
 local SHELL_OPTS = {
   capture = true,
-  stderr = "&1"
+  stderr = "&1",
+  env = ENV
 }
+
+
+--
+-- Shell functions
+--
+---@class KS.Shell
+local Shell = {}
+
+-- Shell.JSON = { json = true }
 
 
 ---@class KS.Shell.RunOpts
 ---@field json? boolean    - parse stdout to json
 ---@field pick? string     - extract a value from output (implied `json` option)
 
----@class KS.Shell.Result
+---@class ShellResult
 ---@field command string
 ---@field status boolean|number
 ---@field code integer
 ---@field output string
 local ShellResult = {}
 
----@return KS.Shell.Result
-function ShellResult:new(sh_result)
 
-  ---@type KS.Shell.Result
+function ShellResult:new(args)
+---@type ShellResult
   local this = self == ShellResult and {} or self
 
-  this.command = sh_result["command"]
-  this.status = sh_result["status"]
-  this.code = types.isNum(sh_result["status"]) and sh_result["status"] or 0
-  this.output = strings.trim(sh_result["output"] or '')
+  this.command = nil
+  this.status = nil
+  this.code = nil
+  this.output = nil
 
   return proto.setProtoOf(this, ShellResult)
 end
 
 
----@param args string JQ args
-function ShellResult:jq(args)
-  local jq_cmd = fmt("echo '%s' | jq -cM '%s'", self.output, args)
-  local jq_result, err = shellg.run_raw(jq_cmd, SHELL_OPTS)
 
-  if err ~= nil then
-    error(cmd_error(jq_result, err))
+---@return ShellResult
+function ShellResult:from_result(sh_result)
+
+  ---@type ShellResult
+  local this = self == ShellResult and {} or self
+
+  ShellResult._post_run(this, sh_result)
+
+  return proto.setProtoOf(this, ShellResult)
+end
+
+
+function ShellResult:_post_run(sh_result)
+  self.command = sh_result["command"]
+  self.status = sh_result["status"]
+  self.code = types.isNum(sh_result["status"]) and sh_result["status"] or 0
+  self.output = strings.trim(sh_result["output"] or '')
+end
+
+
+--
+---@param pattern string when matched against stderr output, result is considered non-error
+function ShellResult:allow(pattern)
+
+end
+
+
+function ShellResult:run()
+  --- TODO
+end
+
+
+---@return boolean
+function ShellResult:ok()
+  return self.code == 0
+end
+
+
+function ShellResult:error_msg()
+  if self:ok() then
+    return ''
   end
 
-  self.output = strings.trim(jq_result["output"])
+  return cmd_error(self, nil)
+end
+
+
+---@param jq_filter string JQ args
+function ShellResult:jq(jq_filter)
+
+  if self.code == 0 then
+
+    local ok, data = pcall(function() return json.parse(self.output) end)
+
+    if not ok then
+      error("Invalid JSON, cannot invoke jq")
+    end
+
+    local jq_cmd = fmt("echo '%s' | /opt/homebrew/bin/jq -c -M '%s'", self.output, jq_filter)
+    local jq_result, err = shellg.run_raw(jq_cmd, SHELL_OPTS)
+
+    if err ~= nil then
+      error(cmd_error(jq_result, err))
+    end
+
+    self.output = strings.trim(jq_result["output"])
+  end
 
   return self
 end
@@ -95,23 +180,64 @@ function ShellResult:pick(key)
   return json:contains(key) and json:get(key) or nil
 end
 
+function ShellResult:__tojson(state)
+  local o = tables.pick(self, { 'status', 'code', 'command', 'output' })
+  
+  return json.tostring(o, not state.indent)
+end
 
 
---
--- Shell functions
---
----@class KS.Shell
-local Shell = {}
 
-Shell.JSON = { json = true }
+---@return ShellResult
+function Shell.build(args)
+  return ShellResult:new(args)
+end
 
 
 --
 -- Executes shell command and returns a `KS.Shell.Result` wrapper object
 --
 ---@param args (string|number)[]|string
----@return KS.Shell.Result
+---@return ShellResult
 function Shell.result(args)
+  local sh_result, sh_err
+
+  if type(args) == 'string' then
+    -- sh_result, sh_err = shellg.run_raw(args, SHELL_OPTS)
+    sh_result, sh_err = shellg.run_raw(args, SHELL_OPTS)
+  else
+    sh_result, sh_err = shellg.run(args, SHELL_OPTS)
+  end
+
+
+  local cmd = sh_result["command"]
+  local code = sh_result["status"]
+  local out = sh_result["output"]
+
+
+  if (sh_err) then
+    log.w('Shell error:', sh_err)
+    log.w('Shell result:', hs.inspect(sh_result))
+  end
+
+  return ShellResult:from_result(sh_result)
+end
+
+
+--
+-- Shell execution with some QOL bits
+--
+---@param args (string|number)[]|string
+---@param options? KS.Shell.RunOpts
+---@return string|table, ShellResult
+---@deprecated
+function Shell.run(args, options)
+
+  options = options or {}
+
+  ---@type string|table
+  local value = ''
+
   local sh_result, sh_err
 
   if type(args) == 'string' then
@@ -133,44 +259,6 @@ function Shell.result(args)
     error(fmt(ERR_MSG, cmd, code, out))
   end
 
-  return ShellResult:new(sh_result)
-end
-
-
---
--- Shell execution with some QOL bits
---
----@param args (string|number)[]|string
----@param options? KS.Shell.RunOpts
----@return string|table, KS.Shell.Result
-function Shell.run(args, options)
-
-  options = options or {}
-
-  ---@type string|table
-  local value = ''
-
-  local result, err
-
-  if type(args) == 'string' then
-    result, err = shellg.run_raw(args, SHELL_OPTS)
-  else
-    result, err = shellg.run(args, SHELL_OPTS)
-  end
-
-
-  local cmd = result["command"]
-  local code = result["status"]
-  local out = result["output"]
-
-
-  if (err) then
-    log.e('Shell error:', err)
-    log.e('Shell result:', hs.inspect(result))
-
-    error(fmt(ERR_MSG, cmd, code, out))
-  end
-
   value = strings.trim(out)
 
   if (options.json) then
@@ -182,7 +270,7 @@ function Shell.run(args, options)
     value = tables.get(value, options.pick)
   end
 
-  return value, result
+  return value, sh_result
 end
 
 
@@ -192,6 +280,7 @@ end
 ---@param args (string|number)[]  
 ---@param options? KS.Shell.RunOpts
 ---@return string|table
+---@deprecated
 function Shell.get(args, options)
   return unpack(pack(Shell.run(args, options)), 1, 1)
 end
@@ -237,6 +326,37 @@ Shell.quote = shellg.quote
 -- Joins a list of shell arguments
 --
 Shell.join = shellg.join
+
+
+
+---@type CommandConfig[]
+Shell.cmds = {
+  {
+    id = "ks.commands.test_shell",
+    title = "Run hammerspoon shell checks",
+    exec = function(cmd, ctx)
+      local results = {}
+
+      local function test_cmd(cmd)
+        local result = Shell.result(cmd)
+        log.df('Test Command - [%s]', hs.inspect(cmd))
+        table.insert(results, tables.toplain(result))
+      end
+
+      test_cmd('echo "$SHELL"')
+      test_cmd('echo "$PATH"')
+      test_cmd('/opt/homebrew/bin/brew shellenv')
+      test_cmd('which jq')
+      test_cmd('eval \'[[ -o login ]] && echo "Login" || echo "Non-Login"\'')
+      test_cmd('[[ -o interactive ]] && echo "Interactive" || echo "Non-Interactive"')
+
+
+      webview.file('json.view', { data = results }, cmd.title)
+    end,
+  },
+}
+
+
 
 
 

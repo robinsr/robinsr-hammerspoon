@@ -1,8 +1,8 @@
+local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
-local types   = require 'user.lua.lib.typecheck'
 local plpath  = require 'pl.path'
 
-local log = require('user.lua.util.logger').new('path', 'error')
+local log = require('user.lua.util.logger').new('path', 'info')
 
 ---@class Paths
 local Paths = {}
@@ -10,11 +10,22 @@ local Paths = {}
 local PathsMeta = {}
 
 PathsMeta.__index = function(p, key)
-  if types.notNil(Paths[key]) then
+  if Paths[key] ~= nil then
     return Paths[key]
   else
     return plpath[key]
   end
+end
+
+
+
+--
+-- Assert path exists
+--
+---@param path string
+---@return boolean
+function Paths.exists(path)
+  return plpath.exists(path)
 end
 
 
@@ -44,15 +55,14 @@ end
 
 
 --
--- Returns filesystem path for a module name
+-- WIP --- Returns filesystem path for a module name
 --
 ---@param modname string Module name
 ---@return string 
 function Paths.mod(modname)
-  local debug_info = debug.getinfo(2)
-
-  print(hs.inspect(debug_info))
-
+  -- TODO - get caller from debug.getinfo instead of requiring a modname parameter
+  -- local debug_info = debug.getinfo(2)
+  -- print(hs.inspect(debug_info))
 
   local dir, err = plpath.package_path(modname)
   
@@ -65,6 +75,35 @@ function Paths.mod(modname)
   end
 
   error(strings.fmt('No path found for module [%s]', modname))
+end
+
+
+--
+-- Maps placeholder strings in filepaths to values
+--
+---@param filepath string Path string
+---@return string 
+function Paths.expand(filepath)
+  params.assert.string(filepath)
+
+  local old_path = filepath
+
+  -- if filepath:startswith('@') then
+  --   filepath = filepath:replace('@', plpath.currentdir())
+  -- end
+  if strings.startswith(filepath, '@') then
+    filepath = strings.replace(filepath, '@', plpath.currentdir())
+  end
+
+  filepath = plpath.expanduser(filepath)
+
+  log.f("expanded path %q to %q", old_path, filepath)
+
+  if not plpath.exists(filepath) then
+    log.wf("Expanded path %q does not exist!", filepath)
+  end
+
+  return filepath
 end
 
 

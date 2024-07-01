@@ -1,11 +1,11 @@
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
-local logr    = require 'user.lua.util.logger'
+local types   = require 'user.lua.lib.typecheck'
 
 local theme = require 'user.lua.ui.mariana'
 
-local log = logr.new('ui-color', 'info')
+-- local log = require('user.lua.util.logger').new('ui-color', 'info')
 
 
 ---@class HS.RGBColor
@@ -82,7 +82,7 @@ end
 
 
 --
--- Gets a specific system color list
+-- Retrieves a list of colors from the available pre-defined hammerspoon color list
 --
 ---@param listname string Name of the color list
 ---@return ColorList
@@ -91,6 +91,12 @@ function colors.list(listname)
 end
 
 
+--
+-- Retrieves a hs.color from one of the predefined hammerspoon color list
+--
+---@param listname string
+---@param color string
+---@return HS.Color
 function colors.from(listname, color)
   local tabl = tables(colors.list(listname) or {})
   
@@ -102,12 +108,41 @@ function colors.from(listname, color)
 end
 
 
-
+--
+-- Retrieves a hs.color from the pre-defined System color list
+--
+---@param color string
+---@return HS.Color
 function colors.system(color)
   local systemColors = hs.drawing.color.colorsFor("System")
   ---@cast systemColors -nil
   return params.default(systemColors[color], colors.black)
 end
+
+
+--
+-- Tries to create a usable HS.Color from the input
+--   - string -> assume a hex string, returns a HS.HexColor
+--   - table  -> assumes table is a valid HS.Color, returns the table
+--   - other  -> returns a default color (black)
+--
+---@param input any
+---@return HS.Color
+function colors.ensure_color(input)
+  if types.isString(input) then
+    return { hex = input }
+  end
+
+  if types.isTable(input) then
+    return input
+  end
+
+  return colors.black
+end
+
+
+---@deprecated
+colors.do_color = colors.ensure_color
 
 
 colors.disabled = colors.system("disabledControlTextColor")

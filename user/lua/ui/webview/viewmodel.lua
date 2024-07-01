@@ -1,52 +1,33 @@
-local plfile   = require 'pl.file'
-local plpath   = require 'pl.path'
-local plstring = require 'pl.stringx'
 local pltabl   = require 'pl.tablex'
-local lists    = require 'user.lua.lib.list'
+local plfile   = require 'pl.file'
 local params   = require 'user.lua.lib.params'
 local paths    = require 'user.lua.lib.path'
-local scan     = require 'user.lua.lib.scan'
 local strings  = require 'user.lua.lib.string'
 local tables   = require 'user.lua.lib.table'
-local types    = require 'user.lua.lib.typecheck'
-local json     = require 'user.lua.util.json'
 
-
-local TMPL_DIR = paths.join(paths.mod('user.lua.ui.webview'), '..', 'templates')
-
-local FMT = {
-  link = '<link rel="stylesheet" href="%s" />',
-  script = '<script type="text/javascript" src="%s"></script>',
-  meta = '<meta name="%s" value="%s" />',
+local elems = {
+  style_link = '<link rel="stylesheet" href="%s" />',
+  style_raw  = '<style type="text/css">%s</style>',
+  script_src = '<script type="text/javascript" src="%s"></script>',
+  script_raw = '<script type="text/javascript">%s</script>',
+  meta       = '<meta name="%s" value="%s" />',
 }
 
-local function link_tag(href)
-  return strings.fmt(FMT.link, href)
-end
-
-local function script_tag(src)
-  return strings.fmt(FMT.script, src)
+local file_contents = function(filename)
+  return plfile.read(paths.expand(filename))
 end
 
 
 local base_model = {
-  title = 'KS Webview',
-  stylesheet = 'function(){ console.error("ba ahahahaha"); }',
-  css = {},
-  header_tags = {},
-  _stylesheet = link_tag,
-  _script = script_tag,
-  _strings = strings,
-  _stringx = plstring,
-  _lists = lists,
-  _tables = tables,
-  _insert = table.insert,
-  _entries = pltabl.sort,
-  _json = json.tostring,
-  _inspect = function(item) return hs.inspect(item) end,
-  _load = function(filepath)
-    return plfile.read(filepath) or ""
-  end,
+  title = 'KittySupreme dialog window',
+  style_blocks = {
+    elems.style_raw:format(file_contents('@/resources/stylesheets/base.css')),
+    elems.style_raw:format(file_contents('@/resources/stylesheets/pico-adjust.css')),
+  },
+  head_tags = {
+    elems.style_link:format("https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.lime.min.css"),
+  },
+  footer_tags = {},
 }
 
 
@@ -55,16 +36,15 @@ local base_model = {
 --
 ---@return table
 local function merge_models(...)
+  for i, tabl in ipairs({...}) do
+    params.assert.tabl(tabl, i)
+  end
+
   local new_base = pltabl.copy(base_model)
 
-  new_base.header_tags = {
-    strings.fmt(FMT.link, "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.lime.min.css")
-  }
-
-  new_base.css = {
-    plpath.join(TMPL_DIR, 'pico-adjust.css'),
-  }
-
+  -- new_base.header_tags = {}
+  -- new_base.style_blocks = {}
+  -- new_base.footer_tags = {}
 
   return tables.merge({}, new_base, table.unpack({...}))
 end

@@ -1,5 +1,25 @@
 PkgName = 'ryan-hs'
 
+_G.clear = function() 
+  hs.console.clearConsole()
+  hs.reload()
+end
+
+-- redefined in user.lua.interface.console
+-- leave in cases of debugging failed start-ups
+_G.console = {
+  log = function(...)
+    local args = table.pack(...)
+    return hs.printf("%s", #args > 1 and hs.inspect(args) or hs.inspect(args[1]))
+  end
+}
+
+local util = require 'user.lua.util.init'
+
+print(string.rep('-', 40))
+print(string.rep('-', 15), util.date_str(), string.rep('-', 15))
+print(string.rep('-', 40))
+
 local lists  = require 'user.lua.lib.list'
 local tabl   = require 'user.lua.lib.table'
 local logger = require 'user.lua.util.logger'

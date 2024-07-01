@@ -1,0 +1,31 @@
+html, body {
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPMmrFrDwAFqgJ64+lE/wAAAABJRU5ErkJggg==) !important;
+  backgroun-image-repeat: repeat;
+  backdrop-filter: blur(20px);
+}
+
+main {
+  backdrop-filter: blur(2.375rem);
+}
+
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 2em 2em;
+  grid-auto-flow: row;
+  grid-template-areas:
+    ". . ."
+    ". . ."
+    ". . .";
+}
+
+
+.pull-right {
+    float: right;
+}
+
+.text-right {
+    text-align: right;
+}

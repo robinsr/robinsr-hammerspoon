@@ -104,21 +104,19 @@ end
 --
 ---@return string
 function Spaces.cycleLayout()
-  local nextlayout
   local layouts = { "bsp", "float", "stack" }
 
   local space = yabai:getSpace()
-  local layout = params.default(space.type, 'stack')
+  local layout = space.type or 'stack'
 
+  local nextlayout
   for i, nl in ipairs(layouts) do
     if nl == layout then
       nextlayout = layouts[i % #layouts + 1]
     end
   end
 
-  log.i('next yabai layout:', nextlayout)
-
-  yabai:setLayout(nextlayout)
+  yabai:setLayout(space.index, nextlayout)
   sketchybar:onSpaceEnvChange(space)
 
   return nextlayout

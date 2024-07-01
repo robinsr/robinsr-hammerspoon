@@ -51,14 +51,7 @@ end
 function LaunchAgent.queryStatus(label)
   local qs = strings.fmt('pid where label == "%s"', label)
 
-  local listing = LaunchAgent.list()
-
-  
-
-  local proc = listing:copy_select(qs)
-
-  print(qs)
-  print(hs.inspect(proc))
+  local proc = LaunchAgent.list():copy_select(qs)
 
   if (proc ~= nil and proc.pid) then
     return Service.STATUS.running
@@ -77,15 +70,7 @@ end
 ---@return LaunchctlListItem?
 function LaunchAgent.query(label)
   local qs = strings.fmt('* where label == "%s"', label)
-
-  local listing = LaunchAgent.list()
-
-  local proc = listing:copy_select(qs) --[[@as LaunchctlListItem]]
-
-  print(qs)
-  print(hs.inspect(proc))
-
-  return proc
+  return LaunchAgent.list():copy_select(qs) --[[@as LaunchctlListItem]]
 end
 
 
@@ -106,8 +91,6 @@ function LaunchAgent:new(name, servicename)
   this.service_target = strings.fmt('gui/%s/%s', uid, this.service_name)
 
   local status = LaunchAgent.query(servicename)
-
-  print(hs.inspect(status))
   
   if (status and status.pid) then
     this.pid = status.pid

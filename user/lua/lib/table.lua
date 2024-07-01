@@ -1,21 +1,8 @@
-local tbx    = require 'pl.tablex'
-local types  = require 'user.lua.lib.typecheck'
-local params = require 'user.lua.lib.params'
+local pltable = require 'pl.tablex'
+local types   = require 'user.lua.lib.typecheck'
+local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 
-
-
-local function assert_tabl(tabl, num)
-  if (not types.isTable(tabl)) then
-    error(string.format('Parameter #%d is not a table, rather %s', num or 1, type(tabl)))
-  end
-end
-
-local function assert_any(typefn, obj, num)
-  if (not types[typefn](obj)) then
-    error(string.format('Parameter #%d failed check "%s". found type %s', num or 1, typefn))
-  end
-end
 
 
 ---@class Table
@@ -40,10 +27,9 @@ TablMeta.__call = function(tabl, init) return create(tabl, init) end
 -- Returns a list keys found in `tabl`
 --
 ---@param tabl table
----@param strict? boolean Throw error if table is nil
 ---@return string[] List of table's keys
-function Table.keys(tabl, strict)
-  assert_tabl(tabl)
+function Table.keys(tabl)
+  params.assert.tabl(tabl)
 
   local keys = {}
 
@@ -58,10 +44,9 @@ end
 -- Returns a list of values found in `tabl`
 --
 ---@param tabl table
----@param strict? boolean Throw error if table is nil
 ---@return any[] list of keys
-function Table.values(tabl, strict)
-  assert_tabl(tabl)
+function Table.values(tabl)
+  params.assert.tabl(tabl)
 
   local vals = {}
 
@@ -83,15 +68,20 @@ Table.vals = Table.values
 ---@return table The merged table
 function Table.merge(...)
   local tables = table.pack(...)
-  assert_tabl(tables)
+  params.assert.tabl(tables)
 
   local merged = {}
 
   for i, tabl in ipairs(tables) do
-    assert_tabl(tabl, i)
-    
+    params.assert.tabl(tabl, i)
+
     for k, v in pairs(tabl) do
-      merged[k] = v
+
+      if types.isTable(v) and types.isTable(merged[k]) then
+        merged[k] = Table.merge(merged[k], v)
+      else
+        merged[k] = v
+      end
     end
   end
 
@@ -106,12 +96,12 @@ end
 ---@returns table 
 function Table.concat(...)
   local tables = table.pack(...)
-  assert_tabl(tables)
+  params.assert.tabl(tables)
 
   local merged = {}
 
   for i, tabl in ipairs(tables) do
-    assert_tabl(tabl, i)
+    params.assert.tabl(tabl, i)
     
     for k, v in pairs(tabl) do
       table.insert(merged, v)
@@ -120,27 +110,6 @@ function Table.concat(...)
 
   return merged
 end
-
-
---
--- Like `table.insert`, but inserts all items
---
--- -@param tabl table Table to insert items into
--- -@param ... any[] Elements to insert
----@return table
--- function Table.insert(tabl, ...)
---   local toAdd = {...}
-
---   if (not isTable(tabl)) then
---     error(errMsg(table))
---   end
-
---   for k, v in ipairs(toAdd) do
---     table.insert(tabl, v)
---   end
-
---   return tabl
--- end
 
 
 --
@@ -187,7 +156,7 @@ end
 ---@param nilMsg? string Optional error message when value is nil
 ---@return boolean 
 function Table.haspath(tabl, path, nilMsg)
-  assert_tabl(tabl, 1)
+  params.assert.tabl(tabl, 1)
 
   local val = Table.get(tabl, table.unpack(strings.split(path, '.')))
 
@@ -209,7 +178,7 @@ end
 ---@param strict? boolean Throw error if table is nil
 ---@return boolean
 function Table.has(tabl, key, strict)
-  assert_tabl(tabl)
+  params.assert.tabl(tabl)
   return types.is_not.Nil(Table.get(tabl, key))
 end
 
@@ -254,7 +223,7 @@ end
 ---@param tabl table Table to check for emptiness
 ---@return boolean
 function Table.isEmpty(tabl)
-  assert_tabl(tabl)
+  params.assert.tabl(tabl)
 
   local keys = Table.keys(tabl)
 
@@ -267,22 +236,36 @@ end
 
 
 --
--- Wait, I can just add methods to lua's table object?
+-- Returns a serializable copy of the table. Optionally
+-- pass a string array of allowed getters to copy
 --
--- Yes, but its not like a class with instance methods
---
--- Eg NOT 
--- tab1 = { this = 'that' }
--- tab2 = tab1:clone()
---
--- its just on the table
---
--- tab2 = table.clone(tab1)
---
--- And this implementation is naive, only copies array-like tables
---
-function Table.clone(tabl)
-  return setmetatable(tabl, table)
+---@param tabl table
+---@param getters? string[]
+function Table.toplain(tabl, getters)
+  getters = getters or {}
+
+  local copy = pltable.copy(tabl)
+
+  for key, val in pairs(copy) do
+    if strings.startswith(key, '__') then
+      copy[key] = nil
+
+    elseif type(val) == 'table' then
+      copy[key] = Table.toplain(val)
+
+    elseif type(val) == 'userdata' then
+      copy[key] = nil
+
+    elseif type(val) == 'function' then
+      if Table.contains(getters, key) then
+        copy[key] = tabl[val]()
+      else
+        copy[key] = nil
+      end
+    end
+  end
+
+  return setmetatable(copy, table)
 end
 
 

@@ -4,7 +4,8 @@ local tables = require 'user.lua.lib.table'
 local types  = require 'user.lua.lib.typecheck'
 local vm     = require 'user.lua.ui.webview.viewmodel'
 local render = require 'user.lua.ui.webview.renderer'
-local logr   = require 'user.lua.util.logger'
+
+local log = require('user.lua.util.logger').new('webview', 'info')
 
 ---@alias HS.Webview.Masks
 ---| 'HUD'
@@ -17,6 +18,7 @@ local logr   = require 'user.lua.util.logger'
 ---| 'texturedBackground'
 ---| 'titled'
 ---| 'utility'
+
 
 ---@alias HS.WindowBehaviors
 ---| 'canJoinAllSpaces'
@@ -32,7 +34,6 @@ local logr   = require 'user.lua.util.logger'
 ---| 'stationary'
 ---| 'transient'
 
-local log = logr.new('webview', 'info')
 
 local FADE_TIME = alert.timing.FAST
 local WEBVIEW_OPTS = {
@@ -80,9 +81,26 @@ function Webview.new_webview()
 
   end)
 
-  local win_dimensions = desk.getScreen('active'):frame():scale({ w = 0.50, h = 0.90 })
+  local MAX_WIDTH = 1680
+  local MAX_HEIGHT = 1124
 
-  local view = hs.webview.new(win_dimensions, WEBVIEW_OPTS, controller) --[[@as hs.webview]]
+  local screen_frame = desk.getScreen('active'):frame()
+  local max_startx = screen_frame.center.x - (MAX_WIDTH/2)
+  local max_starty = screen_frame.center.y - (MAX_HEIGHT/2)
+  local webview_max = hs.geometry.new({ max_startx, max_starty, MAX_WIDTH, MAX_HEIGHT })
+
+  local webview_frame = desk.getScreen('active'):frame():scale({ w = 0.88, h = 0.92 })
+    
+  if not webview_frame:inside(webview_max) then
+    -- webview_frame:fit(webview_max)
+    webview_frame = webview_max
+  end
+
+  print('screen', screen_frame.string, hs.inspect(screen_frame))
+  print('webview', webview_frame.string, hs.inspect(webview_frame))
+
+
+  local view = hs.webview.new(webview_frame, WEBVIEW_OPTS, controller) --[[@as hs.webview]]
 
   view:windowStyle({ "borderless", "closable", "utility" })
   view:behaviorAsLabels({ 'moveToActiveSpace' })
@@ -91,6 +109,7 @@ function Webview.new_webview()
   view:closeOnEscape(true)
   view:allowGestures(true)
   view:allowTextEntry(true)
+  -- view:magnification(0.8)
   -- view:shadow(true)
 
   return view
@@ -98,59 +117,55 @@ end
 
 
 --
+-- Creates a webview with content provided by parameter
+--
+---@param content string
+---@param title? string
+function Webview.content(content, title)
+  if Webview.showing() then
+    return Webview.close_all()
+  end
+
+  title = title or vm.base_model.title
+
+  ---@type hs.webview
+  local view = Webview.new_webview()
+
+  view:windowTitle(title)
+  view:html(content)
+  view:show(FADE_TIME)
+  
+  view:hswindow():becomeMain():focus()
+
+  view:windowCallback(function(obj) 
+    log.f("Wenbview window callback: %s", hs.inspect(obj))
+  end)
+
+  Webview.current = view
+end
+
+
+--
+-- Creates a webview with content rendered from 'template' within a whole-page HTML wrapper
 --
 ---@param template string
 ---@param viewmodel? table
 ---@param title? string
 function Webview.page(template, viewmodel, title)
-
-  if Webview.showing() then
-    return Webview.close_all()
-  end
-
-  viewmodel = viewmodel or {}
-  title = title or vm.base_model.title
-
-  ---@type hs.webview
-  local view = Webview.new_webview()
-
-  view:windowTitle(title)
-  view:html(render.page(template, viewmodel))
-  view:show(FADE_TIME)
-  
-  view:hswindow():becomeMain():focus()
-
-  view:windowCallback(function(obj) print(hs.inspect(obj)) end)
-
-  Webview.current = view
+  Webview.content(render.page(template, viewmodel or {}), title)
 end
 
 
 --
+-- Creates a webview with content rendered from 'template' without a HTML wrapper.
 --
----@param file string
+---@param filepath string
 ---@param viewmodel? table
 ---@param title? string
-function Webview.file(file, viewmodel, title)
-  if Webview.showing() then
-    return Webview.close_all()
-  end
-
-  viewmodel = viewmodel or {}
-  title = title or vm.base_model.title
-
-  ---@type hs.webview
-  local view = Webview.new_webview()
-
-  view:windowTitle(title)
-  view:html(render.file(file, viewmodel))
-  view:show(FADE_TIME)
-
-  view:windowCallback(function(obj) print(hs.inspect(obj)) end)
-
-
-  Webview.current = view
+function Webview.file(filepath, viewmodel, title)
+  Webview.content(render.file(filepath, viewmodel or {}), title)
 end
+
 
 return Webview
 

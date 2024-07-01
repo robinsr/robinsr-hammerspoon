@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{- title|default('There is no title for this page...') -}}</title>
+
+  {% block head_tags %}
+    {% for i, elem_html in head_tags %}
+      {{ elem_html }}
+    {% endfor %}
+  {% endblock %}
+
+  {% block head_css %}
+    {% for i, css_text in style_blocks %}
+      <style type="text/css">
+        {{ css_text }}
+      </style>
+    {% endfor %}
+  {% endblock %}
+
+</head>
+<body>
+
+  {% block page_title %}
+    <header class="container-fluid">
+      <h1 class="title">
+        <small>
+          {{ title|default('There is no title for this page...') }}
+        </small>
+        <small id="js-ok" class="pull-right">…</small>
+      </h1>
+    </header>
+  {% endblock %}
+
+  {% block page_content %}
+    <main class="container-fluid">
+      <p>Content should go here...</p>
+    </main>
+  {% endblock %}
+
+  {% block page_footer %}
+    <footer class="container-fluid">
+      <hr />
+      <nav>
+        <ul>
+          <li><strong>KittySupreme</strong></li>
+        </ul>
+        <ul>
+          <li><a href="#">Button 1</a></li>
+          <li><a href="#">Button 2</a></li>
+          <li><a href="#">Button 3</a></li>
+        </ul>
+      </nav>
+    </footer>
+  {% endblock %}
+
+  {% block page_script %}
+    <script type="text/javascript">
+      const onLoad = function() {
+        const doKsMsg = (data) => {
+          if (typeof data != 'string') {
+            data = JSON.stringify(data)
+          }
+
+          try { 
+            webkit.messageHandlers.kittysupreme.postMessage(data);
+          } catch(err) {
+            console.log('The controller does not exist yet');
+          }
+        }
+
+        window.addEventListener('keyup', (evt) => {
+          evt.preventDefault()
+          evt.stopPropagation()
+
+          doKsMsg(evt)
+
+          if (evt.key == 'Escape') {
+            doKsMsg('close')
+          }
+        })
+
+        doKsMsg("Hello from webview");
+
+        setTimeout(() => {
+          document.querySelector('#js-ok').textContent = "👍"
+        }, 1000)
+      }
+      
+      window.addEventListener('load', onLoad)
+    </script>
+  {% endblock %}
+
+  {% block page_end %}
+    
+  {% endblock %}
+</body>
+</html>

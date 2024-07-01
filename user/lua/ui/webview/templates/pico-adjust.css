@@ -1,6 +1,8 @@
 :root {
   --pico-font-size: 93%;
+/*  --pico-spacing: 0.8rem;*/
 }
+
 
 [data-theme="light"],
 :root:not([data-theme="dark"]) {

@@ -1,3 +1,21 @@
+<style type="text/css">
+  .text-right {
+    text-align: right;
+  }
+
+  kbd {
+    white-space: nowrap;
+    font-size: 1.0rem;
+  }
+
+  kbd span.symbol {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+</style>
+
+
+
 <header class="container-fluid">
   <h1 class="title">
     <small>
@@ -6,7 +24,50 @@
   </h1>
 </header>
 
-<hr />
+<hr>
+
+<main class="container-fluid">
+  <article>
+    <header>
+      <h3>
+        <small>Mods</small>
+      </h3>
+    </header>
+    <table>
+      <% local count = 0 -%>
+
+      <% for name, keys in _entries(mods) do -%>
+      
+        <% if count % 4 == 0 then %>
+          <tr>
+        <% end %>
+        
+        <% if #keys > 1 then %>
+          <td style="text-align: right;">
+            <strong>
+              <em>❝<%= name -%>❞</em>
+            </strong>
+          </td>
+          
+          <td>
+            <% for k, key in ipairs(keys) do -%>
+              <kbd><span class="symbol"><%= symbols[key] or key -%></span></kbd>
+            <% end -%>
+          </td>
+
+          <% count = count+1 -%>
+        <% end -%>
+
+        <% if count % 4 == 0 then %>
+          </tr>
+        <% end %>
+
+      <% end -%>
+    </table>
+  </article>
+</main>
+
+<hr>
 
 <main class="container-fluid card-grid">
   <% for key, cmds in _entries(groups) do -%>
@@ -20,11 +81,20 @@
         <table>
           <% for i, cmd in _entries(cmds) do -%>
             <% if cmd:hasHotkey() then -%>
-              <% local hotkey = cmd:getHotkey():label() -%>
+              <% local hotkey = cmd:getHotkey() -%>
               <tr>
-                <td>
+                <td class="text-right">
                   <kbd>
-                    <%= hotkey %>
+                    <span class="symbol">
+                      <% for i, key in ipairs(hotkey.mods) do -%>
+                        <%= symbols[key] or key %>
+                      <% end %>
+                    </span>
+                    <% if symbols[hotkey.key] then -%>
+                      <span class="symbol"><%= symbols[hotkey.key] %></span>
+                    <% else %>
+                      <span class="not-symbol"><%= hotkey.key %></span>
+                    <% end %>
                   </kbd>
                 </td>
                 <td>
@@ -37,29 +107,6 @@
       </article>
     <% end -%>
   <% end -%>
-  <article>
-    <header>
-      <h3>
-        <small>Mods</small>
-      </h3>
-    </header>
-    <table>
-      <% for name, keys in _entries(mods) do -%>
-        <% if #keys > 1 then %>
-          <tr>
-            <td>
-            <% for k, key in ipairs(keys) do -%>
-              <kbd><%= symbols[key] or symbol -%></kbd>
-            <% end -%>
-            </td>
-            <td>
-              <%= name -%>
-            </td>
-          </tr>
-        <% end -%>
-      <% end -%>
-    </table>
-  </article>
 </main>
 
 <footer class="container-fluid">

@@ -78,7 +78,7 @@ P.cmds = {
   {
     id = "KS.Experiments.Panel",
     title = "Canvas Experiment",
-    mods = "bar",
+    mods = "btms",
     key = "F",
     exec = function(cmd, ctx)
       P.testpanel()

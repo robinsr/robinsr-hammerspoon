@@ -5,28 +5,49 @@ local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local icons   = require 'user.lua.ui.icons'
+local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('HotKey', 'info')
 
+--[[
+https://www.hammerspoon.org/docs/hs.keycodes.html
 
----@alias ModKeyCombo "hyper" | "meh" | "bar" | "modA" | "modB" | "shift" | "alt" | "ctrl" | "cmd"
+Valid strings are any single-character string, or any of the following strings:
+f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+f16, f17, f18, f19, f20, pad., pad*, pad+, pad/, pad-, pad=,
+pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9,
+padclear, padenter, return, tab, space, delete, escape, help,
+home, pageup, forwarddelete, end, pagedown, left, right, down, up,
+shift, rightshift, cmd, rightcmd, alt, rightalt, ctrl, rightctrl,
+capslock, fn
+]]
+
+
+---@alias ModKeyCombo "hyper" | "meh" | "btms" | "peace" | "claw" | "lil" | "shift" | "alt" | "ctrl" | "cmd"
 ---@alias ModKeyname "shift" | "alt" | "ctrl" | "cmd"
 ---@alias KeyEventType "pressed" | "released" | "repeat"
 ---@alias EventHandler fun(): any
 
 ---@type Table
 local preset_mods = tables{
-  hyper = { "cmd", "ctrl", "alt", "shift" },
-  meh   = { "cmd", "ctrl",        "shift" },
-  ctcmd = { "cmd", "ctrl",                },
-  bar   = { "cmd", "ctrl", "alt"          },
-  modA  = {        "ctrl", "alt"          },
-  modB  = {        "ctrl", "alt", "shift" },
-  shift = {                       "shift" },
-  alt   = {                "alt"          },
-  ctrl  = {        "ctrl"                 },
-  cmd   = { "cmd"                         },
+  hyper  = { "ctrl", "alt", "shift", "cmd" }, -- all the keys!
+  meh    = { "ctrl", "alt", "shift"        }, -- its just whatev
+  peace  = { "ctrl", "alt", "shift"        }, -- "the peace sign" (same as "meh", just easier to remember)
+  claw   = { "ctrl",        "shift", "cmd" }, -- THE CLAW! (same as fake-meh)
+  btms   = { "ctrl", "alt",          "cmd" }, -- bottoms
+  lil    = { "ctrl", "alt"                 }, -- just a "lil" thing
+
+  -- Individual keys
+  cmd    = {                         "cmd" },
+  shift  = {                "shift"        },
+  alt    = {         "alt"                 },
+  ctrl   = { "ctrl"                        },
+
+  -- Command+ combos
+  ctcmd  = { "ctrl",                 "cmd" },
+  altcmd = {         "alt",          "cmd" },
+  scmd   = {                "shift", "cmd" },
 }
 
 
@@ -97,20 +118,8 @@ end
 
 
 --
---
----@return table
-function Hotkey:toTable()
-  return {
-    key = self.key,
-    mods = self.mods,
-    symbols = self:symbols(),
-    label = self:label(),
-  }
-end
-
-
---
---
+-- Returns an event handler functin for key-pressed, key-released, 
+-- and key-repeat as return values 1, 2, and 3
 --
 ---@param fn EventHandler
 ---@return { [0]: EventHandler, [0]:  EventHandler, [0]: EventHandler}
@@ -124,6 +133,19 @@ function Hotkey:getEventHandlers(fn)
   return lists(evts):map(function(evt)
     return lists(self.keyevents):includes(evt) and fn or noop
   end)
+end
+
+
+
+---@return table
+function Hotkey:__toplain()
+  return tables.toplain(self, { 'symbols', 'label' })
+end
+
+
+---@return string
+function Hotkey:__tojson()
+  return json.tostring(self:__toplain())
 end
 
 

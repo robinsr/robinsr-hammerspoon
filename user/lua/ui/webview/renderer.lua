@@ -1,25 +1,43 @@
-local etlua    = require 'etlua'
+-- local etlua    = require 'etlua'
 local plpath   = require 'pl.path'
 local plfile   = require 'pl.file'
-local plseq    = require 'pl.seq'
-local plstring = require 'pl.stringx'
 local pltabl   = require 'pl.tablex'
-local alert    = require 'user.lua.interface.alert'
-local desk     = require 'user.lua.interface.desktop'
-local lists    = require 'user.lua.lib.list'
-local params   = require 'user.lua.lib.params'
 local paths    = require 'user.lua.lib.path'
-local scan     = require 'user.lua.lib.scan'
+local params   = require 'user.lua.lib.params'
 local strings  = require 'user.lua.lib.string'
-local tables   = require 'user.lua.lib.table'
-local types    = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
-local vm     = require 'user.lua.ui.webview.viewmodel'
+local vm       = require 'user.lua.ui.webview.viewmodel'
+local json     = require 'user.lua.util.json'
 
-local log = logr.new('webview-renderer', 'info')
+local log = logr.new('webview-renderer', 'debug')
 
-local TMPL_DIR = paths.join(paths.mod('user.lua.ui.webview'), '..', 'templates') 
+local json_encode_function = function(data, ...)
+  -- log.f('Aspect JSON encode call: %s %s', hs.inspect(data), hs.inspect({...}))
+  return json.tostring(data)
+end
 
+local json_decode_function = function(data, ...)
+-- log.f('Aspect JSON decode call: %s %s', hs.inspect(data), hs.inspect({...}))
+  return json.parse(data)
+end
+
+local json = require("aspect.config").json
+json.encode = json_encode_function
+json.decode = json_decode_function
+
+local tmpl_dir = paths.expand('@/resources/templates/aspect')
+local fs_loader = require("aspect.loader.filesystem").new(tmpl_dir)
+local aspect_opts = {
+  cache = false,
+  debug = true,
+  loader = fs_loader
+}
+
+local aspect = require("aspect.template").new(aspect_opts)
+
+
+
+local renderers = {}
 
 ---@return string
 local function fetchTemplate(filepath)
@@ -27,85 +45,42 @@ local function fetchTemplate(filepath)
 end
 
 
-local template_cache = {}
-local function loadAll()
-  log.f('Using template dir [%s]', TMPL_DIR)
-
-  local files = scan.listdir(TMPL_DIR, 'etlua')
-
-  local tmpls = lists(files):reduce({}, function(memo, filepath)
-    return tables.merge(memo, { 
-      [plpath.basename(filepath)] = etlua.compile(fetchTemplate(filepath))
-    })
-  end)
-
-  log.inspect('Loaded templates:', tables.keys(tmpls))
-
-  return tmpls
-end
-
-
-
-local renderers = {}
-
-
----@param template string
----@param viewmodel table
-function renderers.cached(template, viewmodel)
-  if tables.isEmpty(template_cache) then loadAll() end
-
-  local tmpl_key = strings.fmt('%s.etlua', template)
-
-  if tables.has(template_cache, tmpl_key) then
-    return template_cache[tmpl_key](viewmodel)
-  else
-    error(strings.fmt('No template for name [%s]', template))
-  end
-end
-
-
--- Renders a etlua template at the specified path. The following are valid for `filepath`
+-- Renders a Aspect template at the specified path. The following are valid for `filepath`
 -- - basename, eg 'mytemplate'
--- - base + extension, eg 'mytemplate.etlua'
--- - full absolute path, eg `/YUsers/bob/whatever/mytemplate.etlua'
+-- - base + extension, eg 'mytemplate.view'
+-- - full absolute path, eg `/Users/bob/whatever/mytemplate.view'
 --
 ---@param filepath string
 ---@param viewmodel table
 function renderers.file(filepath, viewmodel)
   params.assert.string(filepath, 1)
 
-  if not filepath:match('^.*%.etlua$') then
-    filepath = filepath .. '.etlua'
+  log.df("Rendering FILE at path %q (loader dir: %s)", filepath, tmpl_dir)
+
+  local result, err = aspect:render(filepath, vm.merge_models(viewmodel))
+
+  if err ~= nil then
+    local details = tostring(err)
+    log.ef("Failed to render aspect template [%s]\n%s", filepath, details)
+    error("Aspect error - " .. err.message)
   end
 
-  if not plpath.isabs(filepath) then
-    filepath = plpath.join(TMPL_DIR, filepath)
-  end
-  
-  if plpath.exists(filepath) then
-    log.i('Compiling template file: ', filepath)
+  log.vf("Aspect render result: %s", tostring(result))
 
-    local template = etlua.compile(fetchTemplate(filepath))
-
-    if template == nil then
-      error('Error compiling template: ' .. filepath)
-    end
-
-    return template(viewmodel)
-  else
-    error(strings.fmt('No template found at path: %s', filepath))
-  end
+  return tostring(result)
 end
 
 
 -- Renders `template` as the content portion of base.etlua
 --
----@param template string 
+---@param tmpl_name string 
 ---@param viewmodel table
-function renderers.page(template, viewmodel)
+function renderers.page(tmpl_name, viewmodel)
+  log.df("Rendering PAGE named %q (loader dir: %s)", tmpl_name, tmpl_dir)
+  
   local model = vm.merge_models(viewmodel)
-  model.content = renderers.file(template, model)
-  return renderers.file('base', model)
+  model.content = renderers.file(tmpl_name, model)
+  return renderers.file('base.view', model)
 end
 
 return renderers

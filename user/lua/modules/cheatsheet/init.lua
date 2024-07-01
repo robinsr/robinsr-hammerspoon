@@ -10,37 +10,42 @@ local cheat = {}
 
 cheat.cmds = {
   {
-    id = 'cheatsheet.show.kitty',
-    title = "Show Hotkeys for KittySupreme",
+    id = 'ks.commands.show_ks_hotkeys',
+    title = "Show hotkeys for KittySupreme",
+    icon = "kitty",
     key = "\\",
-    mods = "bar",
+    mods = "btms",
     exec = function(cmd)
+      local groups = KittySupreme.commands
+        :filter(function(cmd) return cmd:hasHotkey() end)
+        :groupBy(function(cmd)
+            local key = (cmd.module or '')
+            :gsub('user%.lua%.', '')
+            :gsub('modules%.', '')
+            :gsub('%.', ' → ')
+
+          return strings.ifEmpty(key, 'Init')
+        end)
+
+
       local model = {
         title = "KittySupreme Hotkeys",
         mods = hotkey.presets,
-        symbols = icons.keys:values(),
-        groups = KittySupreme.commands:filter(function(cmd) return cmd:hasHotkey() end)
-          :groupBy(function(cmd)
-              local key = (cmd.module or '')
-              :gsub('user%.lua%.', '')
-              :gsub('modules%.', '')
-              :gsub('%.', ' → ')
-
-            return strings.ifEmpty(key, 'Init')
-          end)
+        symbols = icons.keys:toplain(),
+        groups = groups,
       }
 
-      webview.page("status", model, model.title)
+      webview.file("cheatsheet.view", model, model.title)
     end,
   },
   {
     title = "Show Hotkeys for current app",
     id = "cheatsheet.show.active",
-    key = "b",
-    mods = "bar",
+    key = "K",
+    mods = "btms",
     exec = function(cmd, ctx)
 
-      --local focusedApp= hs.window.frontmostWindow():application()
+      local focusedApp= hs.window.frontmostWindow():application()
       local app = hs.application.frontmostApplication()
       local title = app:title()
       
@@ -53,17 +58,14 @@ cheat.cmds = {
               reduce(memo, child)
             end
           else
-            table.insert(memo, { 
-              title = child_item.title,
-              hasHotkey = child_item.hasHotkey,
-              getHotkey = child_item.hasHotkey,
-            })
+            table.insert(memo, child_item)
           end
           return memo
         end
 
         return { title = item.title, cmds = reduce({}, item.children) }
-      end):groupBy('title')
+      end)
+      -- :groupBy('title')
 
 
       print(hs.inspect(menus))
@@ -71,12 +73,12 @@ cheat.cmds = {
       local model = {
         title = "Hotkeys for " .. title,
         mods = hotkey.presets,
-        symbols = icons.keys:values(),
+        symbols = icons.keys,
         groups = menus,
       }
 
 
-      webview.page("status", model, model.title)
+      webview.page("json.view", model, model.title)
     end
   }
 }

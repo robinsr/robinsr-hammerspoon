@@ -1,9 +1,13 @@
+local desktop = require 'user.lua.interface.desktop'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
-local plutils = require 'pl.utils'
+local icons   = require 'user.lua.ui.icons'
+local images  = require 'user.lua.ui.image'
 
-local prev_alert = nil
+local log = require('user.lua.util.logger').new('path', 'info')
+
+local keydown = hs.eventtap.event.types.keyDown
 
 
 ---@class HS.AlertStyle
@@ -49,8 +53,19 @@ Alert.timing = {
 ---@param ... any pattern variables
 ---@return Alert
 function Alert.new(self, pattern, ...)
+
+  -- Modify alert style as needed
+  local style = hs.alert.defaultStyle
+
+  -- 0: center
+  -- 1: top edge
+  -- 2: bottom edge
+  style.atScreenEdge = 0
+
   local config = {
-    text = strings.fmt(pattern, ...)
+    text = strings.fmt(pattern, ...),
+    timing = Alert.timing.LONG,
+    style = style
   }
 
   return proto.setProtoOf({ config = config }, Alert)
@@ -80,24 +95,68 @@ end
 
 
 --
+-- stores the currently displayed alert
+--
+local prev_alert = nil
+
+
+--
 -- Shows the configured alert
 --
----@param timing? AlertTime
+---@param timing? AlertTime|integer
 function Alert.show(self, timing)
   hs.alert.closeSpecific(prev_alert, 0)
 
-  local text = self.config.text
-  local icon = self.config.icon
-  local style = self.config.style
+  local text = self.config.text or ''
+  local icon = self.config.icon or nil
+  local style = self.config.style or {}
   local screen = hs.screen.mainScreen()
-  local seconds = self.config.timing or Alert.timing.NORMAL
+  local seconds = timing or self.config.timing or Alert.timing.NORMAL
+
+  log.f("Alert Config: %s", hs.inspect({ text, icon, style, screen:name(), seconds }))
 
   if types.notNil(self.config.icon) then
     prev_alert = hs.alert.showWithImage(text, icon, style, screen, seconds)
   else
     prev_alert = hs.alert.show(text, style, screen, seconds)
   end
+
+  local escape_press = nil
+
+  escape_press = hs.eventtap.new({ keydown }, function(evt)
+    ---@cast evt hs.eventtap.event
+    ---@cast escape_press hs.eventtap
+
+    if evt:getKeyCode() == hs.keycodes.map.escape then
+      hs.alert.closeSpecific(prev_alert, 0)
+      escape_press:stop()
+      return true
+    end
+
+    return false
+  end):start()
 end
+
+
+
+
+Alert.cmds = {
+  {
+    id = 'ks.test.alert1',
+    title = 'Test alert with image',
+    icon = 'info',
+    mods = 'peace',
+    key = 'J',
+    setup = {
+      img = images.from_path("@/resources/images/icons8-esc-100.png", 50, 50),
+    },
+    exec = function(cmd, ctx, params)
+      Alert:new("Use the escape key")
+        :icon(ctx.img)
+        :show(20)
+    end,
+  }
+}
 
 
 return Alert

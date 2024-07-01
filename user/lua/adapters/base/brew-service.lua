@@ -5,7 +5,7 @@ local proto   = require 'user.lua.lib.proto'
 local tables  = require 'user.lua.lib.table'
 local logr    = require 'user.lua.util.logger'
 
-local log = logr.new('brew-servive','debug')
+local log = logr.new('brew-servive', 'info')
 
 
 
@@ -70,7 +70,7 @@ function BrewService:new(name)
 
   local exec = sh.result({ 'brew', 'services', 'info', name, '--json' })
 
-  if (exec == nil) then
+  if (exec == nil or exec.code ~= 0) then
     error("Error retrieving brew service [" .. name .. "]")
   end
 
@@ -82,8 +82,6 @@ function BrewService:new(name)
   this._status = brewinfo.status or 'none'
   this.pid = brewinfo.pid
   this.plist = brewinfo.file
-
-  log.i(hs.inspect(exec), hs.inspect(this))
 
   return proto.setProtoOf(this, BrewService, { locked = true })
 end

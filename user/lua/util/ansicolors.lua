@@ -1,4 +1,4 @@
-local keys = {
+local basic_colors = {
   -- reset
   reset =      0,
 
@@ -31,11 +31,14 @@ local keys = {
   whitebg   = 47
 }
 
-local escapeString = string.char(27) .. '[%dm'
+local esc_char = string.char(27)
+local escape_basic_fg_pattern = esc_char .. '[%dm'
+local true_color_fg_pattern = '[38;2;{r};{g};{b}m' -- todo
+local x256_color_fg_pattern = '[38;5;{num}m'       -- todo
 
 
 local function escapeNumber(number)
-  return escapeString:format(number)
+  return escape_basic_fg_pattern:format(number)
 end
 
 
@@ -44,7 +47,7 @@ local function escapeKeys(str)
   local number
 
   for word in str:gmatch("%w+") do
-    number = keys[word]
+    number = basic_colors[word]
     assert(number, "Unknown key: " .. word)
     table.insert(buffer, escapeNumber(number) )
   end

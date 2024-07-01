@@ -1,6 +1,6 @@
-local screen  = require 'hs.screen' --[[@as hs.screen]]
-local mouse   = require 'hs.mouse' --[[@as hs.mouse]]
-local win     = require 'hs.window' --[@as hs.window]
+-- local screen  = require 'hs.screen' --[[@as hs.screen]]
+-- local mouse   = require 'hs.mouse' --[[@as hs.mouse]]
+-- local win     = require 'hs.window' --[@as hs.window]
 local logr    = require 'user.lua.util.logger'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
@@ -27,10 +27,10 @@ local desktop = {}
 
 ---@type { [ScreenSelector]: fun(): hs.screen }
 local selectors = {
-  main = screen.mainScreen,
-  mouse = mouse.getCurrentScreen,
-  active = screen.mainScreen,
-  primary = screen.primaryScreen,
+  main = hs.screen.mainScreen,
+  mouse = hs.mouse.getCurrentScreen,
+  active = hs.screen.mainScreen,
+  primary = hs.screen.primaryScreen,
 }
 
 --
@@ -40,7 +40,7 @@ local selectors = {
 ---@return hs.screen
 function desktop.getScreen(sel)
   ---@type hs.screen
-  local default = screen.allScreens()[1] 
+  local default = hs.screen.allScreens()[1] 
 
   if (types.isString(sel) and tables.has(selectors, sel)) then
     return selectors[sel]() or default
@@ -51,16 +51,25 @@ end
 
 
 function desktop.screens()
-  return screen.allScreens()
+  return hs.screen.allScreens()
 end
 
 
 --
 -- Returns the numerical ID of the currently active window, or nil if none exists
 --
----@return integer windowId
+---@return integer
+function desktop.activeWindowId()
+  return hs.window.focusedWindow():id() or 0
+end
+
+
+--
+-- Returns the currently active window, or nil if none exists
+--
+---@return hs.window
 function desktop.activeWindow()
-  return win.focusedWindow():id()
+  return hs.window.focusedWindow()
 end
 
 

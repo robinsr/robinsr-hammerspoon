@@ -135,4 +135,28 @@ end
 
 
 
+SketchyBar.cmds = {
+  {
+    id = 'sketch.service.restart',
+    title = 'Restart SketchyBar',
+    icon = 'info',
+    exec = function()
+      if KittySupreme.services.sketchybar ~= nil then
+        KittySupreme.services.sketchybar:restart()
+      end
+    end,
+  },
+  {
+    id = 'sketch.service.refresh',
+    title = 'Refresh SketchyBar (force update)',
+    icon = 'info',
+    exec = function()
+      if KittySupreme.services.sketchybar ~= nil then
+        KittySupreme.services.sketchybar:update()
+      end
+    end,
+  },
+}
+
+
 return proto.setProtoOf(SketchyBar, BrewService, { locked = true })

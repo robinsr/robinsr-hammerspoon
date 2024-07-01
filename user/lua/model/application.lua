@@ -1,5 +1,6 @@
 local hotkey  = require 'user.lua.model.hotkey'
 local lists   = require 'user.lua.lib.list'
+local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 
 
@@ -37,14 +38,13 @@ function App.menuItem(item)
   local mods = item['AXMenuItemCmdModifiers']
   local char = item['AXMenuItemCmdChar']
 
-  local hk = hotkey.new(mods, char):toTable()
+  local hk = hotkey.new(mods, char)
 
-  if (not types.isEmpty(char)) then
+  if types.is_not.empty(char) then
     o.hasHotkey = function() return true end
-    o.getHotkey = function() return hk end
+    o.hotkey = tables.toplain(hk)
   else
     o.hasHotkey = function() return false end
-    o.getHotkey = function() return hk end
   end
 
   o.has_children = types.isTable(item.AXChildren) and types.isTable(item.AXChildren[1])

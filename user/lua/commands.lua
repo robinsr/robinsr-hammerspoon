@@ -1,10 +1,7 @@
-local chooser    = require 'hs.chooser'
-local console    = require 'user.lua.interface.console'
 local desk       = require 'user.lua.interface.desktop'
 local collect    = require 'user.lua.lib.collection'
 local lists      = require 'user.lua.lib.list'
 local scan       = require 'user.lua.lib.scan'
-local strings    = require 'user.lua.lib.string'
 local tables     = require 'user.lua.lib.table'
 local types      = require 'user.lua.lib.typecheck'
 local Command    = require 'user.lua.model.command'
@@ -31,7 +28,7 @@ local command_list = {
     title = "Show console",
     icon = "code",
     key = "I",
-    mods = "bar",
+    mods = "btms",
     exec = function()
       hs.openConsole(true)
     end,
@@ -49,7 +46,7 @@ local command_list = {
     title = "Reload Config",
     icon = "reload",
     key = "W",
-    mods = "bar",
+    mods = "btms",
     exec = function(cmd)
       delay(0.75, hs.reload)
       return cmd:hotkeyLabel()
@@ -60,52 +57,11 @@ local command_list = {
     title = "Relaunch Hammerspoon",
     icon = "reload",
     key = "X",
-    mods = "bar",
+    mods = "btms",
     exec = function(cmd)
       delay(0.75, hs.relaunch)
       return cmd:hotkeyLabel()
     end,
-  },
-  {
-    id = 'ks.commands.chooseCommand',
-    title = "Show command chooser",
-    mods = "bar",
-    key = "c",
-    setup = function(cmd)
-
-      local onCmdChosen = function(choice)
-        local cmd = KittySupreme.commands:first(function(cmd) return cmd.id == choice.id end)
-
-        if types.notNil(cmd) then
-          ---@cast cmd Command
-          cmd:invoke('chooser', {})
-        end
-      end
-
-      local cmd_chooser = chooser.new(onCmdChosen)
-      local not_events_glob = strings.glob(EVT_FILTER)
-
-      cmd_chooser:choices(function()
-        return lists(KittySupreme.commands)
-          :filter(function(cmd) return not_events_glob(cmd.id) end)
-          :map(function(cmd)
-            return {
-              text = cmd.title or cmd.id,
-              subText = cmd.id,
-              id = cmd.id,
-            }
-          end)
-          :values()
-      end)
-
-      cmd_chooser:searchSubText(true)
-
-      return { chooser = cmd_chooser }
-    end,
-    exec = function(cmd, ctx, params)
-      ctx.chooser:refreshChoicesCallback()
-      ctx.chooser:show()
-    end
   }
 }
 

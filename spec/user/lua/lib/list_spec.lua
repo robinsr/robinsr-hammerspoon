@@ -3,7 +3,7 @@ local pretty   = require 'pl.pretty'
 local seq      = require 'pl.seq'
 local testutil = require 'spec.util'
 
-local eq = assert.equals
+local eq = assert.are.equal
 local same = assert.are.same
 
 local msg = testutil.msg
@@ -22,7 +22,7 @@ local methods = { "push", "pop", "forEach", "filter", "map", "reduce" }
 
 local function verify_methods(tabl)
   for i, m in ipairs(methods) do
-    eq(type(tabl[m]), "function", msg("Expected func", hl(m), "to be defined on list{}"))
+    eq("function", type(tabl[m]), msg("Expected func", hl(m), "to be defined on list{}"))
   end
 end
 
@@ -31,13 +31,13 @@ local function verify_list(ls, items)
 
   group('should allow item access via index', function()
     for i,v in ipairs(items) do
-      assert.are.same(v, ls[i], msgf('expected item at index [%d] to be %q', i, tostring(v)))
+      same(v, ls[i], msgf('expected item at index [%d] to be %q', i, tostring(v)))
     end
   end)
 
   group('should allow item access via `at()`', function()
     for i,v in ipairs(items) do
-      assert.are.same(v, ls:at(i), msgf('expected item at index [%d] to be %q', i, tostring(v)))
+      same(v, ls:at(i), msgf('expected item at index [%d] to be %q', i, tostring(v)))
     end
   end)
 end
@@ -53,8 +53,7 @@ describe("lib/list.lua", function()
       assert.is_true(alpha() ~= alpha())
 
       -- The tables have identical contents
-      assert.are.same(alpha(), alpha())
-
+      same(alpha(), alpha())
     end)
   end)
 

@@ -7,6 +7,7 @@ local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local icons   = require 'user.lua.ui.icons'
+local image   = require 'user.lua.ui.image'
 local webview = require 'user.lua.ui.webview'
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
@@ -64,28 +65,13 @@ function Apps.currentWindow()
 end
 
 
-function Apps.getMenusForActiveApp()
-  local app = hs.application.frontmostApplication()
-
-  alert:new("Getting keys for %s...", app:name()):show()
-
-  delay(0.1, function()
-    app:getMenuItems(function(menus)
-      json.write('~/Desktop/hs-activeapp-getmenuitems.json', menus)
-
-      local items = lists(menus):map(appmodel.menuItem):values()
-      
-      webview.show('Shortcuts for ' .. app:name(), 'codeblock', { code = hs.inspect(items) })
-    end)
-  end)
-end
 
 ---@type CommandConfig[]
 Apps.cmds = {
   {
     id = 'apps.current.window',
     title = 'Copy JSON for current window',
-    icon = icons.menuIcon('doc.on.doc'),
+    icon = image.from_icon('doc.on.doc'),
     exec = function(ctx, params)
       local window = Apps.currentWindow()
 
@@ -97,23 +83,13 @@ Apps.cmds = {
   {
     id = 'apps.current.name',
     title = 'Copy JSON for current app',
-    icon = icons.menuIcon('doc.on.doc'),
+    icon = image.from_icon('doc.on.doc'),
     exec = function(ctx, params)
       local app = Apps.currentApp()
 
       alert:new('Copying JSON for app "%s"', app.name):show(alert.timing.LONG)
 
       hs.pasteboard.setContents(json.tostring(app))
-    end,
-  },
-  {
-    id = 'apps.cheatsheet.show',
-    title = 'Show Keys for active app',
-    icon = icons.command,
-    mods = "bar",
-    key = "K",
-    exec = function(ctx, params)
-      Apps.getMenusForActiveApp()
     end,
   },
 }

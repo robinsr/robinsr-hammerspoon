@@ -1,13 +1,17 @@
 local console = require 'user.lua.interface.console'
 local types   = require 'user.lua.lib.typecheck'
 local lists   = require 'user.lua.lib.list'
-local ansi    = require 'user.lua.util.ansicolors'
+local colors  = require 'user.lua.ui.color'
 
 local is, notNil = types.is, types.notNil
 
+---@alias LogFn fun(...): nil
+---@alias TraceFn fun(err: any, pattern: string, ...: any): nil 
+
 ---@class ProxyLogger : hs.logger
----@field inspect fun(...): nil prints a thing nice
----@field logIf fun(...): nil logs conditionally (prevent unnecessary calls to inspect)
+---@field inspect LogFn    - Prints the result oh hs.inspect
+---@field trace TraceFn    - Prints stack strace
+---@field logIf LogFn      - Logs conditionally (prevent unnecessary calls to inspect)
 
 
 local levels_config = {
@@ -45,31 +49,43 @@ function ProxyLogger:new(log_name, level)
   self.__index = self
 
   log.log_instance = _log
-
-  local l = function(ansi_str)
-    return function(...)
-      console.print(ansi(ansi_str..lname..table.concat({...})))
-    end
-  end
-
-  local lf = function(ansi_str)
-    return function(pattern, ...)
-      console.print(ansi(ansi_str..lname..string.format(pattern, table.unpack({...}))))
-    end
-  end
-
-  log.d = l("%{blue}[debug] ")
-  log.df = lf("%{blue}[debug] ")
-  log.e = l("%{red}[ERROR] ")
-  log.ef = lf("%{red}[ERROR] ")
-  log.i = l("%{black}[info] ")
-  log.f = lf("%{black}[info] ")
-  log.v = l("%{green}[verbose] ")
-  log.vf = lf("%{green}[verbose] ")
-  log.w = l("%{yellow}[warn] ")
-  log.wf = lf("%{yellow}[warn] ")
-
   log.getLogLevel = _log.getLogLevel
+
+  local l = function(this_level, prefix, styles)
+    return function(...)
+      if (_log:getLogLevel() >= this_level) then
+        console.print(lname..prefix..table.concat({...}), styles)
+      end
+    end
+  end
+
+  local lf = function(this_level, prefix, styles)
+    return function(pattern, ...)
+      if (_log:getLogLevel() >= this_level) then
+        console.print(lname..prefix..string.format(pattern, table.unpack({...})), styles)
+      end
+    end
+  end
+
+  log.d = l(levels.debug, "[debug] ", { color = colors.violet })
+  log.df = lf(levels.debug, "[debug] ", { color = colors.violet })
+  log.e = l(levels.error, "[ERROR] ", { color = colors.red })
+  log.ef = lf(levels.error, "[ERROR] ", { color = colors.red })
+  log.w = l(levels.warning, "[warn] ", { color = colors.orange })
+  log.wf = lf(levels.warning, "[warn] ", { color = colors.orange })
+  log.i = l(levels.info, "[info] ", { color = colors.blue })
+  log.f = lf(levels.info, "[info] ", { color = colors.blue })
+  log.v = l(levels.verbose, "[verbose] ", { color = colors.violet })
+  log.vf = lf(levels.verbose, "[verbose] ", { color = colors.violet })
+
+  log.trace = function(err, pattern, ...)
+    local msg = string.format(pattern, table.unpack({...}))
+    local trace = debug.traceback(err, 2)
+
+    console.print("%{red}[trace] "..msg)
+    console.print("%{red}"..trace)
+  end
+
 
   ---@cast log ProxyLogger
   log.inspect = function (...)
@@ -93,10 +109,8 @@ function ProxyLogger:new(log_name, level)
         end
       end)
 
-      console.print(
-        ansi('%{blue}'..DEBUG_WARNING),
-        ansi('%{blue}'..table.concat(bits:values()))
-      )
+      console.print(DEBUG_WARNING)
+      console.print(table.concat(bits:values()))
     end
   end
 

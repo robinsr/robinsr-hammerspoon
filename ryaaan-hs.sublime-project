@@ -1,6 +1,13 @@
 {
   "folders": [
-    { "path": "." },
+    { 
+      "path": ".",
+      "folder_exclude_patterns": [
+        "Spoons",
+        ".idea", // gonna use jetbrains anymore?
+        "/opt/homebrew/share/lua",
+      ],
+    },
     { "path": "/Users/ryan/dotfiles/config/skhd" },
     { "path": "/Users/ryan/dotfiles/config/yabai" },
   ],
