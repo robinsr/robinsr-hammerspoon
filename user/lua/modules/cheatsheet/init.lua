@@ -17,6 +17,7 @@ cheat.cmds = {
     mods = "btms",
     exec = function(cmd)
       local groups = KittySupreme.commands
+        :filter(function(cmd) return not cmd:has_flag('hidden') end)
         :filter(function(cmd) return cmd:hasHotkey() end)
         :groupBy(function(cmd)
             local key = (cmd.module or '')

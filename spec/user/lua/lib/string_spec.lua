@@ -1,3 +1,4 @@
+---@diagnostic disable: redundant-parameter
 local assert = require 'luassert'
 local pretty = require 'pl.pretty'
 local tutil  = require 'spec.util'
@@ -252,6 +253,78 @@ describe('lib/string.lua', function()
             "two.red.foo",
             "two.blu.foo",
           })
+        end)
+      end)
+
+      describe("Path matching", function()
+        local test_cases = {
+          { 
+            pattern = '',
+            test_name = 'empty string'
+          },
+          { 
+            pattern = '/',
+            test_name =  'index file'
+          },
+          { 
+            pattern = '/some/dir/',
+            test_name =  'sub-directory without file'
+          },
+          { 
+            pattern = '/some/dir/file.txt',
+            test_name =  'sub-directory with a file'
+          },
+          { 
+            pattern = '?query=this%20string',
+            test_name =  'no path query string'
+          },
+          { 
+            pattern = '/some/dir?query=this%20string',
+            test_name =  'path and query string'
+          },
+        }
+
+        local fail_msg = "path matcher '%s' failed test '%s' (%s)"
+
+        local run_test_cases = function(glob_pattern, expections)
+          local globfn = strings.glob(glob_pattern)
+
+          for i, t in ipairs(test_cases) do
+            local do_assert
+            
+            if expections[i] == true then
+              do_assert = assert.is.truthy
+            elseif expections[i] == false then
+              do_assert = assert.is.falsy
+            else
+              do_assert = assert.is_not.Nil
+            end
+
+            local msg = fail_msg:format(glob_pattern, t.pattern, t.test_name)
+            
+            do_assert(globfn(t.pattern), msg)
+          end
+        end
+
+
+        it('glob pattern "*"', function()
+          run_test_cases('*', { true, true, true, true, true })
+        end)
+
+        it('glob pattern "/some/dir/"', function()
+          run_test_cases('/some/dir/', { false, false, true, false, false })
+        end)
+
+        it('glob pattern "/some/dir/*"', function()
+          run_test_cases('/some/dir/*', { false, false, true, true, false })
+        end)
+
+        it('glob pattern "?*"', function()
+          run_test_cases('?*', { nil, nil, nil, nil, true })
+        end)
+
+        it('glob pattern "/*/?*"', function()
+          run_test_cases('/*/?*', { nil, nil, nil, nil, false, true })
         end)
       end)
     end)

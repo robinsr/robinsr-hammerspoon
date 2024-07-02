@@ -117,80 +117,23 @@ object: nil
 userInfo: nil
 ```
 
-
-```bash
-
-# copy
-https://img.icons8.com/ios/100/copy--v1.png
-https://img.icons8.com/ios/100/cut.png
-
-### Keys ###
-
-# alphas
-https://img.icons8.com/ios/100/a-key.png
-
-# numbers
-https://img.icons8.com/ios/100/1-key.png
-
-# f-keys
-https://img.icons8.com/ios/100/f6-key.png
+***
 
 
-# mods
-https://img.icons8.com/ios/100/fn-key.png
-https://img.icons8.com/ios/100/shift--v1.png
-https://img.icons8.com/ios/100/shift--v2.png
-https://img.icons8.com/ios/100/tab-key--v1.png
-https://img.icons8.com/ios/100/ctrl.png
-https://img.icons8.com/ios-filled/50/shift--v1.png
+IDEA for later
 
-
-# space
-https://img.icons8.com/ios/100/space-key.png
-
-# forward-slash
-https://img.icons8.com/ios/100/solidus-key.png 
-
-# dot ('dor')
-https://img.icons8.com/ios/100/dor-key.png
-
-# others
-https://img.icons8.com/ios/100/del-key.png
-
-# plus
-https://img.icons8.com/ios/100/plus-key.png
-
-# minus
-https://img.icons8.com/ios/100/minus-key.png
-
-# backspace
-https://img.icons8.com/ios/100/backspace.png
-
-# equal-key
-https://img.icons8.com/ios/100/equal-key
-
-# right-angle-parentheses-key
-https://img.icons8.com/ios/100/right-angle-parentheses-key.png
-
-# left-angle-parentheses-key
-https://img.icons8.com/ios/100/left-angle-parentheses-key.png
-
-# asterisk-key--v1
-https://img.icons8.com/ios/100/asterisk-key--v1.png
-
-# asterisk-key--v2
-https://img.icons8.com/ios/100/asterisk-key--v2.png
-
-# toggle-off
-https://img.icons8.com/ios/100/toggle-off.png
-https://img.icons8.com/ios-filled/100/toggle-off.png
-
-# toggle-on
-https://img.icons8.com/ios/100/toggle-on.png
-https://img.icons8.com/ios-filled/100/toggle-on.png
-
-
-# close
-https://img.icons8.com/ios-filled/100/close-window.png
+```lua
+seqx(cmds).prop('id'):pass(section_glob)
+lists(cmds):filter()
+local function seqx(items)
+  local self = {}
+  local ops = {
+    _prop = 'function to select a table property from sequence items for further ops',
+    prop = function(prop_name)
+    end,
+    _pass = 'predicate function which sequenec items must pass',
+  }
+  return proto.setProtoOf(ops, self)
+end
 ```
 

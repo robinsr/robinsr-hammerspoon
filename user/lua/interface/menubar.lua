@@ -4,13 +4,12 @@ local lists   = require 'user.lua.lib.list'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
+local proto   = require 'user.lua.lib.proto'
 local colors  = require 'user.lua.ui.color'
 local icons   = require 'user.lua.ui.icons'
 local image   = require 'user.lua.ui.image'
 local text    = require 'user.lua.ui.text'
 local symbols = require 'user.lua.ui.symbols'
-local logr    = require 'user.lua.util.logger'
-
 
 
 ---@class HS.MenubarItem
@@ -29,7 +28,7 @@ local logr    = require 'user.lua.util.logger'
 ---@field mixedStateImage? hs.image
 
 
-local log = logr.new('menubar', 'info')
+local log = require('user.lua.util.logger').new('menubar', 'info')
 
 
 local service_state_icons = {
@@ -75,7 +74,7 @@ end
 ---@param sections string[]
 ---@param cmds Command[]
 ---@return HS.MenubarItem[]
-local function getMenuitemsForSection(sections, cmds)
+local function menu_section(sections, cmds)
 
   ---@type HS.MenubarItem[]
   return lists(sections):map(function(section)
@@ -146,7 +145,7 @@ local function create_service_submenu(services)
 
     local subitems = lists({})
 
-    local servicecmds = getMenuitemsForSection({ service.name .. '.*' }, KittySupreme.commands)
+    local servicecmds = menu_section({ service.name .. '.*' }, KittySupreme.commands)
 
     if (#servicecmds > 0) then
       subitems:concat(servicecmds)
@@ -190,11 +189,11 @@ function MenuBar.install()
     local menuitems = lists({})
       :push(text_item("Just some text"))
       :push(text_item("-"))
-      :concat(getMenuitemsForSection({ "spaces.space.*", "apps.*" }, cmds))
+      :concat(menu_section({ "spaces.space.*", "apps.*" }, cmds))
       :push(text_item("-"))
       :push(service_menu)
       :push(text_item("-"))
-      :concat(getMenuitemsForSection({ "ks.commands.*" }, cmds))
+      :concat(menu_section({ "ks.commands.*" }, cmds))
 
     log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
 

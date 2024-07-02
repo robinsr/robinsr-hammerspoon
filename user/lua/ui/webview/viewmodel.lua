@@ -21,11 +21,12 @@ end
 local base_model = {
   title = 'KittySupreme dialog window',
   style_blocks = {
-    elems.style_raw:format(file_contents('@/resources/stylesheets/base.css')),
-    elems.style_raw:format(file_contents('@/resources/stylesheets/pico-adjust.css')),
+    -- content here NOT wrapped in style tags
   },
   head_tags = {
     elems.style_link:format("https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.lime.min.css"),
+    elems.style_raw:format(file_contents('@/resources/stylesheets/pico-adjust.css')),
+    elems.style_raw:format(file_contents('@/resources/stylesheets/base.css')),
   },
   footer_tags = {},
 }

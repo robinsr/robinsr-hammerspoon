@@ -20,17 +20,34 @@ function img.from_path(path, width, height)
   height = params.default(height, 100)
 
   local expath = paths.expand(path)
-  local img
+  local image
 
   if paths.exists(expath) then
-    img = hs.image.imageFromPath(expath) --[[@as hs.image]]
+    image = hs.image.imageFromPath(expath) --[[@as hs.image]]
   else
-    img = symbols.toIcon('not_found', 12, colors.gray)
+    image = symbols.toIcon('not_found', 12, colors.gray)
   end
   
-  img:size({ w = width, h = height })
+  image:size({ w = width, h = height })
 
-  return img
+  return image
+end
+
+
+--
+-- Creates base64 encoded URL string from a image file, width, and height (defaults to 100x100)
+--
+---@param path string
+---@param width integer
+---@param height integer
+---@return string
+function img.encode_from_path(path, width, height)
+  params.assert.string(path, 1)
+  width = params.default(width, 100)
+  height = params.default(height, 100)
+
+  local image = img.from_path(path, width, height)
+  return image:encodeAsURLString() or ''
 end
 
 

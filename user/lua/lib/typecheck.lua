@@ -113,8 +113,8 @@ tc.is = {
 
 tc.is_not = {
   Nil = invert(isNil),
-  True = isTrue,
-  False = isFalse,
+  True = invert(isTrue),
+  False = invert(isFalse),
   strng = invert(isString),
   func = invert(isFunc),
   tabl = invert(isTable),

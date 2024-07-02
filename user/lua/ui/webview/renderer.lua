@@ -7,6 +7,7 @@ local params   = require 'user.lua.lib.params'
 local strings  = require 'user.lua.lib.string'
 local logr     = require 'user.lua.util.logger'
 local vm       = require 'user.lua.ui.webview.viewmodel'
+local images   = require 'user.lua.ui.image'
 local json     = require 'user.lua.util.json'
 
 local log = logr.new('webview-renderer', 'debug')
@@ -24,6 +25,20 @@ end
 local json = require("aspect.config").json
 json.encode = json_encode_function
 json.decode = json_decode_function
+
+local funcs = require("aspect.funcs")
+
+funcs.add('encoded_img', {
+  args = {
+    [1] = { name = "filepath", type = 'string' },
+    [2] = { name = "width", type = 'number' },
+    [3] = { name = "height", type = 'number' },
+  }
+},
+function(_, args)
+  local filepath = paths.expand(args.filepath)
+  return images.encode_from_path(filepath, args.width, args.height)
+end)
 
 local tmpl_dir = paths.expand('@/resources/templates/aspect')
 local fs_loader = require("aspect.loader.filesystem").new(tmpl_dir)

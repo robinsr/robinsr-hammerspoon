@@ -5,31 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{- title|default('There is no title for this page...') -}}</title>
 
-  {% block head_tags %}
+  {% block head_tags -%}
     {% for i, elem_html in head_tags %}
       {{ elem_html }}
-    {% endfor %}
-  {% endblock %}
+    {% endfor -%}
+  {% endblock -%}
 
-  {% block head_css %}
-    {% for i, css_text in style_blocks %}
+  {% block head_css -%}
+    {% for i, css_text in style_blocks -%}
       <style type="text/css">
         {{ css_text }}
       </style>
-    {% endfor %}
-  {% endblock %}
+    {% endfor -%}
+  {% endblock -%}
 
 </head>
 <body>
 
   {% block page_title %}
+    {% set img_url = encoded_img(filepath="@/resources/images/icons8-ios17-outlined-esc.template.png", width=100, height=100) %}
+  
     <header class="container-fluid">
-      <h1 class="title">
-        <small>
-          {{ title|default('There is no title for this page...') }}
-        </small>
-        <small id="js-ok" class="pull-right">…</small>
-      </h1>
+      <div class="grid">
+        <div>
+          <h1 class="title">
+            <small>
+              {{ title|default('There is no title for this page...') }}
+            </small>
+          </h1>
+        </div>
+        <div>
+          <small id="js-ok" class="pull-right">…</small>
+          <p class="pull-right">Exit with <img src="{{ img_url }}" width="40" height="40"></p>
+        </div>
+      </div>
     </header>
   {% endblock %}
 

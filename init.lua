@@ -1,4 +1,4 @@
-PkgName = 'ryan-hs'
+_G.PkgName = 'ryan-hs'
 
 _G.clear = function() 
   hs.console.clearConsole()
