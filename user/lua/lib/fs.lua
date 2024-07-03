@@ -6,7 +6,7 @@ local logr     = require 'user.lua.util.logger'
 
 local log = logr.new('scan', 'info')
 
-local THISMOD = ... or 'user.lua.lib.scan'
+local THISMOD = ... or 'user.lua.lib.fs'
 local MAXFILES = 150
 
 local scan = {}

@@ -1,12 +1,12 @@
-local desk       = require 'user.lua.interface.desktop'
-local collect    = require 'user.lua.lib.collection'
-local lists      = require 'user.lua.lib.list'
-local scan       = require 'user.lua.lib.scan'
-local tables     = require 'user.lua.lib.table'
-local types      = require 'user.lua.lib.typecheck'
-local Command    = require 'user.lua.model.command'
-local logr       = require 'user.lua.util.logger'
-local delay      = require 'user.lua.util'.delay
+local desk    = require 'user.lua.interface.desktop'
+local collect = require 'user.lua.lib.collection'
+local lists   = require 'user.lua.lib.list'
+local fs      = require 'user.lua.lib.fs'
+local tables  = require 'user.lua.lib.table'
+local types   = require 'user.lua.lib.typecheck'
+local Command = require 'user.lua.model.command'
+local logr    = require 'user.lua.util.logger'
+local delay   = require 'user.lua.util'.delay
 
 
 local log = logr.new('commands', 'info')
@@ -71,7 +71,7 @@ local function scanForCmds()
   -- local modInfo = debug.getinfo(3, 'S')
   -- local rootdir = string.match(modInfo.source, '^@(.*)/')
   local rootdir = hs.fs.currentDir() or '/asdf/asdf/asdf'
-  local mods = scan.loaddir(rootdir, 'user.lua')
+  local mods = fs.loaddir(rootdir, 'user.lua')
 
   local commands = {}
   for module, exports in pairs(mods) do
