@@ -1,6 +1,6 @@
 local shell       = require 'user.lua.adapters.shell'
--- local shell       = require 'shell-games'
 local BrewService = require 'user.lua.adapters.base.brew-service'
+local params      = require 'user.lua.lib.params'
 local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
 local tables      = require 'user.lua.lib.table'
@@ -48,9 +48,7 @@ end
 ---@param event string The event name
 ---@param ... (string|number|nil) Command parameter variables
 function SketchyBar:trigger(event, ...)
-  if (types.isNil(event)) then
-    error('Missing parameter #1 (event name)')
-  end
+  params.assert.string(event)
   
   if SketchyBar.events:has(event) then
     return shell.result({ 'sketchybar', '--trigger', SketchyBar.events[event] }).code
@@ -61,13 +59,8 @@ end
 
 
 function SketchyBar:setFrontApp(app)
-  if (not types.isString(app)) then
-    error('Invalid app name: ' .. tostring(app))
-  end
-
-  local setresult = shell.result({ 'sketchybar', '--set', 'front_app', 'label='..app })
-
-  log.d(hs.inspect(setresult))
+  params.assert.string(app)
+  shell.result({ 'sketchybar', '--set', 'front_app', shell.kv('label', app) })
 end
 
 --
@@ -77,18 +70,13 @@ end
 ---@param label? string label's value (defaults to index value)
 ---@return string
 function SketchyBar:setSpaceLabel(space, label)
-  if (not types.isNum(space)) then
-    error('Missing parameter #1 (space index)')
-  end
+  params.assert.number(space, 1)
+  params.assert.string(label, 2)
 
-  local space_str = tostring(space)
+  local space_arg = ('space.%d'):format(space)
+  local icon_arg = shell.kv('icon', strings.ifEmpty(label, tostring(space)))
 
-  local space_arg = shell.fmt('space.%d', { space })
-  local icon_arg = shell.kv('icon', strings.ifEmpty(label, space_str))
-
-  local result = shell.run({ 'sketchybar', '--set', space_arg, icon_arg }) --[[@as string]]
-
-  return result
+  return shell.result({ 'sketchybar', '--set', space_arg, icon_arg }).output
 end
 
 
@@ -106,11 +94,9 @@ local layout_icons = tables{
 
 ---@param space Yabai.Space
 function SketchyBar:onSpaceEnvChange(space)
-  local count, sym, label, icon
+  params.assert.tabl(space)
 
-  if (types.isNil(space)) then
-    error('Missing parameter #1 (Yabai space table)')
-  end
+  local count, sym, label, icon
 
   count = #space.windows or 0
 
@@ -120,17 +106,11 @@ function SketchyBar:onSpaceEnvChange(space)
     sym = symbols.toText(layout_icons:get('cols'))
   end
 
-  local space_str = tostring(space.index)
+  local space_arg = ('space.%d'):format(space.index)
+  local icon_arg  = shell.kv('icon', strings.ifEmpty(space.label, tostring(space.index)))
+  local label_arg = shell.kv('label', ('%s %d').format(sym, count))
 
-  local space_arg = shell.fmt('space.%d', { space.index })
-  local icon_arg  = shell.kv('icon', strings.ifEmpty(space.label, space.index))
-  local label_arg = shell.fmt('%s %d', { sym, count })
-
-  local args = { 'sketchybar', '--set', space_arg, 'label='..label_arg, icon_arg }
-
-  print(shell.join(args))
-
-  shell.run(args)
+  return shell.result({ 'sketchybar', '--set', space_arg, label_arg, icon_arg })
 end
 
 

@@ -25,7 +25,7 @@ function img.from_path(path, width, height)
   if paths.exists(expath) then
     image = hs.image.imageFromPath(expath) --[[@as hs.image]]
   else
-    image = symbols.toIcon('not_found', 12, colors.gray)
+    image = img.from_icon('not_found', 12, colors.gray)
   end
   
   image:size({ w = width, h = height })

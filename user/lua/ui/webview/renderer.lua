@@ -41,15 +41,20 @@ function(_, args)
 end)
 
 local tmpl_dir = paths.expand('@/resources/templates/aspect')
+
 local fs_loader = require("aspect.loader.filesystem").new(tmpl_dir)
+
+
 local aspect_opts = {
   cache = false,
   debug = true,
-  loader = fs_loader
+  loader = fs_loader,
+  env = {
+    ['what_does'] = "this_do",
+  }
 }
 
 local aspect = require("aspect.template").new(aspect_opts)
-
 
 
 local renderers = {}

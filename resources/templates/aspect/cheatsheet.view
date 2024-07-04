@@ -71,19 +71,19 @@
                 <td class="text-right">
                   <kbd>
                     <span class="symbol">
-                      {% for key in cmd.hotkey.mods %}
-                        {{ symbols[key] }}
-                      {% endfor %}
+                      {%- for key in cmd.hotkey.mods -%}
+                        {{- symbols[key] -}}
+                      {%- endfor -%}
                     </span>
-                    {% if symbols[cmd.hotkey.key] %}
+                    {%- if symbols[cmd.hotkey.key] -%}
                       <span class="symbol">
                         {{- symbols[cmd.hotkey.key] -}}
                       </span>
-                    {% else %}
+                    {%- else -%}
                       <span class="not-symbol">
                         {{- cmd.hotkey.key -}}
                       </span>
-                    {% endif %}
+                    {%- endif %}
                   </kbd>
                 </td>
                 <td>

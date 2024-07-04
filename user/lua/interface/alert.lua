@@ -113,7 +113,7 @@ function Alert.show(self, timing)
   local screen = hs.screen.mainScreen()
   local seconds = timing or self.config.timing or Alert.timing.NORMAL
 
-  log.f("Alert Config: %s", hs.inspect({ text, icon, style, screen:name(), seconds }))
+  log.df("Alert Config: %s", hs.inspect({ text, icon, style, screen:name(), seconds }))
 
   if types.notNil(self.config.icon) then
     prev_alert = hs.alert.showWithImage(text, icon, style, screen, seconds)

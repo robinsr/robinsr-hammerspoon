@@ -9,7 +9,6 @@ local server_instance = nil
 
 local server_name = 'Hammerspoon Lua (KittySupreme)'
 local date_fmt = '%a, %b %d %Y %I:%M:%S %p'
-local not_found = renderer.file('json.view', { data = { message = 'Not found' } })
 
 local path_matchers = {
   keys_viewer = strings.glob('/keys'),
@@ -18,11 +17,21 @@ local path_matchers = {
   all = strings.glob("*"),
 }
 
+local not_found = nil
+local function get_404_html()
+  if not_found == nil then
+    not_found = renderer.file('json.view', { data = { message = 'Not found' } })
+  end
+
+  return not_found
+end
+
+
 
 local web_handler = function(method, path, req_headers, body)
   log.f("Server Request - %s on %q;\n%s\n\n", method, path, hs.inspect(req_headers))
 
-  local resp_body = not_found
+  local resp_body = get_404_html()
   local resp_code = 200
   local resp_headers = {
     ['Server'] = server_name,

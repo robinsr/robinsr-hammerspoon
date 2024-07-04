@@ -1,8 +1,19 @@
-Spoons
+# Project ignore
+
 *.sublime-workspace
 .idea
+Spoons
+docs/
+resources/images/
+!resources/images/*.json
 
+
+
+
+### ===== ###
 ### macOS ###
+### ===== ###
+
 # General
 .DS_Store
 .AppleDouble

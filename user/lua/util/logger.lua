@@ -42,7 +42,7 @@ function ProxyLogger:new(log_name, level)
 
   local log = {}
 
-  local lname = '(' .. log_name .. ') '
+  local name_prefix = '(' .. log_name .. ') '
 
 
   setmetatable(log, self)
@@ -51,18 +51,18 @@ function ProxyLogger:new(log_name, level)
   log.log_instance = _log
   log.getLogLevel = _log.getLogLevel
 
-  local l = function(this_level, prefix, styles)
+  local l = function(this_level, level_prefix, styles)
     return function(...)
       if (_log:getLogLevel() >= this_level) then
-        console.print(lname..prefix..table.concat({...}), styles)
+        console.print(level_prefix..name_prefix..table.concat({...}), styles)
       end
     end
   end
 
-  local lf = function(this_level, prefix, styles)
+  local lf = function(this_level, level_prefix, styles)
     return function(pattern, ...)
       if (_log:getLogLevel() >= this_level) then
-        console.print(lname..prefix..string.format(pattern, table.unpack({...})), styles)
+        console.print(level_prefix..name_prefix..string.format(pattern, table.unpack({...})), styles)
       end
     end
   end

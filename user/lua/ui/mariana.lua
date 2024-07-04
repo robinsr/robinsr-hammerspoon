@@ -31,10 +31,39 @@ mariana.carnation = {
   alpha = 1.0,
 }
 
+mariana.mahogany = {
+  red   = 0.7969,
+  green = 0.2416,
+  blue  = 0.3106,
+  alpha = 1.0,
+}
+
+
+mariana.stiletto = {
+  red   = 0.6375,
+  green = 0.1933,
+  blue  = 0.2485,
+  alpha = 1.0,
+}
+
+mariana.burnt_umber = {
+  red   = 0.51,
+  green = 0.1546,
+  blue  = 0.1988,
+  alpha = 1.0,
+}
+
 mariana.persimmon = {
   red   = 1.0,
   green = 0.43529412,
   blue  = 0.31764706,
+  alpha = 1.0,
+}
+
+mariana.mojo = {
+  red   = 0.8,
+  green = 0.3482,
+  blue  = 0.2541,
   alpha = 1.0,
 }
 
@@ -66,10 +95,45 @@ mariana.danube = {
   alpha = 1.0,
 }
 
+mariana.san_marino = {
+  red   = 0.2761,
+  green = 0.4831,
+  blue  = 0.6494,
+  alpha = 1.0,
+}
+
+mariana.bismark = {
+  red   = 0.2475,
+  green = 0.4023,
+  blue  = 0.5079,
+  alpha = 1.0,
+}
+
+mariana.pickled_bluewood = {
+  red   = 0.1485,
+  green = 0.2414,
+  blue  = 0.3047,
+  alpha = 1.0,
+}
+
 mariana.viola = {
   red   = 0.81176471,
   green = 0.56470588,
   blue  = 0.78431373,
+  alpha = 1.0,
+}
+
+mariana.bouquet = {
+  red   = 0.6494,
+  green = 0.4518,
+  blue  = 0.6275,
+  alpha = 1.0,
+}
+
+mariana.strikemaster = {
+  red   = 0.5195,
+  green = 0.3614,
+  blue  = 0.502,
   alpha = 1.0,
 }
 

@@ -1,15 +1,28 @@
-local path     = require 'pl.path'
+local plpath   = require 'pl.path'
+local plfile   = require 'pl.file'
 local lists    = require 'user.lua.lib.list'
 local strings  = require 'user.lua.lib.string'
 local is       = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
 
-local log = logr.new('scan', 'info')
+local log = logr.new('lib.fs', 'info')
 
 local THISMOD = ... or 'user.lua.lib.fs'
 local MAXFILES = 150
 
-local scan = {}
+local FS = {}
+
+
+--
+--
+--
+---@param filepath string
+---@return string
+function FS.readfile(filepath)
+  return plfile.read(filepath)
+end
+
+
 
 --
 -- Lists contents of a directory and all sub-directories
@@ -19,7 +32,7 @@ local scan = {}
 ---@param depth? integer Optional how man levels to descend in directory tree; default 10
 ---@param max? integer Optional max length of list
 ---@return string[] Table of string filenames (relative or what?)
-function scan.listdir(dirname, ext, depth, max)
+function FS.listdir(dirname, ext, depth, max)
 
   local files= {}
 
@@ -60,9 +73,9 @@ end
 ---@param dir string Directory path to load modules from
 ---@param pkg string Lua package prefix
 ---@return table table of filepaths and correspnding lua module name
-function scan.mapdir(dir, pkg)
-  local targetdir = path.join(dir, strings.replace(pkg, '.', '/'))
-  local luafiles = scan.listdir(targetdir, 'lua')
+function FS.mapdir(dir, pkg)
+  local targetdir = plpath.join(dir, strings.replace(pkg, '.', '/'))
+  local luafiles = FS.listdir(targetdir, 'lua')
 
   local modules = lists(luafiles):reduce({}, function(memo, filename)
     log.df('loading lua file [%s]', filename)
@@ -86,10 +99,10 @@ end
 --
 ---@param dir string Directory path to load modules from
 ---@param pkg string Lua package prefix
-function scan.loaddir(dir, pkg)
+function FS.loaddir(dir, pkg)
   log.f('Loading lua modules in package [%s] from directory [%s]', pkg, dir)
   
-  local luafiles = scan.mapdir(dir, pkg)
+  local luafiles = FS.mapdir(dir, pkg)
 
   local modules = {}
   for file, mod in pairs(luafiles) do
@@ -101,4 +114,4 @@ function scan.loaddir(dir, pkg)
   return modules
 end
 
-return scan
+return FS

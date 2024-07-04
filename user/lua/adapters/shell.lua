@@ -1,21 +1,20 @@
-local shellg  = require 'shell-games'
 local plutil  = require 'pl.utils'
+local fs      = require 'user.lua.lib.fs'
 local lists   = require 'user.lua.lib.list'
+local paths   = require 'user.lua.lib.path'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
-local webview = require 'user.lua.ui.webview' -- REMOVE LATER
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
-
+local shell_games  = require 'shell-games'
 
 local fmt = strings.fmt
 local pack = table.pack
 local unpack = table.unpack
-local quote_arg = shellg.quote
-
+local quote_arg = shell_games.quote
 
 local log = logr.new('shell', 'info')
 
@@ -34,28 +33,33 @@ local function cmd_error(sh_result, sh_err)
   return fmt(ERR_MSG, cmd, code, out)
 end
 
-local PATHS = {
- '/opt/homebrew/bin',
- '/opt/homebrew/sbin',
- '/usr/local/bin',
- '/usr/bin',
- '/bin',
- '/usr/sbin',
- '/sbin',
-}
-
-local ENV = {
-  PATH = strings.join(PATHS, ':'),
-  XDG_CACHE_HOME = '/Users/ryan/.config/.cache',
-  XDG_CONFIG_HOME = '/Users/ryan/.config',
-  XDG_DATA_HOME = '/Users/ryan/.config/.local/share',
-}
-
 local SHELL_OPTS = {
   capture = true,
   stderr = "&1",
-  env = ENV
 }
+
+local PROFILE = paths.expand("~/.profile")
+
+
+--
+-- Returns commmand string with profile prefix source 
+--
+---@param args string|string[]
+---@return string
+local function splice_args(args)
+  local string_args
+  local args_env = lists({}):concat({ "source", PROFILE, "&&" })
+
+  if type(args) == 'string' then
+    string_args = args_env:push(args):join(' ')
+  else
+    string_args = args_env:push(unpack(args)):join(' ')
+  end
+  
+  log.v(string_args)
+
+  return string_args
+end
 
 
 --
@@ -148,11 +152,12 @@ function ShellResult:jq(jq_filter)
     local ok, data = pcall(function() return json.parse(self.output) end)
 
     if not ok then
-      error("Invalid JSON, cannot invoke jq")
+      error("Invalid JSON, cannot invoke jq - " .. self.output)
     end
 
     local jq_cmd = fmt("echo '%s' | /opt/homebrew/bin/jq -c -M '%s'", self.output, jq_filter)
-    local jq_result, err = shellg.run_raw(jq_cmd, SHELL_OPTS)
+    -- local jq_result, err = shell_games.run_raw(jq_cmd, SHELL_OPTS)
+    local jq_result, err = shell_games.run_raw(splice_args(jq_cmd), SHELL_OPTS)
 
     if err ~= nil then
       error(cmd_error(jq_result, err))
@@ -200,20 +205,13 @@ end
 ---@param args (string|number)[]|string
 ---@return ShellResult
 function Shell.result(args)
-  local sh_result, sh_err
-
-  if type(args) == 'string' then
-    -- sh_result, sh_err = shellg.run_raw(args, SHELL_OPTS)
-    sh_result, sh_err = shellg.run_raw(args, SHELL_OPTS)
-  else
-    sh_result, sh_err = shellg.run(args, SHELL_OPTS)
-  end
-
+  local sh_result, sh_err = shell_games.run_raw(splice_args(args), SHELL_OPTS)
 
   local cmd = sh_result["command"]
   local code = sh_result["status"]
   local out = sh_result["output"]
 
+  log.v(cmd, code, out)
 
   if (sh_err) then
     log.w('Shell error:', sh_err)
@@ -238,13 +236,7 @@ function Shell.run(args, options)
   ---@type string|table
   local value = ''
 
-  local sh_result, sh_err
-
-  if type(args) == 'string' then
-    sh_result, sh_err = shellg.run_raw(args, SHELL_OPTS)
-  else
-    sh_result, sh_err = shellg.run(args, SHELL_OPTS)
-  end
+  local sh_result, sh_err = shell_games.run_raw(splice_args(args), SHELL_OPTS)
 
 
   local cmd = sh_result["command"]
@@ -309,55 +301,31 @@ function Shell.exp(str)
 end
 
 
+--
 -- Creates a K=V/K="V" shell argument pair
 --
 ---@param key string Parameter key
 ---@param val string Parameter value
 ---@return string
 function Shell.kv(key, val)
-  return fmt('%s=%s', key, shellg.quote(val))
+  local kv_pattern = '%s=%s'
+
+  if string.match(val, '%s') then
+    kv_pattern = '%s="%s"'
+  end
+
+  -- return fmt(kv_pattern, key, shellg.quote(val))
+  return fmt(kv_pattern, key, val)
 end
 
 
 -- Quotes a shell argument
 --
-Shell.quote = shellg.quote
+Shell.quote = shell_games.quote
 
 -- Joins a list of shell arguments
 --
-Shell.join = shellg.join
-
-
-
----@type CommandConfig[]
-Shell.cmds = {
-  {
-    id = "ks.commands.test_shell",
-    title = "Run hammerspoon shell checks",
-    exec = function(cmd, ctx)
-      local results = {}
-
-      local function test_cmd(cmd)
-        local result = Shell.result(cmd)
-        log.df('Test Command - [%s]', hs.inspect(cmd))
-        table.insert(results, tables.toplain(result))
-      end
-
-      test_cmd('echo "$SHELL"')
-      test_cmd('echo "$PATH"')
-      test_cmd('/opt/homebrew/bin/brew shellenv')
-      test_cmd('which jq')
-      test_cmd('eval \'[[ -o login ]] && echo "Login" || echo "Non-Login"\'')
-      test_cmd('[[ -o interactive ]] && echo "Interactive" || echo "Non-Interactive"')
-
-
-      webview.file('json.view', { data = results }, cmd.title)
-    end,
-  },
-}
-
-
-
+Shell.join = shell_games.join
 
 
 return Shell

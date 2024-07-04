@@ -1,0 +1,16 @@
+{#
+
+Aspect Macros
+=============
+
+These dont currently work at the moment...
+
+#}
+
+
+{# Pulls in an image from project's image fodler #}
+{% macro image(name, width = 40, height = 40) %}
+  {% set img_path = [ "@/resources/images/", name ]|join %}
+  {% set img_url = encoded_img(filepath=img_path, width=width, height=height) %}
+  <img src="{{ img_url }}" width="40" height="40">
+{% endmacro %}
