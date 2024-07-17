@@ -4,6 +4,9 @@ local plstr = require 'pl.stringx'
 
 local testutil = {}
 
+---@param pattern string
+---@param ... any
+---@return string
 function testutil.fmt(pattern, ...)
 
   local vars = {}
@@ -46,9 +49,11 @@ end
 --
 function testutil.dump(...)
   for i, v in ipairs({...}) do
+    print("")
     print(type(v) == 'table' and pretty.write(v) or tostring(v))
   end
 end
+
 
 --
 --
@@ -63,6 +68,18 @@ function testutil.group(msg, testfn)
 end
 
 
+function testutil.pkgloaded()
+  local lib_pkgs = {}
+
+  for k,v in pairs(package.loaded) do
+    if ("%s"):format(k):match("^user%.") then
+      table.insert(lib_pkgs, k)
+    end
+  end
+
+  print("User package.loaded:")
+  print(pretty.write(lib_pkgs))
+end
 
 --
 --
@@ -83,28 +100,10 @@ function testutil.hs_mock(spy)
 
 
   return {
-    mouse = {},
-    screen = {},
-    window = {},
-    console = {
-      consoleFont = hs_noop,
-      maxOutputHistory = hs_noop,
-    },
-    inspect = hs_noop,
-    drawing = {
-      color = {
-        list = hs_spy_returns({}),
-        colorsFor = hs_spy_returns({}),
-        systemColors = hs_spy_returns({}),
+    eventtap = {
+      event = {
+        types = {}
       }
-    },
-    logger = {
-      new = spy.new(function()
-        return {
-          new = hs_noop,
-          getLogLevel = hs_spy_returns(1)
-        }
-      end),
     },
     canvas = {
       new = spy.new(function()
@@ -115,17 +114,35 @@ function testutil.hs_mock(spy)
         }
       end)
     },
+    console = {
+      consoleFont = hs_noop,
+      maxOutputHistory = hs_noop,
+    },
+    drawing = {
+      color = {
+        list = hs_spy_returns({}),
+        colorsFor = hs_spy_returns({}),
+        systemColors = hs_spy_returns({}),
+      }
+    },
     image = {
       imageFromPath = hs_spy_returns(spy_hs_image)
     },
+    inspect = hs_noop,
+    logger = {
+      new = spy.new(function()
+        return {
+          new = hs_noop,
+          getLogLevel = hs_spy_returns(1)
+        }
+      end),
+    },
+    mouse = {},
+    screen = {},
     styledtext = {
       new = hs_spy_returns({}),
     },
-    eventtap = {
-      event = {
-        types = {}
-      }
-    }
+    window = {},
   }
 end
 

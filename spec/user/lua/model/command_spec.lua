@@ -6,15 +6,18 @@ local fmt = tutil.fmt
 
 
 
-insulate("an insulated test", function()
+insulate("user.lua.model.command", function()
 
   _G.hs = tutil.hs_mock(spy)
+
+  package.loaded['user.lua.interface.alert'] = {}
 
   local Command = require("user.lua.model.command")
 
   describe("KS Command Class", function()
     describe("command:new", function()
       it("should construct a new Command instance without error", function()
+
         local setup_fn = spy.new(function() end)
         local invoke_fn = spy.new(function() end)
 

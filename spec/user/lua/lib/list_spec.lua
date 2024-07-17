@@ -14,8 +14,18 @@ local group = testutil.group
 -- local assert = luassert
 
 
-local function alpha()
-  return table.pack("a", "b", "c", "d")
+local function alpha(len)
+  len = len or 4
+  
+  local alphas = "abcdefghijklmnopqrstuvwxyz"
+  
+  local chars = {}
+
+  for i=1,len do
+    table.insert(chars, alphas:sub(i, i))
+  end
+
+  return table.pack(table.unpack(chars))
 end
 
 local methods = { "push", "pop", "forEach", "filter", "map", "reduce" }
@@ -118,7 +128,7 @@ describe("lib/list.lua", function()
   end)
 
 
-  describe("tostring", function()
+  describe("List#tostring", function()
     it("should return string version of list (for tostring operation)", function()
       local list = lists.new({ "z", "y", "x" })
 
@@ -126,7 +136,33 @@ describe("lib/list.lua", function()
     end)
   end)
 
-  describe("forEach", function()
+
+  describe("List#at", function()
+    local list_at = lists(alpha(10))
+
+    it("should return item at index", function()
+      same("a", list_at:at(1), "expected list_at[1] to be 'a'")
+      same("b", list_at:at(2), "expected list_at[1] to be 'b'")
+      same("c", list_at:at(3), "expected list_at[1] to be 'c'")
+      same("j", list_at:at(10), "expected list_at[10] to be 'j'")
+    end)
+
+    it("should handle overflow indexes", function()
+      same("i", list_at:at(9), "expected list_at[9] to be 'i'")
+      same("j", list_at:at(10), "expected list_at[10] to be 'j'")
+      same("a", list_at:at(11), "expected list_at[11] to be 'a'")
+      same("b", list_at:at(12), "expected list_at[12] to be 'b'")
+      same("j", list_at:at(20), "expected list_at[20] to be 'j'")
+      same("a", list_at:at(21), "expected list_at[21] to be 'a'")
+    end)
+
+    it("should handle negaive indexes", function()
+      same("j", list_at:at(0), "expected list_at[0] to be 'j'")
+      same("i", list_at:at(-1), "expected list_at[-1] to be 'i'")
+    end)
+  end)
+
+  describe("List#forEach", function()
     local result = ""
 
     local eachfn = spy.new(function(item)
@@ -156,7 +192,7 @@ describe("lib/list.lua", function()
     end)
   end)
 
-  describe("filter", function()
+  describe("List#filter", function()
     local filterfn = spy.new(function(item, i)
       return item.amt % 2 == 0
     end)
@@ -193,7 +229,7 @@ describe("lib/list.lua", function()
     end)
   end)
 
-  describe("map", function()
+  describe("List#map", function()
     local mapfn = spy.new(function(item, i)
       return { amt = item.amt * 10 }
     end)
@@ -232,7 +268,7 @@ describe("lib/list.lua", function()
     end)
   end)
 
-  describe("flatten", function()
+  describe("List#flatten", function()
     it("should flatten a 2d list", function()
       local ls = lists({
         { { item = '1' }, { item = '2' } },
