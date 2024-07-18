@@ -1,4 +1,5 @@
 _G.PkgName = 'ryan-hs'
+_G.UpTime = os.time()
 
 _G.clear = function() 
   hs.console.clearConsole()
@@ -14,10 +15,10 @@ _G.console = {
   end
 }
 
-local util = require 'user.lua.util.init'
+local time = require 'user.lua.lib.time'
 
 print(string.rep('-', 40))
-print(string.rep('-', 15), util.date_str(), string.rep('-', 15))
+print(string.rep('-', 15), time.fmt(), string.rep('-', 15))
 print(string.rep('-', 40))
 
 local lists  = require 'user.lua.lib.list'
@@ -70,21 +71,10 @@ end
 log.i('Init complete')
 
 ---@type hs.distributednotifications|nil
-local nsDistNotes = hs.distributednotifications.new(function(name, object, userInfo)
-  print('[distributednotifications] ...')
-  print(string.format("name: %s\nobject: %s\nuserInfo: %s\n", name, object, hs.inspect(userInfo)))
-end)
-if (nsDistNotes ~= nil) then
-  nsDistNotes:start()
-end
-
-
-
-
---- init_d app container WIP
--- local scanner = require 'user.lua.init_d'
--- local info = debug.getinfo(1, 'S')
--- local module_directory = string.match(info.source, '^@(.*)/')
--- local singles = scanner(module_directory.."/user/lua/adapters")
--- hs.loadSpoon('EmmyLua', true)
--- hs.loadSpoon('SpoonInstall', true)
+-- local nsDistNotes = hs.distributednotifications.new(function(name, object, userInfo)
+--   print('[distributednotifications] ...')
+--   print(string.format("name: %s\nobject: %s\nuserInfo: %s\n", name, object, hs.inspect(userInfo)))
+-- end)
+-- if (nsDistNotes ~= nil) then
+--   nsDistNotes:start()
+-- end

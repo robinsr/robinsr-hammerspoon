@@ -81,6 +81,22 @@ function testutil.pkgloaded()
   print(pretty.write(lib_pkgs))
 end
 
+
+
+testutil.logger_mod = "user.lua.util.logger"
+
+--
+--
+--
+function testutil.mock_logger(spy)
+  local mock_logger = {
+    new = spy(function() end)
+  }
+
+  return mock_logger
+end
+
+
 --
 --
 --
@@ -124,6 +140,9 @@ function testutil.hs_mock(spy)
         colorsFor = hs_spy_returns({}),
         systemColors = hs_spy_returns({}),
       }
+    },
+    httpserver = {
+      new = hs_spy_returns({}),
     },
     image = {
       imageFromPath = hs_spy_returns(spy_hs_image)
