@@ -1,6 +1,7 @@
 local plfunc  = require 'pl.func' 
 local alert   = require 'user.lua.interface.alert'
 local lists   = require 'user.lua.lib.list'
+local paths   = require 'user.lua.lib.path'
 local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
@@ -10,6 +11,7 @@ local types   = require 'user.lua.lib.typecheck'
 local Hotkey  = require 'user.lua.model.hotkey'
 local image   = require 'user.lua.ui.image'
 local text    = require 'user.lua.ui.text'
+local symbols = require 'user.lua.ui.symbols'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('Command', 'info')
@@ -183,6 +185,10 @@ function Command:getGroup(num)
 end
 
 
+--
+-- Returns a table that can be used in Hammerspoon menus
+--
+---@return HS.MenubarItem
 function Command:as_menu_item()
   local title = self.title or self.id
   local subtext = self.hotkey and self.hotkey:label() or ''
@@ -191,7 +197,7 @@ function Command:as_menu_item()
   local menuitem = {
     title = text.textAndHint(title, subtext),
     shortcut = self.menukey,
-    image = self:getMenuIcon() or nil,
+    image = self:getMenuIcon(12) or nil,
     fn = function()
       self:invoke('menu', {})
     end
@@ -207,16 +213,38 @@ end
 ---@param size? integer Size of icon, defaults to 12
 ---@return hs.image
 function Command:getMenuIcon(size)
-  size = params.default(size, 12)
+  size = size or 12
+  
+  log.df("icon type %s for command %s", type(self.icon), self.id)
 
   local icon = self.icon or 'info'
 
-  local ok, img = pcall(function()
-    ---@diagnostic disable-next-line: param-type-mismatch
-    return image.from_icon(icon, size)
-  end)
+  if types.isNil(self.icon) then
+    return image.from_icon('info', size)
+  end
 
-  return ok and img or image.from_icon('info', size) --[[@as hs.image]]
+  if type(self.icon) == "string" then
+    local icon = self.icon --[[@as string]]
+      
+    if symbols.has_codepoint(icon) then
+      return image.from_icon(icon, size)
+    end
+
+    if paths.exists(icon) then
+      return image.from_path(icon, size, size)
+    end
+
+    return image.from_icon('info', size)
+  end
+
+  -- local ok, img = pcall(function()
+  --   ---@diagnostic disable-next-line: param-type-mismatch
+  --   return image.from_icon(icon, size)
+  -- end)
+
+  -- return ok and img or image.from_icon('info', size) --[[@as hs.image]]
+
+  return self.icon --[[@as hs.image]]
 end
 
 
@@ -266,6 +294,18 @@ function Command:bindHotkey()
 
     log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(self.id, 20), label)
   end
+end
+
+
+
+--
+-- Returns the command as a data-table row 
+-- 
+-- See: https://stevedonovan.github.io/Penlight/api/libraries/pl.data.html
+--
+---@return table
+function Command:asdatarow()
+  return { self.id, self.title, self.flags, self.hotkey and self.hotkey.mods, self.hotkey and self.hotkey.key, self.url }
 end
 
 return Command

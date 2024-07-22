@@ -1,4 +1,5 @@
 local rexpcre = require 'rex_pcre'
+local rfc6570 = require 'silva.template'
 local plpath  = require 'pl.path'
 local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
@@ -38,7 +39,7 @@ function Regex.to_pcre_regex(pattern)
   pattern = pattern:gsub('!', '')
   pattern = plpath.normcase(pattern)
   -- escape any Lua 'magic' characters in a string
-  pattern = pattern:gsub('[%-%+%[%]%$%^%%%?%*]','%%%1')
+  pattern = pattern:gsub('[%+%[%]%$%^%%%?%*]','%%%1')
 
   -- replace lua's dot literal, with PCRE dot literal
   pattern = pattern:gsub('[%.]', '\\.')
@@ -134,6 +135,25 @@ function Regex.regex_match(pattern, str)
 
   return match ~= nil
 end
+
+
+--
+-- Implements an URI Template (RFC 6570 - level 3) matching engine with capture.
+-- 
+-- All operator defined in the RFC 6570 are supported:
+--  * {var} simple string expansion
+--  * {+var} reserved character string expansion
+--  * {#var} fragment expansion, crosshatch-prefixed
+--  * {.var} label expansion, dot-prefixed
+--  * {/var} path segments, slash-prefixed
+--  * {;var} path-style parameters, semicolon-prefixed
+--  * {?var} form-style query, ampersand-separated
+--  * {&var} form-style query continuation
+-- --
+function Regex.uri(pattern)
+  return rfc6570(pattern)
+end
+
 
 
 --

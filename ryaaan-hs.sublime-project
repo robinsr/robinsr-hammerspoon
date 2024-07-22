@@ -6,6 +6,7 @@
         "Spoons",
         ".idea", // gonna use jetbrains anymore?
         "/opt/homebrew/share/lua",
+        "**/node_modules"
       ],
     },
     { "path": "/Users/ryan/dotfiles/config/skhd" },

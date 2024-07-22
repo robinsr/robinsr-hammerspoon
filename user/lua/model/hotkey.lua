@@ -48,6 +48,9 @@ local preset_mods = tables{
   ctcmd  = { "ctrl",                 "cmd" },
   altcmd = {         "alt",          "cmd" },
   scmd   = {                "shift", "cmd" },
+
+  -- Others
+  option_shift = { "alt", "shift" },
 }
 
 

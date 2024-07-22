@@ -60,7 +60,7 @@ end
 
 function SketchyBar:setFrontApp(app)
   params.assert.string(app)
-  shell.result({ 'sketchybar', '--set', 'front_app', shell.kv('label', app) })
+  shell.result({ 'sketchybar', '--set', 'front_app', shell.kv('label', app, '""') })
 end
 
 --
@@ -107,8 +107,8 @@ function SketchyBar:onSpaceEnvChange(space)
   end
 
   local space_arg = ('space.%d'):format(space.index)
-  local icon_arg  = shell.kv('icon', strings.ifEmpty(space.label, tostring(space.index)))
-  local label_arg = shell.kv('label', ('%s %d').format(sym, count))
+  local icon_arg  = shell.kv('icon', strings.ifEmpty(space.label, tostring(space.index)), '""')
+  local label_arg = shell.kv('label', ('%s %d').format(sym, count), '""')
 
   return shell.result({ 'sketchybar', '--set', space_arg, label_arg, icon_arg })
 end

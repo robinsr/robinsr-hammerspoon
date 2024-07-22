@@ -8,6 +8,20 @@ local icons   = require 'user.lua.ui.icons'
 
 local cheat = {}
 
+function cheat.ks_keys()
+  return KittySupreme.commands
+    :filter(function(cmd) return not cmd:has_flag('hidden') end)
+    :filter(function(cmd) return cmd:hasHotkey() end)
+    :groupBy(function(cmd)
+        local key = (cmd.module or '')
+        :gsub('user%.lua%.', '')
+        :gsub('modules%.', '')
+        :gsub('%.', ' → ')
+
+      return strings.ifEmpty(key, 'Init')
+    end)
+end
+
 cheat.cmds = {
   {
     id = 'ks.commands.show_ks_hotkeys',
@@ -16,24 +30,11 @@ cheat.cmds = {
     key = "\\",
     mods = "btms",
     exec = function(cmd)
-      local groups = KittySupreme.commands
-        :filter(function(cmd) return not cmd:has_flag('hidden') end)
-        :filter(function(cmd) return cmd:hasHotkey() end)
-        :groupBy(function(cmd)
-            local key = (cmd.module or '')
-            :gsub('user%.lua%.', '')
-            :gsub('modules%.', '')
-            :gsub('%.', ' → ')
-
-          return strings.ifEmpty(key, 'Init')
-        end)
-
-
       local model = {
         title = "KittySupreme Hotkeys",
         mods = hotkey.presets,
         symbols = icons.keys:toplain(),
-        groups = groups,
+        groups = cheat.ks_keys(),
       }
 
       webview.file("cheatsheet.view", model, model.title)

@@ -35,7 +35,7 @@ function Yabai:new()
 
   local watcher = system.onEvent(function(evt) this:onEnvChange(evt) end)
 
-  local config_path = paths.join(os.getenv("HOME"), ".config/yabai/")
+  local config_path = paths.expand("~/.config/yabai/")
   local config_watcher = hs.pathwatcher.new(config_path, function() this:restart() end):start()
 
   
@@ -99,36 +99,64 @@ end
 --
 ---@return Yabai.Rule[]
 function Yabai:getRules()
-  local rules = sh.result('yabai -m rule --list'):json()
+  local result = sh.result('yabai -m rule --list')
   
-  ---@cast rules Yabai.Rule[]
-  return rules
+  if not result:ok() then
+    error(result:error_msg())
+  end
+
+  return result:json() --[[@as Yabai.Rule[] ]]
 end
+
+--- TODO - where should custom yabai config live?
+
+---@alias YabaiRulePartial {} | Yabai.Rule 
+
+---@type YabaiRulePartial[]
+local my_yabai_rules = {
+  { app = 'Glance', manage = 'off' }
+}
 
 
 --
 -- TODO - WIP
 --
-function Yabai:addRule()
-  error('not implemented')
+---@param rule Yabai.Rule
+function Yabai:addRule(rule)
+  local args = lists({ 'yabai', '-m', 'rule', '--add' })
+
+  args:push(sh.kv('app', strings.topattern(rule.app), '""'))
+  args:push(sh.kv('manage', rule.manage))
   
-  local rule_args = { 'yabai', '-m', 'rule', '--add', 'app="^Calculator$"', 'manage=off' }
-  local rule_tmpl = 'yabai -m rule --add app="<%= app %>" manage=<%= off %>'
+  local add_reuslt = sh.result(args:values())
 
-  local rule_tmpl_vars = {
-    app = '^Calculator$',
-    manage = 'off'
-  }
+  log.f('yabai add rule: [%s]', args:join(' '))
 
+  if not add_reuslt:ok() then
+    error(('failed to add rule %s\n%s'):format(hs.inspect(rule), add_reuslt:error_msg()))
+  end
 end
 
+
+--
+--
+--
 function Yabai:removeRule()
   error('not implemented')
 end
 
+
+--
+---@param propname string
+---@param propval string
 function Yabai:setConfig(propname, propval)
-  sh.run({ 'yabai','-m','config', propname, qt(propval) })
+  local result = sh.result({ 'yabai','-m','config', propname, qt(propval) })
+
+  if not result:ok() then
+    error(('Failed to set config %s to value %s'):format(propname, propval))
+  end
 end
+
 
 --
 -- Shifts windows around on a grid
@@ -158,7 +186,7 @@ function Yabai:shiftWindow(windowId, start, span, gridrows, gridcols)
 
   log.f('Yabai#shiftWindow: %s', sh.join(yargs))
 
-  sh.run(yargs)
+  sh.result(yargs)
 end
 
 
@@ -189,7 +217,7 @@ function Yabai:scratchWindow(selector)
   selector = selector or desktop.activeWindowId()
 
   if selector ~= nil then
-    sh.run({ 'yabai', '-m', 'window', selector, '--scratchpad', 'hs-scratch' })
+    sh.result({ 'yabai', '-m', 'window', selector, '--scratchpad', 'hs-scratch' })
   end
 end
 
@@ -202,7 +230,7 @@ function Yabai:descratchWindow(selector)
   selector = selector or desktop.activeWindowId()
 
   if selector ~= nil then
-    sh.run({ 'yabai', '-m', 'window', selector, '--scratchpad' })
+    sh.result({ 'yabai', '-m', 'window', selector, '--scratchpad' })
   end
 end
 

@@ -6,7 +6,7 @@ local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local tables  = require 'user.lua.lib.table'
 
-local log = logr.new('Desktop', 'debug')
+local log = logr.new('Desktop', 'info')
 
 
 -- local SysEvents = hs.application
@@ -93,12 +93,26 @@ function desktop.bundleIDs()
   return bundles
 end
 
+local function cooldown(sec, fn)
+  local prev = os.time()
+  local memo = nil
 
---
--- Returns the current state of dark mode
---
----@return boolean
-function desktop.darkMode()
+  return function()
+    local now = os.time()
+    
+    if (memo == nil) or (now > prev + sec) then
+      prev = now
+      memo = fn()
+    end
+
+    return memo
+  end
+end
+
+
+local query_dark_mode = cooldown(10, function()
+  log.d('Querying "System Events" for current dark mode')
+
   local ok, darkModeState = hs.osascript.javascript(
     'Application("System Events").appearancePreferences.darkMode()'
   )
@@ -108,7 +122,23 @@ function desktop.darkMode()
   end
 
   return types.tobool(darkModeState)
+end)
+
+
+--
+-- Returns the current state of dark mode
+--
+---@return boolean
+function desktop.darkMode()
+  return query_dark_mode()
 end
 
+
+--
+--
+--
+function desktop.mouse_position()
+  return hs.mouse.absolutePosition()
+end
 
 return desktop

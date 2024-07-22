@@ -64,6 +64,16 @@ local function isEmpty(i)
   if (i == '') then return true else return false end
 end
 
+-- Type-check a "truthy" value
+---@param i any|nil Possibly a nil value
+---@return boolean true when `i` is "truthy"
+local function truthy(i)
+  if i then
+    return true
+  else
+    return false
+  end
+end
 
 local function invert(fn)
   return function(arg)
@@ -109,6 +119,7 @@ tc.is = {
   func = isFunc,
   tabl = isTable,
   empty = both(isString, isEmpty),
+  truthy = truthy,
 }
 
 tc.is_not = {

@@ -1,4 +1,5 @@
 local pltable = require 'pl.tablex'
+local plseq   = require 'pl.seq'
 local types   = require 'user.lua.lib.typecheck'
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
@@ -39,6 +40,16 @@ function Table.keys(tabl)
 
   return keys
 end
+
+
+--
+-- Returns a interator of key/value pairs in table
+--
+function Table.entries(tabl)
+  return plseq.list(tabl)
+end
+
+
 
 --
 -- Returns a list of values found in `tabl`
@@ -145,6 +156,20 @@ function Table.get(tabl, ...)
   end
 
   return value
+end
+
+
+--
+--
+--
+function Table.set(tabl, key, value)
+  params.assert.tabl(tabl, 1)
+  params.assert.string(key, 2)
+  params.assert.any(types.notNil, value, 3)
+
+  tabl[key] = value
+
+  return tabl
 end
 
 

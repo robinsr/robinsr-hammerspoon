@@ -1,117 +1,164 @@
 {
   "files": [
-    {
-      "name": "icons8-ios17-outlined-copy-key.template.png",
-      "src": "https://img.icons8.com/ios/100/copy--v1.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-cut.template.png",
-      "src": "https://img.icons8.com/ios/100/cut.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-a-key.template.png",
-      "src": "https://img.icons8.com/ios/100/a-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-1-key.template.png",
-      "src": "https://img.icons8.com/ios/100/1-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-f6-key.template.png",
-      "src": "https://img.icons8.com/ios/100/f6-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-fn-key.template.png",
-      "src": "https://img.icons8.com/ios/100/fn-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-shift.template.png",
-      "src": "https://img.icons8.com/ios/100/shift--v1.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-shift.template.png",
-      "src": "https://img.icons8.com/ios/100/shift--v2.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-tab-key.template.png",
-      "src": "https://img.icons8.com/ios/100/tab-key--v1.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-ctrl.template.png",
-      "src": "https://img.icons8.com/ios/100/ctrl.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-shift-key.png",
-      "src": "https://img.icons8.com/ios-filled/50/shift--v1.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-space-key.template.png",
-      "src": "https://img.icons8.com/ios/100/space-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-solidus-key.template.png",
-      "src": "https://img.icons8.com/ios/100/solidus-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-dor-key.template.png",
-      "src": "https://img.icons8.com/ios/100/dor-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-del-key.template.png",
-      "src": "https://img.icons8.com/ios/100/del-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-plus-key.template.png",
-      "src": "https://img.icons8.com/ios/100/plus-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-minus-key.template.png",
-      "src": "https://img.icons8.com/ios/100/minus-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-backspace.template.png",
-      "src": "https://img.icons8.com/ios/100/backspace.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-equals-key.template.png",
-      "src": "https://img.icons8.com/ios/100/equal-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-opentag-key.template.png",
-      "src": "https://img.icons8.com/ios/100/right-angle-parentheses-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-left-closetag-key.template.png",
-      "src": "https://img.icons8.com/ios/100/left-angle-parentheses-key.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-asterisk-key.template.png",
-      "src": "https://img.icons8.com/ios/100/asterisk-key--v1.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-asterisk-key.template.png",
-      "src": "https://img.icons8.com/ios/100/asterisk-key--v2.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-toggle-off.template.png",
-      "src": "https://img.icons8.com/ios/100/toggle-off.png"
-    },
-    {
-      "name": "icons8-ios17-filled-toggle-off.template.png",
-      "src": "https://img.icons8.com/ios-filled/100/toggle-off.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-toggle-on.template.png",
-      "src": "https://img.icons8.com/ios/100/toggle-on.png"
-    },
-    {
-      "name": "icons8-ios17-outlined-toggle-on.template.png",
-      "src": "https://img.icons8.com/ios-filled/100/toggle-on.png"
-    },
-    {
-      "name": "icons8-ios17-filled-close-window.template.png",
-      "src": "https://img.icons8.com/ios-filled/100/close-window.png"
-    }
-
+    [
+      "right-column.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/select-right-column--v2.png"
+    ],
+    [
+      "middle-column.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/select-middle-column.png"
+    ],
+    [
+      "left-column.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/select-left-column.png"
+    ],
+    [
+      "layout-top-25-100-btm-75-40-60.template.png",
+      "https://cdn-icons-png.flaticon.com/512/11223/11223806.png"
+    ],
+    [
+      "layout-top-50-50-50-btm-50-50-50.template.png",
+      "https://cdn-icons-png.flaticon.com/512/4489/4489024.png"
+    ],
+    [
+      "console.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/console.png"
+    ],
+    [
+      "json-download.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/json-download.png"
+    ],
+    [
+      "website.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/domain--v1.png"
+    ],
+    [
+      "server-shutdown.ios17outlined.template.png",
+      "https://img.icons8.com/ios/100/server-shutdown.png"
+    ],
+    [
+      "yabai-logo.png",
+      "https://raw.githubusercontent.com/koekeishiya/yabai/master/assets/icon/icon.png"
+    ],
+    [
+      "restart-basic.png",
+      "https://img.icons8.com/external-sbts2018-flat-sbts2018/58/external-restart-basic-ui-elements-2.3-sbts2018-flat-sbts2018.png"
+    ],
+    [
+      "ios-day-and-night.template.png",
+      "https://img.icons8.com/ios/100/day-and-night.png"
+    ],
+    [
+      "icons8-ios17-outlined-copy-key.template.png",
+      "https://img.icons8.com/ios/100/copy--v1.png"
+    ],
+    [
+      "icons8-ios17-outlined-cut.template.png",
+      "https://img.icons8.com/ios/100/cut.png"
+    ],
+    [
+      "icons8-ios17-outlined-a-key.template.png",
+      "https://img.icons8.com/ios/100/a-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-1-key.template.png",
+      "https://img.icons8.com/ios/100/1-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-f6-key.template.png",
+      "https://img.icons8.com/ios/100/f6-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-fn-key.template.png",
+      "https://img.icons8.com/ios/100/fn-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-shift.template.png",
+      "https://img.icons8.com/ios/100/shift--v1.png"
+    ],
+    [
+      "icons8-ios17-outlined-shift.template.png",
+      "https://img.icons8.com/ios/100/shift--v2.png"
+    ],
+    [
+      "icons8-ios17-outlined-tab-key.template.png",
+      "https://img.icons8.com/ios/100/tab-key--v1.png"
+    ],
+    [
+      "icons8-ios17-outlined-ctrl.template.png",
+      "https://img.icons8.com/ios/100/ctrl.png"
+    ],
+    [
+      "icons8-ios17-outlined-shift-key.png",
+      "https://img.icons8.com/ios-filled/50/shift--v1.png"
+    ],
+    [
+      "icons8-ios17-outlined-space-key.template.png",
+      "https://img.icons8.com/ios/100/space-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-solidus-key.template.png",
+      "https://img.icons8.com/ios/100/solidus-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-dor-key.template.png",
+      "https://img.icons8.com/ios/100/dor-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-del-key.template.png",
+      "https://img.icons8.com/ios/100/del-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-plus-key.template.png",
+      "https://img.icons8.com/ios/100/plus-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-minus-key.template.png",
+      "https://img.icons8.com/ios/100/minus-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-backspace.template.png",
+      "https://img.icons8.com/ios/100/backspace.png"
+    ],
+    [
+      "icons8-ios17-outlined-equals-key.template.png",
+      "https://img.icons8.com/ios/100/equal-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-opentag-key.template.png",
+      "https://img.icons8.com/ios/100/right-angle-parentheses-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-left-closetag-key.template.png",
+      "https://img.icons8.com/ios/100/left-angle-parentheses-key.png"
+    ],
+    [
+      "icons8-ios17-outlined-asterisk-key.template.png",
+      "https://img.icons8.com/ios/100/asterisk-key--v1.png"
+    ],
+    [
+      "icons8-ios17-outlined-asterisk-key.template.png",
+      "https://img.icons8.com/ios/100/asterisk-key--v2.png"
+    ],
+    [
+      "icons8-ios17-outlined-toggle-off.template.png",
+      "https://img.icons8.com/ios/100/toggle-off.png"
+    ],
+    [
+      "icons8-ios17-filled-toggle-off.template.png",
+      "https://img.icons8.com/ios-filled/100/toggle-off.png"
+    ],
+    [
+      "icons8-ios17-outlined-toggle-on.template.png",
+      "https://img.icons8.com/ios/100/toggle-on.png"
+    ],
+    [
+      "icons8-ios17-outlined-toggle-on.template.png",
+      "https://img.icons8.com/ios-filled/100/toggle-on.png"
+    ],
+    [
+      "icons8-ios17-filled-close-window.template.png",
+      "https://img.icons8.com/ios-filled/100/close-window.png"
+    ]
   ]
 }

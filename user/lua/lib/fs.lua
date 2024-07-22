@@ -1,6 +1,7 @@
 local plpath   = require 'pl.path'
 local plfile   = require 'pl.file'
 local lists    = require 'user.lua.lib.list'
+local params   = require 'user.lua.lib.params'
 local strings  = require 'user.lua.lib.string'
 local is       = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
@@ -14,12 +15,27 @@ local FS = {}
 
 
 --
---
+-- Returns contents of file at `filepath` as string
 --
 ---@param filepath string
 ---@return string
 function FS.readfile(filepath)
   return plfile.read(filepath)
+end
+
+
+--
+-- Writes `contents` to a file at path `filepath`
+--
+---@param filepath string
+---@param contents string
+---@return boolean? ok -- `true` or `nil`
+---@return string? err_msg -- error message
+function FS.writefile(filepath, contents)
+  params.assert.string(filepath, 1)
+  params.assert.string(contents, 2)
+
+  return plfile.write(filepath, contents)
 end
 
 

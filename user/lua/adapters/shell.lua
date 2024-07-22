@@ -2,6 +2,7 @@ local plutil  = require 'pl.utils'
 local fs      = require 'user.lua.lib.fs'
 local lists   = require 'user.lua.lib.list'
 local paths   = require 'user.lua.lib.path'
+local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
@@ -301,21 +302,55 @@ function Shell.exp(str)
 end
 
 
+local DBL_QUOTE = '"'
+
+
 --
 -- Creates a K=V/K="V" shell argument pair
 --
 ---@param key string Parameter key
----@param val string Parameter value
+---@param val any Parameter value
+---@param chars? string character pair to wrap values
 ---@return string
-function Shell.kv(key, val)
-  local kv_pattern = '%s=%s'
+function Shell.kv(key, val, chars)
+  params.assert.string(key)
+  
+  val = val or ''
 
-  if string.match(val, '%s') then
-    kv_pattern = '%s="%s"'
+  local q_open = ''
+  local q_close = ''
+  local separator = '='
+
+  local use_char = function(index)
+    return (chars or '  ='):sub(index, index):gsub('%%', '!')
   end
 
+  if string.match(val, '%s') then
+    q_open = DBL_QUOTE
+    q_close = DBL_QUOTE
+  end
+
+  if chars ~= nil and chars:len() == 1 then
+    separator = use_char(1)
+  end
+
+  if chars ~= nil and chars:len() == 2 then
+    q_open = use_char(1)
+    q_close = use_char(2)
+  end
+
+  if chars ~= nil and chars:len() == 3 then
+    separator = use_char(1)
+    q_open = use_char(2)
+    q_close = use_char(3)
+  end
+
+  local kv_pattern = strings.join{ '%s', separator, q_open, '%s', q_close }
+  local kv_formatted = fmt(kv_pattern, key, tostring(val))
+
+  log.i('New shell key-value:', kv_formatted)
   -- return fmt(kv_pattern, key, shellg.quote(val))
-  return fmt(kv_pattern, key, val)
+  return kv_formatted
 end
 
 

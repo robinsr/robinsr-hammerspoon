@@ -1,8 +1,9 @@
 local chooser = require 'hs.chooser'
 local lists   = require 'user.lua.lib.list'
-local types   = require "user.lua.lib.typecheck"
+local regex   = require 'user.lua.lib.regex'
 local strings = require 'user.lua.lib.string'
 local texts   = require 'user.lua.ui.text'
+local types   = require "user.lua.lib.typecheck"
 
 local log = require('user.lua.util.logger').new('mod-cmd-chooser', 'debug')
 
@@ -19,11 +20,11 @@ local log = require('user.lua.util.logger').new('mod-cmd-chooser', 'debug')
 --
 --
 local get_cmd_choices = function()
-  local EVT_FILTER = strings.glob('!*.(evt|event|events).*')
+  local EVT_FILTER = regex.glob('!*.(evt|event|events).*')
 
   return lists(KittySupreme.commands)
     :filter(function(cmd)
-      return EVT_FILTER(cmd.id)
+      return EVT_FILTER(cmd.id) and not lists(cmd.flags):includes('no-chooser')
     end)
     :map(function(cmd)
       ---@cast cmd Command
@@ -146,7 +147,7 @@ return {
       title = "Show command chooser",
       icon = "filemenu.and.selection",
       desc = module_desc,
-      flags = { 'invalid_choice' },
+      flags = { 'no-chooser' },
       mods = "btms",
       key = "C",
       setup = ChooserModule.setup,

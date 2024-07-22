@@ -1,3 +1,4 @@
+local inspect = require 'inspect'
 local console = require 'user.lua.interface.console'
 local types   = require 'user.lua.lib.typecheck'
 local lists   = require 'user.lua.lib.list'
@@ -89,29 +90,31 @@ function ProxyLogger:new(log_name, level)
 
   ---@cast log ProxyLogger
   log.inspect = function (...)
-    if (log:getLogLevel() > levels.info) then
-      local args = lists.pack(...)
-      local lastarg = args[#args]
-
-      -- Prevents unintentionally bogging down HS with huge objects
-      -- Add { depth = N } as last argument to override
-      if (is.tabl(lastarg) and notNil(lastarg.depth)) then
-        args:pop()
-      else
-        lastarg = { depth = 1 }
-      end
-
-      local bits = args:map(function(bit)
-        if is.strng(bit) then
-          return bit
-        else
-          return hs.inspect(bit, lastarg)
-        end
-      end)
-
-      console.print(DEBUG_WARNING)
-      console.print(table.concat(bits:values()))
+    if (log:getLogLevel() < levels.debug) then
+      return
     end
+
+    local args = lists.pack(...)
+    local lastarg = args[#args]
+
+    -- Prevents unintentionally bogging down HS with huge objects
+    -- Add { depth = N } as last argument to override
+    if (is.tabl(lastarg) and notNil(lastarg.depth)) then
+      args:pop()
+    else
+      lastarg = { depth = 1 }
+    end
+
+    local bits = args:map(function(bit)
+      if is.strng(bit) then
+        return bit
+      else
+        return inspect(bit, lastarg)
+      end
+    end)
+
+    console.print(DEBUG_WARNING)
+    console.print(table.concat(bits:values()))
   end
 
   log.logIf = function(level, fn)

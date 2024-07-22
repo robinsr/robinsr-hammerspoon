@@ -38,6 +38,8 @@ function strings.trim(str)
 end
 
 
+
+
 --
 -- Shorten a string to a specified length
 --
@@ -94,12 +96,12 @@ end
 --
 -- Gonna try something here
 --
----@param ... any Format string variables
----@return string
-function string:fmt(...)
-  local msg = self --[[@as string]]
-  return string.format(msg, table.unpack{...})
-end
+-- -@param ... any Format string variables
+-- -@return string
+-- function string:fmt(...)
+--   local msg = self --[[@as string]]
+--   return string.format(msg, table.unpack{...})
+-- end
 
 
 --
@@ -126,14 +128,12 @@ end
 -- Compiles a template string
 --
 function strings.tmpl(tmplstr)
-  if not types.isString(tmplstr) then
-    error(strings.fmt('Invalid template string: %s', tmplstr or 'nil'))
-  end
+  assert_string(tmplstr)
 
   local render = lustache:compile(tmplstr)
 
   if render == nil then
-    error(strings.fmt('Error compiling lustache template: %q', tmplstr))
+    error(('Error compiling lustache template: %q'):format(tmplstr))
   else
     return function(args) return render(args) end
   end
@@ -262,83 +262,39 @@ function strings.replace(str, old, new)
   return plstring.replace(str, old, new)
 end
 
---
---
--- Pattern Matcher
---
-
---- escape any Lua 'magic' characters in a string
--- @param s The input string
-function escape(s)
-  assert_string(s, 1)
-  return (s:gsub('[%-%+%[%]%$%^%%%?%*]','%%%1'):gsub('[%.]', '\\.'))
-end
-
-local function filemask(mask)
-  mask = escape(plpath.normcase(mask))
-  return '^'..mask:gsub('%%%*','.*'):gsub('%%%?','.')..'$'
-end
-
-
-local function fnmatch(filename, pattern)
-  local fpattern = filemask(pattern)
-  local match = regex.new(fpattern, 'i'):find(plpath.normcase(filename)) ~= nil
-
-  
-  return match
-end
-
-
----@alias GlobMatchFn fun(str: string): boolean
 
 --
--- Returns a glob matching function
---
----@param patterns string|string[]
----@return GlobMatchFn
-function strings.glob(patterns)
-
-  local map_pattern = function(p)
-    local is_negation = string.match(p, '^!.*')
-    local pattern = p:gsub('!', '')
-
-    return function(filename)
-      local match = fnmatch(filename, pattern)
-      
-      if match and not is_negation then
-        return true
-      end
-
-      if not match and is_negation then
-        return true
-      end
-
-      return false
-    end
-  end
-
-  local mapped = lists.new({ patterns }):flatten():map(map_pattern)
-
-  return function(str)
-    return mapped:every(function(matcher)
-      return matcher(str)
-    end)
-	end
-end
-
-
---
+-- WIP
 -- Given a non-wildcard pattern, returns a list of matching strings
 --
 function strings.expand(pattern)
   local matches = {}
-
-
-
 end
 
 
-
+string._replace = strings.replace
+string._startswith = strings.startswith
+string._endswith = strings.endswith
+string._trim = strings.trim
+string._truncate = strings.truncate
+string._ifEmpty = strings.ifEmpty
+string._contains = strings.contains
+string._startswith = strings.startswith
+string._endswith = strings.endswith
+string._fmt = strings.fmt
+string._title = strings.title
+string._titlefmt = strings.titlefmt
+string._tmpl = strings.tmpl
+string._fmt = strings.fmt
+string._fmt = strings.fmt
+string._join = strings.join
+string._split = strings.split
+string._fmt = strings.fmt
+string._padStart = strings.padStart
+string._padEnd = strings.padEnd
+string._padMid = strings.padMid
+string._replace = strings.replace
+string._expand = strings.expand
 
 
 return strings

@@ -136,6 +136,14 @@ describe("lib/list.lua", function()
     end)
   end)
 
+  describe("List.shift", function()
+    it("Adds new items to front of list", function()
+      local l = lists({ 'd','e','f','g' })
+      l:shift('a','b','c')
+
+      same({'a','b','c','d','e','f','g'}, l:values())
+    end)
+  end)
 
   describe("List#at", function()
     local list_at = lists(alpha(10))

@@ -1,109 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{- title|default('There is no title for this page...') -}}</title>
+{%- set cog_icon_src = { point: 0x1008CB } -%}
+{%- set cog_icon = html('image', { href: encoded_img(source=cog_icon_src, width=24, color='#ffffff'), width: "24", height: "24" }) -%}
+{%- set menu_icon = html('path', { 'stroke-linecap': "round", 'stroke-linejoin': "round", 'stroke-width': "2", 'd': "M4 6h16M4 12h16M4 18h16" }) -%}
 
-  {% block head_tags -%}
-    {% for i, elem_html in head_tags %}
-      {{ elem_html }}
-    {% endfor -%}
-  {% endblock -%}
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="darkreader-lock" />
 
-  {% block head_css -%}
-    {% for i, css_text in style_blocks -%}
-      <style type="text/css">
-        {{ css_text }}
-      </style>
-    {% endfor -%}
-  {% endblock -%}
+    <title>{{- title|default('There is no title for this page...') -}}</title>
 
-</head>
-<body>
-  {% block page_title %}
-    {% set esc_filename = [ "@/resources/images/", "icons8-ios17-outlined-esc.template.png" ]|join %}
-    {% set esc_datauri = encoded_img(filepath=esc_filename, width=width, height=height) %}
+    {% block head_tags -%}
+      {% for i, elem_html in head_tags %}
+        {{ elem_html }}
+      {% endfor -%}
+    {% endblock -%}
 
-  
-    <header class="container-fluid">
-      <div class="grid">
-        <div>
-          <h1 class="title">
-            <small>
-              {{ title|default('There is no title for this page...') }}
-            </small>
-          </h1>
+    {% block head_css -%}
+      {% for i, css_text in style_blocks -%}
+        {{ html("style", {type:"text/css", 'data-l': 'head_css'}, [ css_text ]) }}
+      {% endfor -%}
+    {% endblock -%}
+  </head>
+  <body>
+    <div class="mx-auto flex h-screen w-[95vw] flex-col">
+      {% block page_title %}
+        <div class="navbar bg-base-100">
+          <div class="flex-none">
+            <button class="btn btn-square btn-ghost">{{ mSVG(content=menu_icon) }}</button>
+          </div>
+          <div class="flex-1">
+            <p>{{ title|default('There is no title for this page...') }}</p>
+          </div>
+          <div class="flex-none">
+            <button class="btn btn-square btn-ghost">{{ mSVG(content=cog_icon) }}</button>
+          </div>
         </div>
-        <div>
-          <small id="js-ok" class="pull-right">…</small>
-          <p class="pull-right">Exit with <img src="{{ esc_datauri }}" width="40" height="40"></p>
-        </div>
-      </div>
-    </header>
-  {% endblock %}
+      {% endblock %}
 
-  {% block page_content %}
-    <main class="container-fluid">
-      <p>Content should go here...</p>
-    </main>
-  {% endblock %}
+      <main class="flex-grow">
+        {% block page_content %}
+          {# Content should go here... #}
+        {% endblock %}
+      </main>
 
-  {% block page_footer %}
-    <footer class="container-fluid">
-      <hr />
-      <nav>
-        <ul>
-          <li><strong>KittySupreme</strong></li>
-        </ul>
-        <ul>
-          <li><a href="#">Button 1</a></li>
-          <li><a href="#">Button 2</a></li>
-          <li><a href="#">Button 3</a></li>
-        </ul>
-      </nav>
-    </footer>
-  {% endblock %}
+      {% block page_footer %}
+        <footer class="">
+          <hr />
+          <nav>
+            <ul>
+              <li><strong>KittySupreme</strong></li>
+            </ul>
+            <ul>
+              <li><a href="/data">Request Data</a></li>
+              <li><a href="/keys">Cheatsheet</a></li>
+              <li><a href="/edit">Editor</a></li>
+            </ul>
+          </nav>
+        </footer>
+      {% endblock %}
 
-  {% block page_script %}
-    <script type="text/javascript">
-      const onLoad = function() {
-        const doKsMsg = (data) => {
-          if (typeof data != 'string') {
-            data = JSON.stringify(data)
-          }
+      {% block page_script %}
+        <script type="text/javascript">
+          const onLoad = function () {
+            const doKsMsg = (data) => {
+              if (typeof data != "string") {
+                data = JSON.stringify(data);
+              }
 
-          try { 
-            webkit.messageHandlers.kittysupreme.postMessage(data);
-          } catch(err) {
-            console.log('The controller does not exist yet');
-          }
-        }
+              try {
+                webkit.messageHandlers.kittysupreme.postMessage(data);
+              } catch (err) {
+                console.log("The controller does not exist yet");
+              }
+            };
 
-        window.addEventListener('keyup', (evt) => {
-          evt.preventDefault()
-          evt.stopPropagation()
+            window.addEventListener("keyup", (evt) => {
+              evt.preventDefault();
+              evt.stopPropagation();
 
-          doKsMsg(evt)
+              doKsMsg(evt);
 
-          if (evt.key == 'Escape') {
-            doKsMsg('close')
-          }
-        })
+              if (evt.key == "Escape") {
+                doKsMsg("close");
+              }
+            });
 
-        doKsMsg("Hello from webview");
+            doKsMsg("Hello from webview");
 
-        setTimeout(() => {
-          document.querySelector('#js-ok').textContent = "👍"
-        }, 1000)
-      }
-      
-      window.addEventListener('load', onLoad)
-    </script>
-  {% endblock %}
+            setTimeout(() => {
+              document.querySelector("#js-ok").textContent = "👍";
+            }, 1000);
+          };
 
-  {% block page_end %}
-    
-  {% endblock %}
-</body>
+          window.addEventListener("load", onLoad);
+        </script>
+      {% endblock %}
+
+      {% block page_end %}
+      {% endblock %}
+    </div>
+  </body>
 </html>

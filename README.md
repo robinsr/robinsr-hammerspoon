@@ -3,9 +3,9 @@ robinsr's hammerspoon
 
 ## Todos
 
-- Startup errors related to executing shell commands. See [issues item 1](#item1)
+- [x] Startup errors related to executing shell commands. See [issues item 1](#item1)
 - Add/Remove rules to/from yabai config
-    - I want to stop yabai from managing an app's windows
+    - Add command - "always ignore current app"
     - I don't know this until the app is running
     - Stopping to add a rule to the yabai config is a pain so I usually dont
     - This results in annoying window issues
@@ -83,29 +83,12 @@ Generate docs with `--docs` path, `--doc_out_path` path, and the entry point
 
 ## Issues
 
-### item1
-
-Config errors on startup
-
-
-```brew: command not found```
-
-```
-[ERROR] (shell) Shell result:{
-  command = "brew services info sketchybar --json 2>&1",
-  output = "sh: brew: command not found\n",
-  status = 127
-}
-```
-
-***
-
 
 
 
 ***
 
-Scratch pad 
+## Scratch pad 
 
 ```
 name: ApplePrivateInterfaceThemeChangedNotification
@@ -137,3 +120,40 @@ local function seqx(items)
 end
 ```
 
+
+***
+
+
+**HS to WebviewJS connection?**
+
+(Example webview callback data)
+
+
+```lua
+{
+  body = "popopopo",
+  frameInfo = {
+    mainFrame = true,
+    request = {
+      HTTPHeaderFields = {},
+      HTTPMethod = "GET",
+      HTTPShouldHandleCookies = true,
+      HTTPShouldUsePipelining = false,
+      URL = {
+        __luaSkinType = "NSURL",
+        url = "about:blank"
+      },
+      cachePolicy = "protocolCachePolicy",
+      networkServiceType = "default",
+      timeoutInterval = 60.0
+    },
+    securityOrigin = {
+      host = "",
+      port = 0,
+      protocol = ""
+    }
+  },
+  name = "kittysupreme",
+  webView = <userdata 1> -- hs.webview: KittySupreme Hotkeys (0x6000002abbf8)
+}
+```

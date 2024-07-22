@@ -3,9 +3,14 @@ return {
     {
       id = 'ks.commands.ctx-menu',
       title = 'Test context menu',
+      flags = { 'no-chooser' },
       icon = 'info',
       exec = function(cmd, ctx, params)
         local ctxmenu = hs.menubar.new(false)
+
+        if ctxmenu == nil then
+          error('Error creating context menu')
+        end
 
         ctxmenu:setMenu({
           {
@@ -22,7 +27,7 @@ return {
           }
         })
 
-        ctxmenu:popupMenu(hs.geometry.point(100, 100))
+        ctxmenu:popupMenu(hs.mouse:absolutePosition())
       end,
     }
   }

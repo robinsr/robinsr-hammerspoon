@@ -1,100 +1,74 @@
 {% extends "base.view" %}
 
-{% block head_tags %}
-  {{ parent() }}
-  
-  <style type="text/css">
-    kbd {
-      white-space: nowrap;
-      font-size: 1.0rem;
-    }
-
-    kbd span.symbol {
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-
-    .shortcut-group table {
-      --pico-spacing: 0.15rem;
-    }
-  </style>
-{% endblock %}
-
 {% block page_content %}
 
-  <main class="container-fluid">
-    <article>
-      <header>
-        <h3>
-          <small>Mods</small>
-        </h3>
-      </header>
-      <table>
-        {% for row in mods|batch(4) %}
-          <tr>
-            {% for name, keys in row %}
-              <td class="text-right">
-                <strong>
-                  <em>{{- count -}} ❝{{- name -}}❞</em>
-                </strong>
-              </td>
-              <td>
-                {% for key in keys %}
-                  <kbd>
-                    <span class="symbol">
-                      {{- symbols[key] -}}
-                    </span>
-                  </kbd>
-                {% endfor %}
-              </td>
+  {% set card_content %}
+    <div class="columns-xs">
+      {% for name, keys in mods %}
+        <div class="flex flex-row items-center justify-between space-x-2">
+          <div class="flex-none">
+            <strong>
+              <em>{{- count -}} ❝{{- name -}}❞</em>
+            </strong>
+          </div>
+          <div>
+            {% for key in keys %}
+              {{ mKBD(keys=symbols[key], scale=90) }}
             {% endfor %}
-          </tr>
-        {% endfor %}
-      </table>
-    </article>
-  </main>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endset %}
 
-  <hr>
+  {{ mCard('Mods', content=card_content) }}
 
-  <main class="container-fluid card-grid">
+  <hr class="my-4" />
+
+  <section class="columns-sm">
     {% for group_name, cmds in groups %}
-      <article class="shortcut-group">
-        <header>
-          <h3>
-            <small>{{- group_name -}}</small>
-          </h3>
-        </header>
-        <table>
+
+      {% set card_content %}
+        <div class="flex flex-col space-y-2">
           {% for cmd in cmds %}
             {% if cmd.hotkey %}
-              <tr>
-                <td class="text-right">
-                  <kbd>
-                    <span class="symbol">
-                      {%- for key in cmd.hotkey.mods -%}
-                        {{- symbols[key] -}}
-                      {%- endfor -%}
-                    </span>
+              {%- set icon_size = 30 -%}
+
+              <div class="odd:bg-base-100 p-1 even:bg-none">
+                <div class="flex flex-row items-center justify-between gap-x-4">
+                  <div class="h-[30px] w-[30px] flex-none">
+                    <img
+                      class="invert"
+                      src="{{ modelfn(modelfn(cmd, 'getMenuIcon', [icon_size]), 'encodeAsURLString') }}"
+                      width="{{ icon_size }}"
+                      height="{{ icon_size }}" />
+                  </div>
+                  <p class="grow">{{- cmd.title -}}</p>
+                  <div class="flex-none">
+                    {%- for key in cmd.hotkey.mods -%}
+                      {{ mKBD(symbols[key]) }}
+                    {%- endfor -%}
                     {%- if symbols[cmd.hotkey.key] -%}
-                      <span class="symbol">
-                        {{- symbols[cmd.hotkey.key] -}}
-                      </span>
+                      {{ mKBD(symbols[cmd.hotkey.key]) }}
                     {%- else -%}
-                      <span class="not-symbol">
-                        {{- cmd.hotkey.key -}}
-                      </span>
+                      {{ mKBD(cmd.hotkey.key) }}
                     {%- endif %}
-                  </kbd>
-                </td>
-                <td>
-                  {{- cmd.title -}}
-                </td>
-              </tr>
+                  </div>
+                </div>
+              </div>
             {% endif %}
           {% endfor %}
-        </table>
-      </article>
-    {% endfor %}
-  </main>
+        </div>
+      {% endset %}
 
+      {{
+        mCard(
+        title=group_name,
+        classnames=['mb-8 card-compact break-inside-avoid inline-block'],
+        content=card_content)
+      }}
+    {% endfor %}
+  </section>
+
+  <hr class="py-4" />
 {% endblock %}

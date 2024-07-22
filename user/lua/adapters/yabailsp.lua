@@ -1,3 +1,5 @@
+---@meta
+
 ---@alias Yabai.Selector.NumId
 ---| integer # Either a numerical ID, mission control index value, or arrangement index value
 
@@ -10,6 +12,8 @@
 
 
 ---@alias Yabai.Selector.Bool
+---| true
+---| false
 ---| 'on'
 ---| 'off'
 
@@ -155,7 +159,7 @@
 ---@field label string
 ---@field frame Yabai.Frame
 ---@field spaces integer[]
----@field has-focus boolean
+---@field has-focus Yabai.Selector.Bool
 
 
 
@@ -163,22 +167,23 @@
 ---@field app string
 ---@field display integer
 ---@field flags string
----@field follow_space boolean
+---@field follow_space Yabai.Selector.Bool
 ---@field grid string
 ---@field index integer
 ---@field label string
----@field manage boolean
----@field mouse_follows_focus boolean
----@field native-fullscreen boolean
----@field one-shot boolean
+---@field manage Yabai.Selector.Bool
+---@field mouse_follows_focus Yabai.Selector.Bool
+---@field native-fullscreen Yabai.Selector.Bool
+---@field one-shot Yabai.Selector.Bool
 ---@field opacity integer
 ---@field role string
 ---@field scratchpad string
 ---@field space integer
----@field sticky boolean
+---@field sticky Yabai.Selector.Bool
 ---@field sub-layer string
 ---@field subrole string
 ---@field title string
+
 
 
 ---@alias YabaiEvent

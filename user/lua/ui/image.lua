@@ -3,6 +3,8 @@ local paths   = require 'user.lua.lib.path'
 local symbols = require 'user.lua.ui.symbols'
 local colors  = require 'user.lua.ui.color'
 
+local log = require('user.lua.util.logger').new('ui-image', 'info')
+
 
 local img = {}
 
@@ -11,26 +13,31 @@ local img = {}
 -- Creates a hs.image from path, width, and height (defaults to 100x100)
 --
 ---@param path string
----@param width integer
----@param height integer
+---@param width? integer
+---@param height? integer
 ---@return hs.image
 function img.from_path(path, width, height)
   params.assert.string(path, 1)
-  width = params.default(width, 100)
-  height = params.default(height, 100)
-
+  
+  width = width or 100
+  height = height or 100
+  
   local expath = paths.expand(path)
   local image
 
   if paths.exists(expath) then
     image = hs.image.imageFromPath(expath) --[[@as hs.image]]
-  else
-    image = img.from_icon('not_found', 12, colors.gray)
-  end
-  
-  image:size({ w = width, h = height })
+    image = img.resize(image, { w = width, h = height })
 
-  return image
+    if paths.basename(path):match('%.template%.') then
+      image:template(true)
+    end
+  else
+    image = img.from_icon('not_found', math.min(width, height), colors.gray)
+  end
+
+  -- return 
+  return image --[[@as hs.image]]
 end
 
 
@@ -73,16 +80,16 @@ function img.from_icon(icon, size, color)
     codepoint = symbols.get_codepoint('questionmark.app.dashed')
   end
 
-  local img = img.from_codepoint(codepoint, 12, color)
+  local icon = img.from_codepoint(codepoint, size, color)
     
-  if img == nil then
+  if icon == nil then
     error('Could not create icon image for '..codepoint)
   end
 
-  img:setSize({ w = size, h = size })
-  img:template(true)
+  icon:setSize({ w = size, h = size })
+  icon:template(true)
 
-  return img
+  return icon
 end
 
 
@@ -118,6 +125,65 @@ function img.from_codepoint(codepoint, size, color)
   }
 
   return canvas:imageFromCanvas()
+end
+
+
+--
+--
+--
+function img.from_data(image_data)
+  local canvas_dimensions = { 
+    w = image_data.frame.w,
+    h = image_data.frame.h,
+    x = 0,
+    y = 0,
+  }
+
+  ---@type hs.canvas
+  local canvas = hs.canvas.new(canvas_dimensions)  --[[@as hs.canvas]]
+
+  for i,elem in ipairs(image_data.elements) do
+    canvas:insertElement(elem)
+  end
+
+  if image_data.debug then
+    log.f("image data: %s", hs.inspect(image_data, { depth = 4 }))
+  end
+
+  if image_data.filename then
+    -- canvas:imageFromCanvas():saveToFile(image_data.filename, 'png')
+  end
+
+  return canvas:imageFromCanvas()
+end
+
+
+
+local counter = 0
+
+
+--
+--
+--
+---@param image hs.image
+---@param dimensions hs.geometry
+function img.resize(image, dimensions)
+
+  local height = dimensions.h
+  local width = dimensions.w
+
+  local filename = image:name()
+  local current = image:size()
+
+  log.df("Dimensions [%s]: %s", filename, hs.inspect(current))
+
+  local resized = image:size({ w = width, h = height }) --[[@as hs.image]]
+
+  -- counter = counter + 1
+  -- local test_name = ('~/Desktop/test-resize-%d-%d.png'):format(os.time(), counter)
+  -- resized:saveToFile(paths.expand(test_name), 'png')
+
+  return resized
 end
 
 

@@ -18,18 +18,21 @@ local file_contents = function(filename)
 end
 
 
-local base_model = {
-  title = 'KittySupreme dialog window',
-  style_blocks = {
-    -- content here NOT wrapped in style tags
-  },
-  head_tags = {
-    elems.style_link:format("https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.lime.min.css"),
-    elems.style_raw:format(file_contents('@/resources/stylesheets/pico-adjust.css')),
-    elems.style_raw:format(file_contents('@/resources/stylesheets/base.css')),
-  },
-  footer_tags = {},
-}
+local function base_model()
+  return {
+    title = 'KittySupreme dialog window',
+    style_blocks = {
+      -- content here NOT wrapped in style tags
+      file_contents('@/resources/stylesheets/output.css'),
+    },
+    head_tags = {
+      -- elems.style_link:format("https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.lime.min.css"),
+      -- elems.style_raw:format(file_contents('@/resources/stylesheets/pico-adjust.css')),
+      -- elems.style_raw:format(file_contents('@/resources/stylesheets/output.css')),
+    },
+    footer_tags = {}, 
+  }
+end
 
 
 --
@@ -41,7 +44,7 @@ local function merge_models(...)
     params.assert.tabl(tabl, i)
   end
 
-  local new_base = pltabl.copy(base_model)
+  local new_base = pltabl.copy(base_model())
 
   -- new_base.header_tags = {}
   -- new_base.style_blocks = {}

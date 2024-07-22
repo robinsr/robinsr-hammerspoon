@@ -1,10 +1,12 @@
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
 local lists   = require 'user.lua.lib.list'
+local proto   = require 'user.lua.lib.proto'
+local regex   = require 'user.lua.lib.regex'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
+local time    = require 'user.lua.lib.time'
 local types   = require 'user.lua.lib.typecheck'
-local proto   = require 'user.lua.lib.proto'
 local colors  = require 'user.lua.ui.color'
 local icons   = require 'user.lua.ui.icons'
 local image   = require 'user.lua.ui.image'
@@ -44,10 +46,14 @@ local EVT_FILTER = '!*.(evt|event|events).*'
 -- Creates a text-only, placeholder-like menu item
 --
 ---@param text string
+---@param ... any Optional format string variables
 ---@return HS.MenubarItem
-local function text_item(text)
+local function text_item(text, ...)
+  local fmt_string_args = {...}
+  local text = text or ("%q"):rep(#fmt_string_args, " - ")
+
   return {
-    title = text,
+    title = (text):format(table.unpack(fmt_string_args)),
     image = image.from_icon('info'),
     disabled = true,
   }
@@ -79,7 +85,7 @@ local function menu_section(sections, cmds)
   ---@type HS.MenubarItem[]
   return lists(sections):map(function(section)
 
-    local section_glob = strings.glob({ section, EVT_FILTER })
+    local section_glob = regex.globs({ section, EVT_FILTER })
 
     log.df("Mapping menubar section %s", section)
 
@@ -172,32 +178,38 @@ end
 
 local MenuBar = {}
 
---
--- Adds the main KS menu to the menubar
---
-function MenuBar.install()
 
+function MenuBar.primary_items()
   local cmds = KittySupreme.commands
   local services = tables.vals(KittySupreme.services)
 
   local service_menu = submenu_item("Services", 'term', create_service_submenu(services))
 
 
+  local menuitems = lists({})
+    :push(text_item("KittySupreme - uptime: %s", time.fmt_ago(_G.UpTime)))
+    :push(text_item("-"))
+    :concat(menu_section({ "spaces.space.*", "apps.*" }, cmds))
+    :push(text_item("-"))
+    :push(service_menu)
+    :push(text_item("-"))
+    :concat(menu_section({ "ks.commands.*" }, cmds))
+
+  log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
+
+  return menuitems:values()
+end
+
+--
+-- Adds the main KS menu to the menubar
+--
+function MenuBar.install()
+
+  
   local getItems = function(keymods)
     log.f('KS menubar clicked with modifier keys: %s', hs.inspect(keymods))
 
-    local menuitems = lists({})
-      :push(text_item("Just some text"))
-      :push(text_item("-"))
-      :concat(menu_section({ "spaces.space.*", "apps.*" }, cmds))
-      :push(text_item("-"))
-      :push(service_menu)
-      :push(text_item("-"))
-      :concat(menu_section({ "ks.commands.*" }, cmds))
-
-    log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
-
-    return menuitems:values()
+    return MenuBar.primary_items()
   end
 
 
@@ -215,5 +227,31 @@ function MenuBar.install()
 
   KittySupreme.menubar = ksmbar
 end
+
+
+
+MenuBar.cmds = {
+  {
+    id = 'ks.commands.show_context_menu',
+    title = 'Shows the context menu on global hotkey',
+    flags = { 'no-chooser' },
+    icon = 'info',
+    key = 'home',
+    mods = 'hyper',
+    setup = function(cmd) end,
+    exec = function(cmd, ctx, params)
+      local ctx_menu = hs.menubar.new(false, "kittysupreme-ctx")
+
+      if (ctx_menu == nil) then
+        error('Could not create context menu')
+      end
+
+      ctx_menu:setMenu(MenuBar.primary_items())
+      ctx_menu:popupMenu(desktop.mouse_position())
+    end,
+  },
+}
+
+
 
 return MenuBar

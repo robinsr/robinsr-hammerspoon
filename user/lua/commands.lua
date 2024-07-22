@@ -1,8 +1,11 @@
+local console = require 'user.lua.interface.console'
 local desk    = require 'user.lua.interface.desktop'
 local collect = require 'user.lua.lib.collection'
 local lists   = require 'user.lua.lib.list'
 local fs      = require 'user.lua.lib.fs'
+local paths   = require 'user.lua.lib.path'
 local tables  = require 'user.lua.lib.table'
+local rdir    = require 'user.lua.ui.resource-dir'
 local types   = require 'user.lua.lib.typecheck'
 local Command = require 'user.lua.model.command'
 local logr    = require 'user.lua.util.logger'
@@ -20,6 +23,9 @@ local command_list = {
     id = 'ks.evt.onLoad',
     exec = function()
       log.i('Running KittySupreme onLoad...')
+
+      local image_watcher = rdir:new(paths.expand('@/resources/images/')):watch()
+
       KittySupreme.services.sketchybar:setFrontApp('Hammerspoon Loaded!')
     end,
   },
@@ -30,13 +36,14 @@ local command_list = {
     key = "I",
     mods = "btms",
     exec = function()
-      hs.openConsole(true)
+      hs.toggleConsole()
+      -- hs.openConsole(true)
     end,
   },
   {
     id = 'ks.commands.toggle_darkmode',
     title = "Toggle dark mode",
-    icon = "code",
+    icon = "@/resources/images/ios-day-and-night.template.png",
     exec = function()
       console.setDarkMode(desk.darkMode())
     end,

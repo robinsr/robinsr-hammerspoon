@@ -1,11 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 html, body {
-  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPMmrFrDwAFqgJ64+lE/wAAAABJRU5ErkJggg==) !important;
+  /*background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPMmrFrDwAFqgJ64+lE/wAAAABJRU5ErkJggg==) !important;
   backgroun-image-repeat: repeat;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);*/
 }
 
 main {
-  backdrop-filter: blur(2.375rem);
+/*  backdrop-filter: blur(2.375rem);*/
 }
 
 

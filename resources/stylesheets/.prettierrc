@@ -1,0 +1,16 @@
+{
+  "plugins": [
+    "prettier-plugin-tailwindcss",
+    "prettier-plugin-jinja-template"
+  ],
+  "overrides": [
+    {
+      "files": ["../templates/aspect/**/*.view"],
+      "options": {
+        "parser": "jinja-template",
+        "printWidth": 120,
+        "bracketSameLine": true
+      }
+    }
+  ]
+}

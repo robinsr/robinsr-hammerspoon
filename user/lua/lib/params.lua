@@ -1,5 +1,10 @@
-local types  = require "user.lua.lib.typecheck"
 local plpath = require "pl.path"
+local regex  = require 'rex_pcre'
+local types  = require "user.lua.lib.typecheck"
+
+
+local url_matcher = regex.new("^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\\\/=]*)$", 'i')
+
 
 local Params = {}
 
@@ -31,7 +36,7 @@ end
 
 
 --
--- Check a function parameter against the isTable typecheck function
+-- Asserts that `checkpath` is a valid filesystem path
 --
 ---@param checkpath any
 ---@param num? integer Parameter position
@@ -45,6 +50,28 @@ function Params.assert.path(checkpath, num)
 
   if not isDir and not isFile then
     error(("Parameter #%d is not a file or directory: %s"):format(num or 1, checkpath), 2)
+  end
+end
+
+
+--
+--
+--
+---@param checkurl any
+---@param num? integer Parameter position
+function Params.assert.url(checkurl, num)
+  if (not types.isString(checkurl)) then
+    error(('Parameter #%d is not a URL string, rather a %s'):format(num or 1, type(checkurl)), 2)
+  end
+  
+  local match, err = url_matcher:match(checkurl)
+
+  if err ~= nil then
+    error(err)
+  end
+
+  if match == nil then
+    error(('Parameter #%d is not a valid URL string; input [%s]'):format(num or 1, checkurl), 2)
   end
 end
 
@@ -121,5 +148,19 @@ end
 function Params.noop(...)
   -- Doing great!
 end
+
+
+--
+-- substitures first N parameters to function `fn`
+--
+-- -@param fn fun(...):any
+-- -@return fun(...):any
+-- function Params.sub(fn, ...)
+--   local statics = {...}
+--   return function(...)
+--     local rest_args = select(#statics)
+--     fn(table.unpack(statics), table.unpack(rest_args))
+--   end
+-- end
 
 return Params

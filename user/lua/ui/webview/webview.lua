@@ -19,6 +19,8 @@ local log = require('user.lua.util.logger').new('webview', 'info')
 ---| 'titled'
 ---| 'utility'
 
+local winmasks = hs.webview.windowMasks
+
 
 ---@alias HS.WindowBehaviors
 ---| 'canJoinAllSpaces'
@@ -36,9 +38,6 @@ local log = require('user.lua.util.logger').new('webview', 'info')
 
 
 local FADE_TIME = alert.timing.FAST
-local WEBVIEW_OPTS = {
-  developerExtrasEnabled = true,
-}
 
 
 local Webview = {}
@@ -78,7 +77,6 @@ function Webview.new_webview()
       Webview.close_all()
       return
     end
-
   end)
 
   local MAX_WIDTH = 1680
@@ -96,21 +94,24 @@ function Webview.new_webview()
     webview_frame = webview_max
   end
 
-  print('screen', screen_frame.string, hs.inspect(screen_frame))
-  print('webview', webview_frame.string, hs.inspect(webview_frame))
-
+  local WEBVIEW_OPTS = {
+    developerExtrasEnabled = true,
+  }
 
   local view = hs.webview.new(webview_frame, WEBVIEW_OPTS, controller) --[[@as hs.webview]]
 
-  view:windowStyle({ "borderless", "closable", "utility" })
-  view:behaviorAsLabels({ 'moveToActiveSpace' })
+  -- view:windowStyle({ "borderless", "closable", "utility" })
+  view:windowStyle(winmasks.fullSizeContentView)
+  view:behaviorAsLabels({ "canJoinAllSpaces", "stationary" })
   view:transparent(true)
   view:darkMode(desk.darkMode())
   view:closeOnEscape(true)
   view:allowGestures(true)
   view:allowTextEntry(true)
-  -- view:magnification(0.8)
-  -- view:shadow(true)
+  view:shadow(true)
+
+
+  log.f("Webview Using zoom level %q", view:magnification())
 
   return view
 end
@@ -126,7 +127,7 @@ function Webview.content(content, title)
     return Webview.close_all()
   end
 
-  title = title or vm.base_model.title
+  title = title or vm.base_model().title
 
   ---@type hs.webview
   local view = Webview.new_webview()
@@ -138,7 +139,7 @@ function Webview.content(content, title)
   view:hswindow():becomeMain():focus()
 
   view:windowCallback(function(obj) 
-    log.f("Wenbview window callback: %s", hs.inspect(obj))
+    log.df("Webview (%s) window callback: %s", title, hs.inspect(obj))
   end)
 
   Webview.current = view
@@ -168,39 +169,3 @@ end
 
 
 return Webview
-
-
-
---[[
-Example webview callback data
-
-
-{
-  body = "popopopo",
-  frameInfo = {
-    mainFrame = true,
-    request = {
-      HTTPHeaderFields = {},
-      HTTPMethod = "GET",
-      HTTPShouldHandleCookies = true,
-      HTTPShouldUsePipelining = false,
-      URL = {
-        __luaSkinType = "NSURL",
-        url = "about:blank"
-      },
-      cachePolicy = "protocolCachePolicy",
-      networkServiceType = "default",
-      timeoutInterval = 60.0
-    },
-    securityOrigin = {
-      host = "",
-      port = 0,
-      protocol = ""
-    }
-  },
-  name = "kittysupreme",
-  webView = <userdata 1> -- hs.webview: KittySupreme Hotkeys (0x6000002abbf8)
-}
-
-
-]]

@@ -1,0 +1,84 @@
+{% extends "base.view" %}
+{% set title = "Editor" %}
+
+{% block head_tags %}
+  {{- parent() -}}
+{% endblock %}
+
+{% block page_content %}
+  <div class="">
+    <div class="flex w-full flex-row">
+      <div class="flex-none">
+        <div
+          class="pattern-rectangles pattern-blue-500 pattern-bg-white pattern-size-6 pattern-opacity-100 h-[500px] w-[500px]">
+          <img id="preview-image" src="{{ image_uri }}" class="h-[500px] w-[500px] opacity-50" />
+        </div>
+      </div>
+      <form id="image-data-form" class="flex-grow">
+        <div>
+          <label for="image-data" class="sr-only">Order notes</label>
+
+          <div
+            class="overflow-hidden rounded-lg border border-gray-200 shadow-sm focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 dark:border-gray-700">
+            <textarea
+              id="image-data"
+              class="w-full resize-none border-none align-top focus:ring-0 sm:text-sm dark:bg-gray-800 dark:text-white"
+              rows="4"
+              placeholder="Enter any additional order notes...">
+                {{ image_data|json_encode() }}
+              </textarea
+            >
+
+            <div class="flex items-center justify-end gap-2 bg-white p-3 dark:bg-gray-800">
+              <button
+                type="button"
+                class="rounded bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:text-gray-100">
+                Clear
+              </button>
+
+              <button
+                type="button"
+                class="rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700">
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+        <button type="submit">Test</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block page_end %}
+  <script>
+    window.addEventListener("load", function () {
+      let form = document.querySelector("#image-data-form");
+      let image_elem = document.querySelector("#preview-image");
+      let json_input = document.querySelector("#image-data");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        let img_data = JSON.parse(json_input.value);
+
+        let img_request = new Request("/icon-editor/preview-image.json", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(img_data),
+        });
+
+        fetch(img_request).then(async (response) => {
+          if (response.ok) {
+            let text = await response.text();
+            image_elem.src = text;
+          } else {
+            throw new error("Error getting image url");
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

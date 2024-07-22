@@ -1,0 +1,23 @@
+{% extends "base.view" %}
+{% set title = "Editor" %}
+
+{% block head_tags %}
+  {{- parent() -}}
+{% endblock %}
+
+{% block page_content %}
+  <main class="container-fluid">
+    <textarea class="form-textarea h-[80vh]">
+      {{- data|json_encode() -}}
+    </textarea
+    >
+  </main>
+{% endblock %}
+
+{% block page_end %}
+  <script>
+    window.addEventListener("load", function () {
+      // hljs.highlightAll();
+    });
+  </script>
+{% endblock %}

@@ -1,5 +1,6 @@
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
+local types   = require 'user.lua.lib.typecheck'
 local plpath  = require 'pl.path'
 
 local log = require('user.lua.util.logger').new('path', 'info')
@@ -18,6 +19,39 @@ PathsMeta.__index = function(p, key)
 end
 
 
+--
+--
+--
+---@param path string
+---@param suffix? string
+---@return string
+function Paths.basename(path, suffix)
+  local base = plpath.basename(path)
+
+  ---@cast suffix string
+  return types.isString(suffix) and strings.replace(base, suffix, '') or base
+end
+
+
+--
+--
+--
+---@param path string
+---@return string
+function Paths.extname(path)
+  return plpath.extension(path)
+end
+
+
+--
+--
+--
+---@param path string
+---@return string
+function Paths.dirname(path)
+  return plpath.dirname(path)
+end
+
 
 --
 -- Assert path exists
@@ -25,7 +59,7 @@ end
 ---@param path string
 ---@return boolean
 function Paths.exists(path)
-  return plpath.exists(path)
+  return plpath.exists(Paths.expand(path))
 end
 
 
@@ -97,7 +131,7 @@ function Paths.expand(filepath)
 
   filepath = plpath.expanduser(filepath)
 
-  log.f("expanded path %q to %q", old_path, filepath)
+  log.df("expanded path %q to %q", old_path, filepath)
 
   if not plpath.exists(filepath) then
     log.wf("Expanded path %q does not exist!", filepath)
@@ -106,6 +140,34 @@ function Paths.expand(filepath)
   return filepath
 end
 
+
+--
+-- Returns a new filename from template
+--
+---@param filepath string
+---@param pattern string
+---@param addvars? table Optional additional format string variables
+function Paths.rename(filepath, pattern, addvars)
+  params.assert.string(filepath)
+  params.assert.string(pattern)
+
+  local vars = {}
+
+  vars.name = Paths.basename(filepath)
+  vars.ext  = Paths.extname(filepath)
+  vars.dir  = Paths.dirname(filepath)
+  vars.base = Paths.basename(filepath, vars.ext)
+
+  for k,v in pairs(addvars or {}) do
+    vars[k] = v
+  end
+
+  local result = pattern:gsub('%{(%w+)%}', function(n)
+    return vars[n]
+  end)
+
+  return plpath.normpath(result)
+end
 
 
 return setmetatable({}, PathsMeta) --[[@as Paths]]

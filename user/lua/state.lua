@@ -3,10 +3,8 @@ local BrewService = require 'user.lua.adapters.base.brew-service'
 local lists       = require 'user.lua.lib.list'
 local logr        = require 'user.lua.util.logger'
 
-local log = logr.log('KS-State', 'debug')
+local log = logr.log('core.state', 'info')
 
-
-ScreenAlert = nil
 
 ---@class Services
 ---@field yabai Yabai

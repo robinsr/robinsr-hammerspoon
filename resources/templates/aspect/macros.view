@@ -3,14 +3,43 @@
 Aspect Macros
 =============
 
-These dont currently work at the moment...
+When using in a block, import them in the block itself, eg:
+
+{% block page_content %}
+  {% import "macros.view" as _macros %}
+  ...
+{% endblock %}
 
 #}
 
-
 {# Pulls in an image from project's image fodler #}
-{% macro image(name, width = 40, height = 40) %}
+{% macro DataImage(name, width = 40, height = 40) %}
   {% set img_path = [ "@/resources/images/", name ]|join %}
-  {% set img_url = encoded_img(filepath=img_path, width=width, height=height) %}
-  <img src="{{ img_url }}" width="40" height="40">
+  {# {% set img_url = encoded_img(filepath=img_path, width=width, height=height) %} #}
+  <img src="{{ img_url }}" width="40" height="40" />
 {% endmacro %}
+
+{%- macro Button(color='primary', size='sm', content='') -%}
+  <button class="btn btn-{{ color }} btn-{{ size }}">{{ content ? content : children }}</button>
+{%- endmacro -%}
+
+{%- macro KBD(keys='', scale=75) %}
+  <kbd class="kbd scale-{{ scale }} mx-0">
+    <span class="p-0 align-middle text-2xl font-bold">{{- keys -}}</span>
+  </kbd>
+{% endmacro %}
+
+{%- macro Card(title='', classnames={}, content='') -%}
+  <div class="card bg-base-200 {{ classnames|join(' ') }} w-full shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title">{{ title }}</h2>
+      {{ content ? content : children }}
+    </div>
+  </div>
+{%- endmacro -%}
+
+{%- macro SVG(content='') -%}
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-5 w-5 stroke-current">
+    {{ content ? content : children }}
+  </svg>
+{%- endmacro -%}

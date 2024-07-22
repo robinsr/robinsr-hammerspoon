@@ -86,11 +86,27 @@ end
 testutil.logger_mod = "user.lua.util.logger"
 
 --
---
+-- Usage: package.loaded[tutil.logger_mod] = tutil.mock_logger(spy)
 --
 function testutil.mock_logger(spy)
+  local hs_noop = spy.new(function() end)
+
   local mock_logger = {
-    new = spy(function() end)
+    new = spy(function()
+      return {
+        e = hs_noop,
+        ef = hs_noop,
+        w = hs_noop,
+        wf = hs_noop,
+        i = hs_noop,
+        f = hs_noop,
+        d = hs_noop,
+        df = hs_noop,
+        v = hs_noop,
+        vf = hs_noop,
+        inspect = hs_noop,
+      }
+    end)
   }
 
   return mock_logger

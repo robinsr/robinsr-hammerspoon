@@ -28,7 +28,7 @@ insulate("adapters.shell", function()
         manage = "manage",
       })
 
-      tutil.dump(flags, params)
+      -- tutil.dump(flags, params)
     end)
 
     it("uses SIP", function()
@@ -41,7 +41,7 @@ insulate("adapters.shell", function()
       local result = {}
       local match = do_sip(test_cmd, result)
 
-      tutil.dump(match, result)
+      -- tutil.dump(match, result)
     end)
   end)
 

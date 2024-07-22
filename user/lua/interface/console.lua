@@ -5,9 +5,9 @@ local colors = require 'user.lua.ui.mariana'
 ---@type HS.StyledText
 local console_text_styles = {
   font = {
-    size = 16,
+    size = 13,
     name = 'JetBrainsMono Nerd Font Mono',
-  }
+  },
 }
 
 hs.console.consoleFont(console_text_styles.font)
@@ -16,17 +16,29 @@ hs.console.maxOutputHistory(50000) -- sets max character count, not lines
 
 local Console = {}
 
-function Console.configureHSConsole()
-  -- log.i("Configuring hammerspoon console")
-  -- hs.console.clearConsole()
+
+--
+--
+--
+---@param is_dark_mode? boolean
+function Console.configureHSConsole(is_dark_mode)
+  -- hs.console.behavior(64)
+  
+  if is_dark_mode ~= nil then
+    Console.setDarkMode(is_dark_mode)
+  end
 end
 
 
-function Console.setDarkMode(isDark)
-  local print_color = putil.choose(isDark, colors.chateau, colors.bunker)
+--
+--
+--
+---@param is_dark_mode? boolean
+function Console.setDarkMode(is_dark_mode)
+  local print_color = putil.choose(is_dark_mode, colors.chateau, colors.bunker)
   hs.console.consolePrintColor(print_color)
-  hs.console.darkMode(isDark)
-  hs.preferencesDarkMode(isDark)
+  hs.console.darkMode(is_dark_mode)
+  hs.preferencesDarkMode(is_dark_mode)
 end
 
 --

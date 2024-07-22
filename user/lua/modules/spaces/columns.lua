@@ -11,6 +11,7 @@ cols.cmds = {
   {
     id = 'spaces.layout.col_first3rd',
     title = "Move window: 1st ⅓",
+    icon = '@/resources/images/left-column.ios17outlined.template.png',
     mods = 'peace',
     key = '1',
     exec = function(cmd)
@@ -21,6 +22,7 @@ cols.cmds = {
   {
     id = 'spaces.layout.col_second3rd',
     title = "Move window: 2nd ⅓",
+    icon = '@/resources/images/middle-column.ios17outlined.template.png',
     mods = 'peace',
     key = '2',
     exec = function(cmd)
@@ -31,6 +33,7 @@ cols.cmds = {
   {
     id = 'spaces.layout.col_third3rd',
     title = "Move window: 3rd ⅓",
+    icon = '@/resources/images/right-column.ios17outlined.template.png',
     mods = 'peace',
     key = '3',
     exec = function(cmd)

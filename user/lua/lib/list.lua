@@ -90,7 +90,22 @@ end
 ---@param num integer
 ---@return string
 function List:at(num)
-  return self.items[num]
+  local len = #self.items
+  local index = (num-1)%len+1
+
+  return self.items[index]
+end
+
+
+--
+---@param elem any
+---@return integer
+function List:indexOf(elem)
+  for i, v in ipairs(self.items) do
+    if (v == elem) then return i end
+  end
+
+  return -1
 end
 
 
@@ -122,6 +137,27 @@ end
 function List:push(...)
   for i, add in ipairs({...}) do
     table.insert(self.items, add)
+  end
+
+  return self
+end
+
+
+--
+--
+--
+---@generic T
+---@param ... T The item to add
+---@return List List with new items appended
+function List:shift(...)
+  local additems = {...}
+
+  for i = #self.items, 1, -1 do
+    self.items[#additems+i] = self.items[i]
+  end
+
+  for j, add in ipairs(additems) do
+    self.items[j] = add
   end
 
   return self

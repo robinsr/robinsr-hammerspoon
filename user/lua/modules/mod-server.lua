@@ -1,93 +1,128 @@
 local ksutil   = require 'user.lua.util'
-local strings  = require 'user.lua.lib.string'
-local tables   = require 'user.lua.lib.table'
+local hotkey   = require 'user.lua.model.hotkey'
+local fs       = require 'user.lua.lib.fs'
+local lists    = require 'user.lua.lib.list'
+local regex    = require 'user.lua.lib.regex'
+local paths    = require 'user.lua.lib.path'
+local icons    = require 'user.lua.ui.icons'
+local images   = require 'user.lua.ui.image'
 local renderer = require 'user.lua.ui.webview.renderer'
+local json     = require 'user.lua.util.json'
+local cheat    = require 'user.lua.modules.cheatsheet'
+local logr     = require 'user.lua.util.logger' 
+local mime     = require 'user.lua.util.mimetypes'
 
-local log = require('user.lua.util.logger').new('mod_server', 'debug')
+local webserver = require 'user.lua.interface.webserver'
+
+local log = logr.new('mod_server', 'info')
+
+local server = webserver:new()
+
+log.inspect(server, { metatables = true })
+
+
+server:engine('.view', function(viewname, viewmodel)
+  return renderer.file(viewname, viewmodel)
+end)
+
+server:use('uri:/{+path}', function(req, res)
+  res:setHeader('app-name', 'ryans-hs-mod-server')
+end)
+
+server:get('favicon.ico', function(req, res)
+  local resolved = paths.expand('@/resources/images/favicon.ico')
+  
+  if paths.exists(resolved) then
+    res:setFile(resolved)
+  end
+end)
+
+server:get('uri:/static/{+filepath}', function(req, res)
+  log.f("middleware static/*args;\nRequest: %s\nResponse: %s", hs.inspect(req), hs.inspect(res))
+
+  local resolved = paths.expand('@/resources/' .. req.params.filepath)
+  
+  if paths.exists(resolved) then
+    res:setFile(resolved)
+  end
+
+  -- webserver.static(paths.expand('@/resources/')))
+end)
+
+
+server:get('glob:/keys', function(req, res)
+  res:setView('cheatsheet.view')
+  res:setModel({
+    title = "Cheatsheet page",
+    mods = hotkey.presets,
+    symbols = icons.keys:toplain(),
+    groups = cheat.ks_keys(),
+  })
+end)
+
+
+server:get('glob:/data', function(req, res)
+  res:setView('json.view')
+  res:updateModel('title', 'JSON data test page')
+end)
+
+server:get('glob:/edit', function(req, res)
+  res:setView('edit.view')
+  res:updateModel('title', 'Edit form test page')
+end)
+
+server:get('glob:/edit/:filename', function(req, res)
+  res:setView('edit.view')
+  res:updateModel('title', 'Edit file test page')
+end)
+
+server:get('uri:/icon-editor', function(req, res)
+  res:setView('icon-editor.view')
+  res:updateModel('title', ('Icon editor - %s'):format('New icon'))
+  res:updateModel('image_data', {})
+  res:updateModel('image_uri', images.encode_from_path('@/resources/images/yabai-logo.png', 500, 500))
+end)
+
+server:get('uri:/icon-editor/{+filepath}', function(req, res)
+  res:setView('icon-editor.view')
+
+  local filepath = paths.expand('@/resources/images/'..req.params.filepath)
+  local image_data = json.read(filepath)
+  local image = images.from_data(image_data):encodeAsURLString()
+
+
+  res:updateModel('title', ('Icon editor - %s'):format(req.params.filepath))
+  res:updateModel('image_data', image_data)
+  res:updateModel('image_uri', image)
+end)
+
+server:post('uri:/icon-editor/{+filepath}{&save}', function(req, res)
+  local image_data = json.decode(req.body)
+
+  log.f('image_data received: %s', image_data)
+
+  local img = images.from_data(image_data)
+
+  res:response(200, img:encodeAsURLString(), mime['.txt'])
+end)
+
+server:get('glob:/', function(req, res)
+  res:setView('json.view')
+  res:updateModel('title', 'Home page (json data test page)')
+end)
+
+
 
 local server_instance = nil
-
-local server_name = 'Hammerspoon Lua (KittySupreme)'
-local date_fmt = '%a, %b %d %Y %I:%M:%S %p'
-
-local path_matchers = {
-  keys_viewer = strings.glob('/keys'),
-  json_viewer = strings.glob('/data'),
-  home = strings.glob('/*'),
-  all = strings.glob("*"),
-}
-
-local not_found = nil
-local function get_404_html()
-  if not_found == nil then
-    not_found = renderer.file('json.view', { data = { message = 'Not found' } })
-  end
-
-  return not_found
-end
-
-
-
-local web_handler = function(method, path, req_headers, body)
-  log.f("Server Request - %s on %q;\n%s\n\n", method, path, hs.inspect(req_headers))
-
-  local resp_body = get_404_html()
-  local resp_code = 200
-  local resp_headers = {
-    ['Server'] = server_name,
-    ['Content-Type'] = "text/html; charset=utf-8",
-    ['Content-Length'] = tostring(string.len(resp_body)),
-    -- ['Expires'] = ksutil.date_str(date_fmt),
-    -- ['ETag'] = strings.replace(hs.host.uuid(), '-', ''), -- does this change
-    -- ['Cache-Control'] = "no-cache",
-    -- ['Access-Control-Allow-Origin'] = "*",
-  }
-
-  if path_matchers.keys_viewer(path) then
-    local html = renderer.file('cheatsheet.view', {  })
-
-    resp_body = html
-    resp_code = 200
-    resp_headers = tables.merge(resp_headers, {
-      ['Content-Type'] = "text/html",
-      ['Content-Length'] = tostring(string.len(html)),
-    })
-  
-
-  -- if path == "/" then
-  elseif path_matchers.all(path) then
-    local data = {
-      method = method,
-      path = path,
-      headers = req_headers,
-      body = body,
-    }
-
-    local html = renderer.file('json.view', { data = data })
-
-    resp_body = html
-    resp_code = 200
-    resp_headers = tables.merge(resp_headers, {
-      ['Content-Type'] = "text/html",
-      ['Content-Length'] = tostring(string.len(html)),
-    })
-  end
-
-  return resp_body, resp_code, resp_headers
-end
 
 
 local function get_server()
   if server_instance == nil then
-    local new_server = hs.httpserver.new(false, false)
+    local new_server = server:listen(3000)
 
     if new_server == nil then
       error('Failed to create hs.httpserver instance')
     end
-
-    new_server:setInterface('localhost')
-    new_server:setPort(3000)
-    new_server:setCallback(web_handler)
 
     server_instance = new_server
   end
@@ -99,7 +134,7 @@ end
 local start_dev_server = {
   id = 'ks.server.start',
   title = 'Starts/Restarts a HS server on port 3000',
-  icon = 'info',
+  icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
   setup = function(cmd) end,
   exec = function(cmd, ctx, params)
     if server_instance ~= nil then
@@ -117,7 +152,7 @@ local start_dev_server = {
 local stop_dev_server = {
   id = 'ks.server.stop',
   title = 'Stops the HS server',
-  icon = 'info',
+  icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
   setup = function(cmd) end,
   exec = function(cmd, ctx, params)
     if server_instance ~= nil then
@@ -129,25 +164,6 @@ local stop_dev_server = {
 return {
   cmds = {
     start_dev_server,
-    stop_dev_server
+    stop_dev_server,
   }
 }
-
-
-
-
---[[
-getInterface
-getName
-getPort
-maxBodySize
-send
-setCallback
-setInterface
-setName
-setPassword
-setPort
-start
-stop
-websocket
-]]

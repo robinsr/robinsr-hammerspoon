@@ -71,7 +71,7 @@ Apps.cmds = {
   {
     id = 'apps.current.window',
     title = 'Copy JSON for current window',
-    icon = image.from_icon('doc.on.doc'),
+    icon = '@/resources/images/json-download.ios17outlined.template.png',
     exec = function(ctx, params)
       local window = Apps.currentWindow()
 
@@ -83,7 +83,7 @@ Apps.cmds = {
   {
     id = 'apps.current.name',
     title = 'Copy JSON for current app',
-    icon = image.from_icon('doc.on.doc'),
+    icon = '@/resources/images/json-download.ios17outlined.template.png',
     exec = function(ctx, params)
       local app = Apps.currentApp()
 
