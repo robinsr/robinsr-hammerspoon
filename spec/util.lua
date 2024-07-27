@@ -177,6 +177,9 @@ function testutil.hs_mock(spy)
     styledtext = {
       new = hs_spy_returns({}),
     },
+    timer = {
+      doafter = hs_noop(),
+    },
     window = {},
   }
 end

@@ -15,7 +15,7 @@ local yabai = KittySupreme.services.yabai
 
 local YabaiCmds = {}
 
----@type CommandConfig[]
+---@type ks.command.config[]
 YabaiCmds.cmds = {
   {
     id = 'yabai.service.restart',

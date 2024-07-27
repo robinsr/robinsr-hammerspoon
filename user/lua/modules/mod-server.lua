@@ -131,10 +131,12 @@ local function get_server()
 end
 
 
+---@type ks.command.config
 local start_dev_server = {
   id = 'ks.server.start',
   title = 'Starts/Restarts a HS server on port 3000',
   icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
+  module = 'Dev Server',
   setup = function(cmd) end,
   exec = function(cmd, ctx, params)
     if server_instance ~= nil then
@@ -149,10 +151,12 @@ local start_dev_server = {
   end,
 }
 
+---@type ks.command.config
 local stop_dev_server = {
   id = 'ks.server.stop',
   title = 'Stops the HS server',
   icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
+  module = 'Dev Server',
   setup = function(cmd) end,
   exec = function(cmd, ctx, params)
     if server_instance ~= nil then
@@ -165,5 +169,13 @@ return {
   cmds = {
     start_dev_server,
     stop_dev_server,
+  },
+  kscmds = {
+    version = 'v2',
+    name = 'Dev Server',
+    items = {
+      start_dev_server,
+      stop_dev_server,
+    }
   }
 }

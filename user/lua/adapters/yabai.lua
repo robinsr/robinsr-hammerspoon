@@ -13,10 +13,40 @@ local strings     = require 'user.lua.lib.string'
 local types       = require 'user.lua.lib.typecheck'
 local tables      = require 'user.lua.lib.table'
 local logr        = require 'user.lua.util.logger'
+local stringio = require('pl.stringio')
+
 
 local qt = sh.quote
 
 local log = logr.new('Yabai', 'debug')
+
+
+
+--- TODO - where should custom yabai config live?
+
+---@alias YabaiRulePartial {} | Yabai.Rule 
+
+---@type YabaiRulePartial[]
+local my_yabai_rules = {
+  { app = 'Glance', manage = 'off' }
+}
+
+
+---@class Yabai.Config.Writer
+---@field asCliArgs string[]
+---@field asConfig type
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ---@class Yabai: LaunchAgent
@@ -37,6 +67,10 @@ function Yabai:new()
 
   local config_path = paths.expand("~/.config/yabai/")
   local config_watcher = hs.pathwatcher.new(config_path, function() this:restart() end):start()
+
+  system.registerGlobal('yabaiconfig', function(args)
+    return 'yabai -m config focus_follows_mouse autoraise'
+  end)
 
   
   return proto.setProtoOf(this, Yabai)
@@ -107,15 +141,6 @@ function Yabai:getRules()
 
   return result:json() --[[@as Yabai.Rule[] ]]
 end
-
---- TODO - where should custom yabai config live?
-
----@alias YabaiRulePartial {} | Yabai.Rule 
-
----@type YabaiRulePartial[]
-local my_yabai_rules = {
-  { app = 'Glance', manage = 'off' }
-}
 
 
 --

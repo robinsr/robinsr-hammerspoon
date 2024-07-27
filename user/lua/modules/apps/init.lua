@@ -1,34 +1,11 @@
-local alert   = require 'user.lua.interface.alert'
+local ksalert  = require 'user.lua.interface.alert'
+local desktop  = require 'user.lua.interface.desktop'
 local appmodel = require 'user.lua.model.application'
-local cmd     = require 'user.lua.model.command'
-local lists   = require 'user.lua.lib.list'
-local params  = require 'user.lua.lib.params'
-local strings = require 'user.lua.lib.string'
-local tables  = require 'user.lua.lib.table'
-local types   = require 'user.lua.lib.typecheck'
-local icons   = require 'user.lua.ui.icons'
-local image   = require 'user.lua.ui.image'
-local webview = require 'user.lua.ui.webview'
-local json    = require 'user.lua.util.json'
-local logr    = require 'user.lua.util.logger'
-local delay   = require 'user.lua.util'.delay
+local Option   = require 'user.lua.lib.optional'
+local json     = require 'user.lua.util.json'
+local logr     = require 'user.lua.util.logger'
 
-local log   = logr.new('apps', 'debug')
-
-
----@class CurrentApp
----@field name string
----@field path string
----@field title string
----@field bundle_id string
-
-
----@class CurrentWindow
----@field app string
----@field id string
----@field role string
----@field subrole string
----@field title string
+local log = logr.new('apps', 'debug')
 
 
 local Apps = {}
@@ -38,60 +15,45 @@ function Apps.onLoad()
 end
 
 
----@return CurrentApp
-function Apps.currentApp()
-  local app = hs.application.frontmostApplication()
 
-  return {
-    name = app:name(),
-    path = app:path(),
-    title = app:title(),
-    bundle_id = app:bundleID(),
-  }
-end
-
----@return CurrentWindow
-function Apps.currentWindow()
-  local app = hs.application.frontmostApplication()
-  local window = app:focusedWindow()
-
-  return {
-    app = app:name(),
-    id = window:id(),
-    role = window:role(),
-    subrole = window:subrole(),
-    title = window:title(),
-  }
-end
-
-
-
----@type CommandConfig[]
+---@type ks.command.config[]
 Apps.cmds = {
   {
     id = 'apps.current.window',
     title = 'Copy JSON for current window',
     icon = '@/resources/images/json-download.ios17outlined.template.png',
-    exec = function(ctx, params)
-      local window = Apps.currentWindow()
+    module = 'Apps',
+    exec = function(cmd, ctx, params)
+      local result = Option:ofNil(ctx.activeApp)
+        :map(function(app) return app:focusedWindow() end)
+        :map(function(win) return desktop.windowInfo(win) end)
+        :map(function(info)
+          desktop.setPasteBoard(json.tostring(info))
+          return ('Copying JSON for window "%s"'):format(info.title)
+        end)
+        :orElse('No focused window')
 
-      alert:new('Copying JSON for window "%s"', window.title):show(alert.timing.LONG)
-
-      hs.pasteboard.setContents(json.tostring(window))
+      ksalert:new(result):show(ksalert.timing.LONG)
     end,
   },
   {
-    id = 'apps.current.name',
+    id = 'apps.current.app',
     title = 'Copy JSON for current app',
     icon = '@/resources/images/json-download.ios17outlined.template.png',
-    exec = function(ctx, params)
-      local app = Apps.currentApp()
+    module = 'Apps',
+    exec = function(cmd, ctx, params)
+      local result = Option:ofNil(ctx.activeApp)
+        :map(function(app) return desktop.appInfo(app) end)
+        :map(function(info)
+          desktop.setPasteBoard(json.tostring(info))
+          return ('Copying JSON for app "%s"'):format(info.title)
+        end)
+        :orElse('No active app')
 
-      alert:new('Copying JSON for app "%s"', app.name):show(alert.timing.LONG)
-
-      hs.pasteboard.setContents(json.tostring(app))
+      ksalert:new(result):show(ksalert.timing.LONG)
     end,
   },
 }
+
 
 return Apps

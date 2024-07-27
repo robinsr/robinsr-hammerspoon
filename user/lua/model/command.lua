@@ -1,4 +1,5 @@
 local plfunc  = require 'pl.func' 
+local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
 local lists   = require 'user.lua.lib.list'
 local paths   = require 'user.lua.lib.path'
@@ -17,33 +18,37 @@ local logr    = require 'user.lua.util.logger'
 local log = logr.new('Command', 'info')
 
 
----@class CommandConfig
----@field id string             - Unique string to identify command
----@field exec CmdExecFn           - A callback function for the command, optionally returning an alert string
----@field module? string        - source module of the command
----@field setup? CmdSetupFn        - (optional) A setup function, the return value passed to fn
----@field title? string         - (optional) A title for command
----@field desc? string          - (optional) What commmand do?
----@field flags? CmdFeature[]   - (optional) List of command feature flags
----@field icon? hs.image|string - (optional) A icon for the command
----@field key? string           - (optional) A key for the hotkey binding
----@field menukey? string       - (optional) A shortcut key for use in the KS menubar menu
----@field mods? string          - (optional) A mods group for the hotkey binding
----@field url? string           - (optional) A hammerspoon url to bind to
+---@class ks.command.config
+---@field id       string              - Unique string to identify command
+---@field module?  string              - (optional) source module of the command
+---@field title?   string              - (optional) A title for command
+---@field desc?    string              - (optional) What commmand do?
+---@field exec     ks.command.execfn   - A callback function for the command, optionally returning an alert string
+---@field setup?   ks.command.setupfn  - (optional) A setup function, the return value passed to fn
+---@field flags?   ks.command.flag[]   - (optional) List of command feature flags
+---@field icon?    string|hs.image     - (optional) A icon for the command
+---@field mods?    ks.keys.modifiers   - (optional) A mods group for the hotkey binding
+---@field key?     ks.keys.keycode     - (optional) A key for the hotkey binding
+---@field menukey? ks.keys.keycode     - (optional) A shortcut key for use in the KS menubar menu
+---@field url?     string              - (optional) A hammerspoon url to bind to
 
 
----@alias CmdFeature 'invalid_choice' | 'test_flag'
+---@class ks.command.context
+---@field trigger        ks.command.trgger   - Source invoking the command
+---@field activeApp      hs.application|nil  - Currently active app
+---@field activeWindow   hs.window|nil       - Currently active window ID
 
 
----@class NextAction
----@field message? string
+---@alias ks.command.flag 'invalid_choice' | 'test_flag' | 'no-chooser'
 
----@alias CmdExecFn<T> fun(cmd: Command, ctx: T, params: table): string|nil
 
----@alias CmdSetupFn<T> fun(cmd: Command): T
+---@alias ks.command.execfn fun(cmd: Command, ctx: ks.command.context, params: table): string|nil
 
----@class CommandCtx
----@field trigger 'hotkey'|'menubar' Source invoking the command
+
+---@alias ks.command.setupfn<T> fun(cmd: Command): T
+
+
+---@alias ks.command.trgger 'hotkey'|'menu'|'url'|'chooser'|'other'
 
 
 
@@ -64,16 +69,16 @@ local valid = {
 }
 
 
----@class Command : CommandConfig
+---@class Command : ks.command.config
 ---@field context any
----@field hotkey? Hotkey
+---@field hotkey? ks.keys.hotkey
 local Command = {}
 
 
 --
 -- Command class
 --
----@param config CommandConfig
+---@param config ks.command.config
 ---@return Command
 function Command:new(config)
 
@@ -84,7 +89,7 @@ function Command:new(config)
   validate(valid.id.match(this.id), 'invalid id pattern %q', this.id)
 
   this.flags = this.flags or {}
-
+  this.hotkey = nil
   this.context = nil
 
   local contextok, context = pcall(function()
@@ -105,10 +110,8 @@ function Command:new(config)
     log.trace(context, "command setup error [%s]", config.id)
   end
 
-  this.hotkey = nil
-
-  if types.isString(this.key) and types.isString(this.mods) then
-    this.hotkey = Hotkey.new(this.mods, this.key)
+  if types.notNil(this.key) and types.isString(this.mods) then
+    this.hotkey = Hotkey:new(this.mods, this.key)
   end
 
   return proto.setProtoOf(this, Command) --[[@as Command]]
@@ -118,7 +121,7 @@ end
 --
 -- Runs the command's execute callback
 --
----@param from 'hotkey'|'menu'|'url'|'chooser'|'other'
+---@param from ks.command.trgger
 ---@param params? table
 ---@return nil
 function Command:invoke(from, params)
@@ -126,11 +129,15 @@ function Command:invoke(from, params)
     error(('No exec function on command [%s]'):format(self.id or 'none'))
   end
 
-  ---@type CommandCtx
-  local ctx = tables.merge({}, self.context, { trigger = from })
+  ---@type ks.command.context
+  local ctx = { 
+    trigger = from,
+    activeApp = desktop.activeApp(),
+    activeWindow = desktop.activeWindow(),
+  }
 
   local ok, post_msg = xpcall(function()
-    return self.exec(self, ctx, params or {}) --[[@as string]]
+    return self.exec(self, tables.merge(ctx, self.context), params or {}) --[[@as string]]
   end, debug.traceback)
 
   if not ok then
@@ -191,7 +198,7 @@ end
 ---@return HS.MenubarItem
 function Command:as_menu_item()
   local title = self.title or self.id
-  local subtext = self.hotkey and self.hotkey:label() or ''
+  local subtext = self.hotkey and self.hotkey.symbols or ''
 
   ---@type HS.MenubarItem
   local menuitem = {
@@ -251,11 +258,10 @@ end
 --
 -- Returns descriptive text of the commands hotkey (if present) - keyboard symbols and command title
 --
+---@deprecated
 ---@return string
 function Command:hotkeyLabel()
-  local prefix = self.hotkey and self.hotkey:label() or ''
-  
-  return strings.join({ prefix, ': ', self.title })
+  return self.hotkey.label
 end
 
 
@@ -284,15 +290,18 @@ end
 -- Binds the command hotkey
 --
 function Command:bindHotkey()
-  if (self.hotkey ~= nil) then
-    local label = self.hotkey:label()
-    local triggers = self.hotkey:getEventHandlers(plfunc.bind(self.invoke, self, 'hotkey', {}))
-    -- todo, how to configure this
-    local show_message = false
-    local message = show_message and self.title or nil
-    local bind = hs.hotkey.bind(self.hotkey.mods, self.hotkey.key, message, table.unpack(triggers))
 
-    log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(self.id, 20), label)
+  if (self.hotkey ~= nil) then
+    self.hotkey:setCallback(plfunc.bind(self.invoke, self, 'hotkey', {}))
+    self.hotkey:setDescription(self.title)
+
+    local hotkey = self.hotkey:enable()
+
+    if hotkey == nil then
+      error(('Could not create hotkey for command [%s]'):format(self.id))
+    end
+
+    log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(self.id, 20), self.hotkey.label)
   end
 end
 

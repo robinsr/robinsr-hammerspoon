@@ -2,18 +2,28 @@
 -- local mouse   = require 'hs.mouse' --[[@as hs.mouse]]
 -- local win     = require 'hs.window' --[@as hs.window]
 local logr    = require 'user.lua.util.logger'
+local fns     = require 'user.lua.lib.func'
+local lists   = require 'user.lua.lib.list'
+local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local tables  = require 'user.lua.lib.table'
 
-local log = logr.new('Desktop', 'info')
+local log = logr.new('Desktop', 'debug')
+
+---@class ks.desktop.app
+---@field name string
+---@field path string
+---@field title string
+---@field bundle_id string
 
 
--- local SysEvents = hs.application
-
---
--- Desktop/environment utilities
---
+---@class ks.desktop.window
+---@field app string
+---@field id string
+---@field role string
+---@field subrole string
+---@field title string
 
 ---@class KS.Desktop
 local desktop = {}
@@ -67,9 +77,80 @@ end
 --
 -- Returns the currently active window, or nil if none exists
 --
----@return hs.window
+---@return hs.window|nil
 function desktop.activeWindow()
   return hs.window.focusedWindow()
+end
+
+
+--
+-- Returns the currently active app, or nil if none exists
+--
+---@return hs.application|nil
+function desktop.activeApp()
+  local focused = desktop.activeWindow()
+  return focused and focused:application()
+end
+
+
+--
+-- Returns all the displayable properties of a `hs.application` object
+--
+---@param app hs.application
+---@param noWindows? boolean
+---@return ks.desktop.app
+function desktop.appInfo(app, noWindows)
+  noWindows = noWindows or false
+
+  local appInfo = {
+    name = app:name(),
+    title = app:title(),
+    path = app:path(),
+    pid = app:pid(),
+    bundleID = app:bundleID(),
+  }
+
+  if not noWindows then
+    appInfo.windows = lists(app:allWindows()):map(function(w)
+      return w and desktop.windowInfo(w, true)
+    end):values()
+  end
+  
+  return appInfo
+end
+
+
+--
+-- Returns all the displayable properties of a `hs.window` object
+--
+---@param window hs.window
+---@param noApp? boolean
+---@return ks.desktop.window
+function desktop.windowInfo(window, noApp)
+  noApp = noApp or false
+
+  local winInfo = {
+    id = window:id(),
+    role = window:role(),
+    subrole = window:subrole(),
+    title = window:title(),
+    frame = window:frame(),
+    isFullScreen = window:isFullScreen(),
+    isMaximizable = window:isMaximizable(),
+    isMinimized = window:isMinimized(),
+    isStandard = window:isStandard(),
+    isVisible = window:isVisible(),
+  }
+
+  if not noApp then
+    local app = window:application()
+
+    if app then
+      winInfo.app = desktop.appInfo(app, true)
+    end
+  end
+
+  return winInfo
 end
 
 
@@ -93,24 +174,8 @@ function desktop.bundleIDs()
   return bundles
 end
 
-local function cooldown(sec, fn)
-  local prev = os.time()
-  local memo = nil
 
-  return function()
-    local now = os.time()
-    
-    if (memo == nil) or (now > prev + sec) then
-      prev = now
-      memo = fn()
-    end
-
-    return memo
-  end
-end
-
-
-local query_dark_mode = cooldown(10, function()
+local query_dark_mode = fns.cooldown(10, function()
   log.d('Querying "System Events" for current dark mode')
 
   local ok, darkModeState = hs.osascript.javascript(
@@ -121,7 +186,7 @@ local query_dark_mode = cooldown(10, function()
     error('Error executing osascript (js):' .. darkModeState)
   end
 
-  return types.tobool(darkModeState)
+  return types.tobool(darkModeState) --[[@as boolean]]
 end)
 
 
@@ -139,6 +204,14 @@ end
 --
 function desktop.mouse_position()
   return hs.mouse.absolutePosition()
+end
+
+
+--
+-- Sets the pasteboard contents
+--
+function desktop.setPasteBoard(val)
+  hs.pasteboard.setContents(val)
 end
 
 return desktop

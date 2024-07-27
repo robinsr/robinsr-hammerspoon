@@ -38,7 +38,7 @@ function App.menuItem(item)
   local mods = item['AXMenuItemCmdModifiers']
   local char = item['AXMenuItemCmdChar']
 
-  local hk = hotkey.new(mods, char)
+  local hk = hotkey:new(mods, char)
 
   if types.is_not.empty(char) then
     o.hasHotkey = function() return true end

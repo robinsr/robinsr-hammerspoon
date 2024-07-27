@@ -21,11 +21,11 @@
     </div>
   {% endset %}
 
-  {{ mCard('Mods', content=card_content) }}
+  {{ mCollapse('Mods', content=card_content) }}
 
   <hr class="my-4" />
 
-  <section class="columns-sm">
+  <section class="columns-md">
     {% for group_name, cmds in groups %}
 
       {% set card_content %}
@@ -38,7 +38,7 @@
                 <div class="flex flex-row items-center justify-between gap-x-4">
                   <div class="h-[30px] w-[30px] flex-none">
                     <img
-                      class="invert"
+                      class="no-invert"
                       src="{{ modelfn(modelfn(cmd, 'getMenuIcon', [icon_size]), 'encodeAsURLString') }}"
                       width="{{ icon_size }}"
                       height="{{ icon_size }}" />

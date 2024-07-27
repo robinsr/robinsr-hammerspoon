@@ -8,8 +8,8 @@ local tables  = require 'user.lua.lib.table'
 local rdir    = require 'user.lua.ui.resource-dir'
 local types   = require 'user.lua.lib.typecheck'
 local Command = require 'user.lua.model.command'
-local logr    = require 'user.lua.util.logger'
-local delay   = require 'user.lua.util'.delay
+local logr  = require 'user.lua.util.logger'
+local funcs = require 'user.lua.lib.func'
 
 
 local log = logr.new('commands', 'info')
@@ -55,7 +55,7 @@ local command_list = {
     key = "W",
     mods = "btms",
     exec = function(cmd)
-      delay(0.75, hs.reload)
+      funcs.delay(0.75, hs.reload)
       return cmd:hotkeyLabel()
     end,
   },
@@ -66,7 +66,7 @@ local command_list = {
     key = "X",
     mods = "btms",
     exec = function(cmd)
-      delay(0.75, hs.relaunch)
+      funcs.delay(0.75, hs.relaunch)
       return cmd:hotkeyLabel()
     end,
   }

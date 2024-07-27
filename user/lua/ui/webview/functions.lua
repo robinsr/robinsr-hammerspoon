@@ -83,10 +83,27 @@ local function macro_func(file, name, arg_def)
 end
 
 
+-- local C = require('pl.comprehension').new()
+-- return C('x..":title" for x')(keys)
+
+-- ---@param keys string[]
+-- local function arg_set_string(keys)
+--   return lists(keys):reduce({}, function(m,k) m[k] = k..':string' end)
+-- end
+
+
+-- local attrs = {
+--   title = 'title:string',
+--   type  = 'type:string',
+
+-- }
+
+
 macro_func('macros.view' ,'SVG', { 'content:string' })
 macro_func('macros.view' ,'KBD', { 'keys:string', 'scale:number' })
 macro_func('macros.view' ,'Card', { 'title:string', 'classnames:table', 'content:string' })
-macro_func('macros.view' ,'Button', { 'color:string', 'size:string', 'content:string' })
+macro_func('macros.view' ,'Collapse', { 'title:string', 'classnames:table', 'content:string' })
+macro_func('macros.view' ,'Button', { 'color:string', 'size:string', 'content:string', 'attrs:any' })
 macro_func('macros.view' ,'DataImage', { 'name:string', 'width:number', 'height:number' })
 
 

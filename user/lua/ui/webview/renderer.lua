@@ -54,8 +54,6 @@ function renderers.file(filename, viewmodel)
 
   log.df("Rendering FILE at path %q (loader dir: %s)", filename, tmpl_dir)
 
-  renderers.util.compile(filename)
-
   local result, err = aspect:render(filename, vm.merge_models(viewmodel))
 
   if err ~= nil then

@@ -50,7 +50,7 @@ end
 -- Currently responds after Yabai has already changed the active space
 --
 ---@param cmd Command
----@param ctx CommandCtx The event context
+---@param ctx ks.command.context The event context
 ---@param params SpaceChangeParams to/from index of change
 function Spaces.onSpaceChange(cmd, ctx, params)
   local disp = { 'Irratic space change...', alert.timing.NORMAL, icons.tornado }
@@ -123,7 +123,7 @@ function Spaces.cycleLayout()
 end
 
 
----@type CommandConfig[]
+---@type ks.command.config[]
 Spaces.cmds = {
   -- {
   --   id = 'spaces.evt.onSpaceChange',

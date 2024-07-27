@@ -1,34 +1,68 @@
-local check  = require 'user.lua.lib.typecheck'
-local logger = require 'user.lua.util.logger'
+local inspect = require 'inspect'
+local types   = require 'user.lua.lib.typecheck'
+local logr    = require 'user.lua.util.logger'
 
-local log = logger.new('Optional', 'verbose')
-
-local is, notNil = check.is, check.notNil
+local log = logr.new('Optional', 'info')
 
 
----@class Optional<T>: { value: T, present: boolean }
-local optional = {}
+
+---@class Optional
+local Optional = {}
+
+Optional.msg = 'This cant be null'
+
+
+local OptionalMeta = {
+  __index = Optional
+}
+
 
 --
--- Creates a new optional
+-- Returns an Optional with the specified present non-null value.
 --
 ---@generic T
+---@param self { value: T, present: boolean }
 ---@param val T|nil
 ---@param msg? string customized error msg
----@return Optional<T>
-function optional:new(val, msg)
-  log.df('Optional:New  - type(%s) msg("%s") val(%s)', type(val), (msg or 'none'), hs.inspect(val))
+---@return Optional
+function Optional:of(val, msg)
+  log.df('Optional:of  - type(%s) msg("%s") val(%s)', type(val), (msg or '<none>'), inspect(val))
 
-  local o = {
-    present = notNil(val),
+  if types.isNil(val) then
+    error(msg or Optional.msg)
+  end
+
+  ---@class Optional<T>
+  local this = {
+    present = true,
     value   = val,
   }
 
-  setmetatable(o, self)
-  self.__index = self
-
-  return o
+  return setmetatable(this, OptionalMeta)
 end
+
+
+--
+-- Returns an Optional describing the specified value, if non-null, otherwise
+-- returns an empty Optional.
+--
+---@generic T
+---@param self { value: T, present: boolean }
+---@param val T|nil
+---@param msg? string customized error msg
+---@return Optional
+function Optional:ofNil(val, msg)
+  log.df('Optional:OfNil - type(%s) val(%s)', type(val), inspect(val))
+  
+  ---@class Optional<T>
+  local this = {
+    present = types.notNil(val),
+    value   = val,
+  }
+
+  return setmetatable(this, OptionalMeta)
+end
+
 
 --
 -- Returns true of optional's value is not nil
@@ -36,18 +70,31 @@ end
 ---@generic T
 ---@param self { value: T, present: boolean }
 ---@return boolean
-function optional:ispresent()
-  return self.present
+function Optional:isPresent()
+  return self.present == true
 end
 
+
 --
--- Returns the optional's non-nil value or throws an error
+-- Returns true of optional's value is nil
 --
 ---@generic T
 ---@param self { value: T, present: boolean }
-function optional:get()
+---@return boolean
+function Optional:isEmpty()
+  return self.present == false
+end
+
+
+--
+-- If a value is present in this Optional, returns the value, otherwise throws an error
+--
+---@generic T
+---@param self { value: T, present: boolean }
+---@return T
+function Optional:get()
   if self.present == false then
-    error('Cannot get nil optional')
+    error('get called on nil optional')
   end
 
   return self.value
@@ -55,13 +102,27 @@ end
 
 
 --
--- Returns fallback value when optional is null
+-- If a value is present, invoke the specified consumer with the value, otherwise do nothing.
 --
 ---@generic T
 ---@param self { value: T, present: boolean }
----@param fallback T
----@return T
-function optional:orElse(fallback)
+---@param consumer fun(val: T)
+function Optional:ifPresent(consumer)
+  if self.present == true then
+    consumer(self.value)
+  end
+end
+
+
+--
+-- Returns fallback value when optional is null
+--
+---@generic T
+---@generic F
+---@param self { value: T, present: boolean }
+---@param fallback F
+---@return T|F
+function Optional:orElse(fallback)
   if self.present == false then
     return fallback
   end
@@ -74,10 +135,11 @@ end
 -- Calls fallback supplier function when optional is null
 --
 ---@generic T
+---@generic S
 ---@param self { value: T, present: boolean }
----@param supplier fun(): T
----@return T
-function optional:orElseGet(supplier)
+---@param supplier fun(): S
+---@return T|S
+function Optional:orElseGet(supplier)
   if self.present == false then
     return supplier()
   end
@@ -86,41 +148,69 @@ function optional:orElseGet(supplier)
 end
 
 
-
 --
--- Will throw an error if value provided is nil
+-- If a value is present, apply the provided mapping function to it, and if
+-- the resultis non-null, return an Optional describing the result. Otherwise
+-- return an empty Optional.
 --
 ---@generic T
----@param val T|nil
----@param msg? string customized error msg
----@return T
-local function optionalOf(val, msg)
-  log.df('Optional:Of - type(%s) msg("%s") val(%s)', type(val), (msg or 'none'), hs.inspect(val))
+---@generic S
+---@param self { value: T, present: boolean }
+---@param mapper fun(val: T): S
+---@return Optional
+function Optional:map(mapper)
+  if self.present == true then
+    local ok, result = pcall(mapper, self.value)
 
-  local onNilMsg = msg or 'This cant be nil'
-  
-  if is.nill(val) then
-    error(onNilMsg)
+    if ok then
+      return Optional:ofNil(result)
+    end
+
+    -- return Optional:ofNil(mapper(self.value))
   end
-
-  return val
+  
+  return Optional:ofNil(nil)
 end
 
 
-return {
-  ---@generic T
-  ---@param val T|nil
-  ---@param msg? string customized error msg
-  ---@return T
-  of = function(val, msg) 
-    return optionalOf(val, msg)
-  end,
+--
+-- If a value is present, call the provided method on the value, and if
+-- the resultis non-null, return an Optional describing the result. Otherwise
+-- return an empty Optional.
+--
+---@generic T
+---@param self { value: T, present: boolean }
+---@param methodName string
+---@param ... any Optional method arguments
+---@return Optional
+function Optional:mapMethod(methodName, ...)
+  if self.present == true then
+    local ok, result = pcall(self.value[methodName], self.value, table.unpack({...}))
 
-  ---@generic T
-  ---@param val T|nil
-  ---@param msg? string customized error msg
-  ---@return Optional
-  ofNil = function(val, msg) 
-    return optional:new(val, msg)
-  end,
-}
+    if ok then
+      return Optional:ofNil(result)
+    end
+  end
+  
+  return Optional:ofNil(nil)
+end
+
+
+--
+-- If a value is present, and the value matches the given predicate, return
+-- an Optional describing the value, otherwise return an empty Optional.
+--
+---@generic T
+---@param self { value: T, present: boolean }
+---@param predicate fun(val: T): boolean
+---@return Optional
+function Optional:filter(predicate)
+  if self.present == true and predicate(self.value) then
+    return self
+  end
+  
+  return Optional:ofNil(nil)
+end
+
+
+return setmetatable({}, OptionalMeta) --[[@as Optional]]

@@ -372,5 +372,13 @@ function List:groupBy(fn, ...)
 end
 
 
+---
+-- Returns the elements of the list as arguments
+--
+function List:unpack()
+  return table.unpack(self.items)
+end
+
+
 
 return setmetatable({}, ListMeta) --[[@as List]]

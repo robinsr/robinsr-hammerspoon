@@ -3,7 +3,7 @@ local send_message = require('user.lua.modules.spaces.util').send_message
 
 local YabaiCmds = {}
 
----@type CommandConfig[]
+---@type ks.command.config[]
 YabaiCmds.cmds = {
 
   {

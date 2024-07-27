@@ -1,0 +1,11 @@
+<div class="navbar bg-base-100">
+  <div class="flex-none">
+    <button class="btn btn-square btn-ghost">{{ mSVG(content=menu_icon) }}</button>
+  </div>
+  <div class="flex-1">
+    <p>{{ title|default('There is no title for this page...') }}</p>
+  </div>
+  <div class="flex-none">
+    <button class="btn btn-square btn-ghost">{{ mSVG(content=cog_icon) }}</button>
+  </div>
+</div>

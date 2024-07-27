@@ -38,6 +38,10 @@
           ]
         },
         "enabled": true
+      },
+      "LSP-tailwindcss": {
+        "enabled": true,
+        "selector": "text.html.jinja"
       }
     }
   }

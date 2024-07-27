@@ -25,81 +25,62 @@
   </head>
   <body>
     <div class="mx-auto flex h-screen w-[95vw] flex-col">
-      {% block page_title %}
-        <div class="navbar bg-base-100">
-          <div class="flex-none">
-            <button class="btn btn-square btn-ghost">{{ mSVG(content=menu_icon) }}</button>
-          </div>
-          <div class="flex-1">
-            <p>{{ title|default('There is no title for this page...') }}</p>
-          </div>
-          <div class="flex-none">
-            <button class="btn btn-square btn-ghost">{{ mSVG(content=cog_icon) }}</button>
-          </div>
-        </div>
+      {% block page_header %}
+        {# navbar content goes here... #}
       {% endblock %}
 
       <main class="flex-grow">
         {% block page_content %}
-          {# Content should go here... #}
+          {# Primary content goes here... #}
         {% endblock %}
       </main>
 
-      {% block page_footer %}
-        <footer class="">
-          <hr />
-          <nav>
-            <ul>
-              <li><strong>KittySupreme</strong></li>
-            </ul>
-            <ul>
-              <li><a href="/data">Request Data</a></li>
-              <li><a href="/keys">Cheatsheet</a></li>
-              <li><a href="/edit">Editor</a></li>
-            </ul>
-          </nav>
-        </footer>
-      {% endblock %}
+      <footer class="">
+        {% block page_footer %}
+          {# Sticky bottom content goes here... #}
+        {% endblock %}
+      </footer>
+    </div>
 
-      {% block page_script %}
-        <script type="text/javascript">
-          const onLoad = function () {
-            const doKsMsg = (data) => {
-              if (typeof data != "string") {
-                data = JSON.stringify(data);
-              }
+    {% block page_script %}
+      <script type="text/javascript">
+        const onLoad = function () {
+          const doKsMsg = (data) => {
+            if (typeof data != "string") {
+              data = JSON.stringify(data);
+            }
 
-              try {
-                webkit.messageHandlers.kittysupreme.postMessage(data);
-              } catch (err) {
-                console.log("The controller does not exist yet");
-              }
-            };
-
-            window.addEventListener("keyup", (evt) => {
-              evt.preventDefault();
-              evt.stopPropagation();
-
-              doKsMsg(evt);
-
-              if (evt.key == "Escape") {
-                doKsMsg("close");
-              }
-            });
-
-            doKsMsg("Hello from webview");
-
-            setTimeout(() => {
-              document.querySelector("#js-ok").textContent = "👍";
-            }, 1000);
+            try {
+              webkit.messageHandlers.kittysupreme.postMessage(data);
+            } catch (err) {
+              console.log("The controller does not exist yet");
+            }
           };
 
-          window.addEventListener("load", onLoad);
-        </script>
-      {% endblock %}
+          window.addEventListener("keyup", (evt) => {
+            evt.preventDefault();
+            evt.stopPropagation();
 
-      {% block page_end %}
-      {% endblock %}
-    </div>
+            doKsMsg(evt);
+
+            if (evt.key == "Escape") {
+              doKsMsg("close");
+            }
+          });
+
+          doKsMsg("Hello from webview");
+
+          setTimeout(() => {
+            document.querySelector("#js-ok").textContent = "👍";
+          }, 1000);
+        };
+
+        window.addEventListener("load", onLoad);
+      </script>
+    {% endblock %}
+
+    {% block page_end %}
+    {% endblock %}
+
   </body>
 </html>

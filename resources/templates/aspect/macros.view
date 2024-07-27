@@ -20,7 +20,12 @@ When using in a block, import them in the block itself, eg:
 {% endmacro %}
 
 {%- macro Button(color='primary', size='sm', content='') -%}
-  <button class="btn btn-{{ color }} btn-{{ size }}">{{ content ? content : children }}</button>
+  <button 
+    {# class="btn btn-{{ color }} btn-{{ size }}" #}
+    class="rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+  >
+    {{ content ? content : children }}
+  </button>
 {%- endmacro -%}
 
 {%- macro KBD(keys='', scale=75) %}
@@ -42,4 +47,13 @@ When using in a block, import them in the block itself, eg:
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-5 w-5 stroke-current">
     {{ content ? content : children }}
   </svg>
+{%- endmacro -%}
+
+{%- macro Collapse(title='', classnames=['collapse-arrow'], content='') -%}
+<div tabindex="0" class="collapse border-base-300 bg-base-200 border {{ classnames|join(' ') }}">
+  <div class="collapse-title text-lg font-medium">{{ title }}</div>
+  <div class="collapse-content">
+    {{ content ? content : children }}
+  </div>
+</div>
 {%- endmacro -%}

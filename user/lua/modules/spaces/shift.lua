@@ -1,6 +1,5 @@
 local space_util = require 'user.lua.modules.spaces.util'
 local logr       = require 'user.lua.util.logger'
-local desk = require 'user.lua.interface.desktop'
 
 local yabai = KittySupreme.services.yabai
 
@@ -12,7 +11,8 @@ local log = logr.new('ModSpaces/warp', 'debug')
 
 local arrange = {}
 
-arrange.cmds = {
+---@type ks.command.config[]
+local cmds = {
   {
     id = 'spaces.space.swap_with_next',
     title = "Swap current space neighbor to right",
@@ -28,36 +28,36 @@ arrange.cmds = {
     exec = send_message('space --move prev', 'Moved space to the left'),
   },
   {
-    id = 'spaces.arrange.move_next',
+    id = 'spaces.arrange.move_to_next_space',
     title = "Send window to next space",
     mods = "btms",
     key = "right",
-    setup = {
-      move_window = send_message('window --space next', true),
-      goto_window = send_message('space mouse --focus next', 'Moved space to the right'),
-    },
     exec = function(cmd, ctx)
-      local win = desk.activeWindowId()
-      ctx.move_window()
-      ctx.goto_window()
-      hs.window.get(win):focus()
+      send_message('window --space next')()
+      send_message('space mouse --focus next')()
+      ctx.activeWindow:focus()
+      return 'Moved space to the right'
     end,
   },
   {
-    id = 'spaces.arrange.move_prev',
+    id = 'spaces.arrange.move_to_prev_space',
     title = "Send window to previous space",
     mods = "btms",
     key = "left",
-    setup = {
-      move_window = send_message('window --space prev', true),
-      goto_window = send_message('space mouse --focus prev', 'Moved space to the left'),
-    },
     exec = function(cmd, ctx)
-      local win = desk.activeWindowId()
-      ctx.move_window()
-      ctx.goto_window()
-      hs.window.get(win):focus()
+      send_message('window --space prev')()
+      send_message('space mouse --focus prev')()
+      ctx.activeWindow:focus()
+      return 'Moved space to the left'
     end,
+  },
+  {
+    id = 'spaces.arrange.toggle_maximize',
+    title = 'Toggle maximize',
+    icon = 'info',
+    mods = 'claw',
+    key = 'm',
+    exec = send_message('window --toggle zoom-fullscreen'),
   },
   {
     id = 'spaces.arrange.swap_north',
@@ -90,32 +90,34 @@ arrange.cmds = {
     {
     id = 'spaces.arrange.warp_north',
     title = 'Warp to window above',
-    mods = 'lil',
+    mods = 'peace',
     key = 'up',
     exec = send_message('window --warp north'),
   },
   {
     id = 'spaces.arrange.warp_south',
     title = 'Warp to window below',
-    mods = 'lil',
+    mods = 'peace',
     key = 'down',
     exec = send_message('window --warp south'),
   },
   {
     id = 'spaces.arrange.warp_east',
     title = 'Warp to window right',
-    mods = 'lil',
+    mods = 'peace',
     key = 'right',
     exec = send_message('window --warp east'),
   },
   {
     id = 'spaces.arrange.warp_west',
     title = 'Warp to window left',
-    mods = 'lil',
+    mods = 'peace',
     key = 'left',
     exec = send_message('window --warp west'),
   },
 }
 
 
-return arrange
+return {
+  cmds = cmds
+}

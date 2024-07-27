@@ -12,8 +12,8 @@ local log = require('user.lua.util.logger').new('mod-cmd-chooser', 'debug')
 ---@field chooser hs.chooser
 
 ---@class ChooserModules
----@field setup CmdSetupFn<ChooserModCtx | CommandCtx>
----@field exec CmdExecFn<ChooserModCtx | CommandCtx>
+---@field setup ks.command.setupfn<ChooserModCtx | ks.command.context>
+---@field exec ks.command.execfn<ChooserModCtx | ks.command.context>
 
 
 --
@@ -140,19 +140,24 @@ Note — limited to just the commands invocable from the chooser, ie with no arg
 ]]
 
 
+---@type ks.command.config
+local show_command_chooser = {
+  id = 'ks.commands.show_command_chooser',
+  title = "Show command chooser",
+  icon = "filemenu.and.selection",
+  module = 'Command Chooser',
+  desc = module_desc,
+  flags = { 'no-chooser' },
+  mods = 'btms',
+  key = "space",
+  setup = ChooserModule.setup,
+  exec = ChooserModule.exec,
+}
+
+
 return {
   cmds = {
-    {
-      id = 'ks.commands.show_command_chooser',
-      title = "Show command chooser",
-      icon = "filemenu.and.selection",
-      desc = module_desc,
-      flags = { 'no-chooser' },
-      mods = "btms",
-      key = "C",
-      setup = ChooserModule.setup,
-      exec = ChooserModule.exec,
-    }
+    show_command_chooser
   }
 }
 

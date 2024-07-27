@@ -1,10 +1,13 @@
 local regex      = require 'rex_pcre'
 local lustache   = require 'lustache'
 local plstring   = require 'pl.stringx'
+local plstrio    = require 'pl.stringio'
 local pretty     = require 'pl.pretty'
 local pldir      = require 'pl.dir'
 local plpath     = require 'pl.path'
+local plseq      = require 'pl.seq'
 local plutils    = require 'pl.utils'
+local pltypes    = require 'pl.types'
 local types      = require 'user.lua.lib.typecheck'
 local lists      = require 'user.lua.lib.list'
 
@@ -17,16 +20,23 @@ local lists      = require 'user.lua.lib.list'
 -- string.startswith = strings.startswith
 -- string.endswith = strings.endswith
 
-
----@module 'lib.string'
-local strings = {}
-
 local function assert_string(str, num)
   if not types.isString(str) then
     error('Need string, arg #'..tostring(num or 1))
   end
 end
 
+
+local CHAR = {
+  newline = utf8.char(0x000A),
+}
+
+
+
+---@class String
+local strings = {}
+
+strings.char = CHAR
 
 --
 -- Trims whitespace from a string
@@ -127,15 +137,48 @@ end
 --
 -- Compiles a template string
 --
-function strings.tmpl(tmplstr)
+---@param tmplstr string
+---@param vars? table Fallback table of template variables
+function strings.tmpl(tmplstr, vars)
   assert_string(tmplstr)
+  vars = vars or {}
 
-  local render = lustache:compile(tmplstr)
+  local repl_pat = '((%s*)%{([%-%+]?)([%.%w]+)([%-%+]?)%}(%s*))'
 
-  if render == nil then
-    error(('Error compiling lustache template: %q'):format(tmplstr))
-  else
-    return function(args) return render(args) end
+  local function searchtable(target, key)
+    local path = strings.split(key, '.')
+    local current = target
+
+    for key in plseq.list(strings.split(key, '.')) do
+      if types.isTable(current[key]) then
+        current = current[key]
+      end
+
+      if current[key] then
+        return current[key]
+      end
+    end
+  end
+
+  return function(tabl)
+    return tmplstr:gsub(repl_pat, function(match, pre, preop, var, postop, tail)
+      -- require('zzz_dump')({ match, pre, preop, var, postop, tail, tabl })
+
+      local repl = ''
+
+      if pltypes.is_callable(tabl) then
+        repl = tabl(var) or ''
+      else
+        repl = searchtable(tabl, var) or searchtable(vars, var) or ''
+      end
+
+      if repl == '' and preop == '-' then pre = '' end
+      if repl == '' and postop == '-' then tail = '' end
+      if repl ~= '' and preop == '+' then pre = ' ' end
+      if repl ~= '' and postop == '+' then tail = ' ' end
+
+      return pre..repl..tail
+    end)
   end
 end
 
@@ -270,6 +313,60 @@ end
 function strings.expand(pattern)
   local matches = {}
 end
+
+
+--
+-- Returns an interface for building multi-line strings
+--
+function strings.linewriter()
+  local NEWLINE = CHAR.newline
+  local output = plstrio:create()
+
+  ---@class lib.string.linewriter
+  local LineWriter = {}
+
+  local next = ''
+
+  function LineWriter:add(line)
+    assert_string(line)
+    output:write(next..line)
+    next = CHAR.newline
+    return self
+  end
+
+  function LineWriter:addf(pat, ...)
+    assert_string(pat)
+    output:writef((next..pat):format(table.unpack({...})))
+    next = CHAR.newline
+    return self
+  end
+
+  function LineWriter:write(part)
+    assert_string(part)
+    output:write(next..part)
+    next = ''
+    return self
+  end
+
+  function LineWriter:writef(pat, ...)
+    assert_string(pat)
+    output:writef((next..pat):format(table.unpack({...})))
+    next = ''
+    return self
+  end
+
+  function LineWriter:cr()
+    output:write(CHAR.newline)
+    return self
+  end
+  
+  function LineWriter:value()
+    return output:value()
+  end
+  
+  return setmetatable({}, { __index = LineWriter })
+end
+
 
 
 string._replace = strings.replace

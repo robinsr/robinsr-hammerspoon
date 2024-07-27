@@ -8,6 +8,10 @@ local strings = require 'user.lua.lib.string'
 
 ---@class Table
 ---@operator call:Table
+
+---@alias ks.lib.table Table
+
+---@class Table
 local Table = {}
 
 local TablMeta = {}
@@ -126,11 +130,17 @@ end
 --
 -- Determine if a table contains a given object
 --
----@param tabl table A table containing some sort of data
----@param elem any An object to search the table for
----@return boolean # true if the element could be f
+---@param tabl table  - A table containing some sort of data
+---@param elem any    - An object to search the table for
+---@return boolean    - True if the element could be f
 function Table.contains(tabl, elem)
-  return hs.fnutils.contains(tabl, elem)
+  for k, el in pairs(tabl) do
+    if el == elem then
+      return true
+    end
+  end
+
+  return false
 end
 
 

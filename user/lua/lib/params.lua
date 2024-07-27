@@ -14,6 +14,18 @@ Params.assert = {}
 --
 -- Check a function parameter against the isTable typecheck function
 --
+---@param arg any
+---@param num? integer Parameter position
+function Params.assert.notNil(arg, num)
+  if (not types.isNil(arg)) then
+    error(('Parameter #%d is required to be non-nil'):format(num or 1), 2)
+  end
+end
+
+
+--
+-- Check a function parameter against the isTable typecheck function
+--
 ---@param tabl any
 ---@param num? integer Parameter position
 function Params.assert.tabl(tabl, num)

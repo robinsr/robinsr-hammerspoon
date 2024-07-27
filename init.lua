@@ -21,6 +21,9 @@ print(string.rep('-', 40))
 print(string.rep('-', 15), time.fmt(), string.rep('-', 15))
 print(string.rep('-', 40))
 
+require('hs.ipc')
+hs.ipc.cliInstall('/opt/homebrew')
+
 local lists  = require 'user.lua.lib.list'
 local tabl   = require 'user.lua.lib.table'
 local logger = require 'user.lua.util.logger'

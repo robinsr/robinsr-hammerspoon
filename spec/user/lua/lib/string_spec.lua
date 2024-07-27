@@ -1,12 +1,15 @@
 ---@diagnostic disable: redundant-parameter
-local assert = require 'luassert'
-local pretty = require 'pl.pretty'
 local tutil  = require 'spec.util'
+local say = require 'say'
 
 local fmt = tutil.fmt
+local dump = tutil.dump
 
 
-describe('lib/string.lua', function()
+insulate('user.lua.lib.string', function()
+
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy)
+  package.loaded['zzz_dump'] = dump
   
   local strings = require('user.lua.lib.string')
   
@@ -19,39 +22,74 @@ describe('lib/string.lua', function()
       end)
     end)
 
-    describe('String.tmpl(str)', function()
-      it('compiles a template string for rendering', function()
+    describe('strings.tmpl', function()
 
-        local tmpl = strings.tmpl('{ {{foo}} {{bar.bop}} }')
+      local consts = {
+        foo = 'Lorem ipsum',
+        bar = 'dolor',
+      }
 
-        assert.equal('{ abc xyz }', tmpl{ foo = 'abc', bar = { bop = 'xyz', } })
-        assert.equal('{ 123 987 }', tmpl{ foo = '123', bar = { bop = '987', } })
-        assert.equal('{ 123  }', tmpl{ foo = '123', bar = { bop = nil, } })
-        assert.equal('{ 123  }', tmpl{ foo = '123', bar = {} } )
-        assert.equal('{ 123  }', tmpl{ foo = '123' })
-        assert.equal('{   }', tmpl{})
+      local fullvars = {
+        foo = 'Lorem ipsum',
+        bar = 'dolor',
+        baz = 0.04,
+        qux = 0xFF,
+        quuz = nil,
+        fob = {
+          qab = 'xyz'
+        },
+        bab = false,
+      }
+
+      it("(1) should do basic var replacement", function()
+        local render = strings.tmpl('{foo} {bar} {baz}-{qux}-{quuz}-{fob}-{bab}')
+        assert.are.same('Lorem ipsum dolor 0.04-255---', render(fullvars))
       end)
 
-      it('throws an error hopefully', function()
-        local tmpl
+      it("(2) should fallback to consts table", function()
+        local render = strings.tmpl('{foo} {bar} {baz}', consts)
+        assert.are.same('Lorem ipsum dolor sit amet', render({ baz = 'sit amet' }))
+      end)
 
-        -- valid template
-        tmpl = strings.tmpl('what will this do?')
-        tmpl({})
+      it("(3) should use nested fields", function()
+        local render = strings.tmpl('{foo} {bar} {baz.foo}', consts)
+        assert.are.same('Lorem ipsum dolor sit amet', render({ baz = { foo = 'sit amet' }}))
+      end)
 
-        -- valid template
-        tmpl = strings.tmpl('')
-        tmpl({})
+      it("(4A) trim front", function()
+        local render = strings.tmpl('Lorem ipsum {-foo}')
+        assert.are.same('Lorem ipsum', render({ foo = nil }))
+        assert.are.same('Lorem ipsum dolor', render({ foo = 'dolor' }))
+      end)
 
-        -- Invalid - nil
-        assert.has_error(function()
-          tmpl = strings.tmpl(nil)
-        end)
+      it("(4B) trim front (cant trim previous token's trailing whitespace)", function()
+        local render = strings.tmpl('{foo} {-bar}')
+        assert.are.same('Lorem ipsum ', render({ foo = consts.foo, bar = nil }))
+        assert.are.same('Lorem ipsum dolor', render({ foo = consts.foo, bar = consts.bar }))
+      end)
 
-        -- Invalid - table
-        assert.has_error(function()
-          tmpl = strings.tmpl({})
-        end)
+      it("(5) trim end", function()
+        local render = strings.tmpl('{foo-} {bar}')
+        assert.are.same('rab', render({ foo = nil, bar = 'rab' }))
+        assert.are.same('#oof rab', render({ foo = '#oof', bar = 'rab' }))
+      end)
+
+      it("(6) append space when var defined", function()
+        local render = strings.tmpl('{foo+}{bar}')
+        assert.are.same('rab', render({ foo = nil, bar = 'rab' }))
+        assert.are.same('oof rab', render({ foo = 'oof', bar = 'rab' }))
+      end)
+
+      it("(7) prepend space when var defined", function()
+        local render = strings.tmpl('{foo}{+bar}')
+        assert.are.same('oof', render({ foo = 'oof', bar = nil }))
+        assert.are.same('oof rab', render({ foo = 'oof', bar = 'rab' }))
+      end)
+
+      it("(8) add both leading and trailing space when var defined", function()
+        local render = strings.tmpl('{foo}{+baz+}{bar}')
+        assert.are.same('Lorem ipsumdolor', render(consts))
+        assert.are.same('Lorem ipsum 0.04 dolor', render(fullvars))
       end)
     end)
   end)

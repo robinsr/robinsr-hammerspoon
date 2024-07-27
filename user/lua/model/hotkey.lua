@@ -4,33 +4,38 @@ local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
+local valua   = require 'user.lua.lib.valua'
 local icons   = require 'user.lua.ui.icons'
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('HotKey', 'info')
 
---[[
-https://www.hammerspoon.org/docs/hs.keycodes.html
 
-Valid strings are any single-character string, or any of the following strings:
-f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
-f16, f17, f18, f19, f20, pad., pad*, pad+, pad/, pad-, pad=,
-pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9,
-padclear, padenter, return, tab, space, delete, escape, help,
-home, pageup, forwarddelete, end, pagedown, left, right, down, up,
-shift, rightshift, cmd, rightcmd, alt, rightalt, ctrl, rightctrl,
-capslock, fn
-]]
+---@type ks.keys.keyevent[]
+local KEY_EVENTS = { 'pressed', 'released', 'repeat' } 
 
 
----@alias ModKeyCombo "hyper" | "meh" | "btms" | "peace" | "claw" | "lil" | "shift" | "alt" | "ctrl" | "cmd"
----@alias ModKeyname "shift" | "alt" | "ctrl" | "cmd"
----@alias KeyEventType "pressed" | "released" | "repeat"
----@alias EventHandler fun(): any
+local noop = function()
+  -- do nothing
+end
 
----@type Table
-local preset_mods = tables{
+
+--
+-- Returns the symbol character that corresponds to a key name
+--
+---@param key string
+---@return string
+local function get_key_symbol(key)
+  return icons.keys:has(key) and icons.keys:get(key) or icons.replace
+end
+
+
+---@class ks.keys.presets
+---@field [ks.keys.modcombo] ks.keys.modkey[]
+
+---@type Table|ks.keys.presets
+local combo_presets = tables{
   hyper  = { "ctrl", "alt", "shift", "cmd" }, -- all the keys!
   meh    = { "ctrl", "alt", "shift"        }, -- its just whatev
   peace  = { "ctrl", "alt", "shift"        }, -- "the peace sign" (same as "meh", just easier to remember)
@@ -55,94 +60,141 @@ local preset_mods = tables{
 
 
 
----@class Hotkey
+---@class ks.keys.hotkey
 ---@field key string
----@field mods ModKeyname[]
----@field keyevents KeyEventType[]
+---@field mods ks.keys.modkey[]
+---@field keyevents ks.keys.keyevent[]
+---@field handlerfn ks.keys.callback
+---@field showAlert boolean
+---@field label string
+---@field symbols string[]
+---@field listener hs.hotkey|nil
+
+
+---@class ks.keys.hotkey
 local Hotkey = {}
 
 
 --
 -- Returns a Hotkey configuration
 --
----@param mods ModKeyCombo|ModKeyname[] The shortcut's modifier keys
----@param key string The shortcuts non-modifier key
----@param keyevents? KeyEventType[]
----@return Hotkey
-function Hotkey:new(mods, key, keyevents)
+---@param mods ks.keys.modifiers The shortcut's modifier keys
+---@param key ks.keys.keycode The shortcuts non-modifier key
+---@return ks.keys.hotkey
+function Hotkey:new(mods, key)
 
-  ---@type Hotkey
-  local hotkey = {
+  ---@class ks.keys.hotkey
+  local this = {
     key = key,
-    keyevents = keyevents or { "pressed" },
+    keyevents = { "pressed" },
     mods = {},
+    showAlert = false,
+    label = '',
+    symbols = {},
+    handler = noop,
+    listener = nil,
   }
 
 
   if types.isString(mods) then
-    ---@cast mods string
-    if preset_mods:has(mods) then
-      hotkey.mods = preset_mods:get(mods) --[[ @as ModKeyname[] ]]
+    ---@cast mods ks.keys.modcombo
+    if combo_presets:has(mods) then
+      this.mods = combo_presets:get(mods) --[[@as ks.keys.modkey[] ]]
     else
-      error('Unrecognized modifiers: '..mods)
+      error(('Unrecognized mod combo "%s"'):format(mods))
     end
+  elseif types.isTable(mods) then
+    ---@cast mods ks.keys.modkey[]
+    this.mods = mods
+  else
+    error('mods is neither a list of mod keynames or a preset combo')
   end
 
-  if (types.isTable(mods)) then
-    ---@cast mods ModKeyname[]
-    hotkey.mods = mods
+  local key_symbols = lists(this.mods):map(get_key_symbol)
+
+  this.symbols = key_symbols:values()
+
+
+  return setmetatable(this, { __index = Hotkey }) --[[@as ks.keys.hotkey]]
+end
+
+
+--
+-- Sets which key events this hotkey should fire on (press, release, repeat)
+--
+---@param evts ks.keys.keyevent[]
+function Hotkey:setKeyEvents(evts)
+  self.keyevents = evts
+  return self
+end
+
+
+--
+-- Sets the handler callback function
+--
+---@param fn ks.keys.callback
+function Hotkey:setCallback(fn)
+  self.handlerfn = fn
+  return self
+end
+
+
+--
+-- Sets whether the hotkey will automatically show an alert message on events
+--
+---@param val boolean
+function Hotkey:setAlert(val)
+  self.showAlert = val
+  return self
+end
+
+
+--
+-- Reformats the label (message) with a text description
+--
+---@param desc string
+function Hotkey:setDescription(desc)
+  self.label = ('%s: %s'):format(lists(self.mods):map(get_key_symbol):join(' '), desc)
+  return self
+end
+
+
+--
+-- Creates and enables the hotkey with hammerspoon
+--
+function Hotkey:enable()
+  if self.listener == nil then
+    local self_events = lists(self.keyevents)
+    local triggers = lists(KEY_EVENTS):map(function(evt)
+      return self_events:includes(evt) and self.handlerfn or noop
+    end)
+
+    local message = self.showAlert and self.label or nil
+
+    self.listener = hs.hotkey.new(self.mods, self.key, message, triggers:unpack())
   end
 
-  return proto.setProtoOf(hotkey, Hotkey) --[[ @as Hotkey ]]
-end
+  self.listener:enable()
 
-
-local function get_key_symbol(key)
-  return icons.keys:has(key) and icons.keys:get(key) or icons.replace
-end
-
-
---
---
----@return string[]
-function Hotkey:symbols()
-  return lists(self.mods):map(get_key_symbol):values()
+  return self.listener
 end
 
 
 --
+-- Disables the hotkey
 --
----@return string
-function Hotkey:label()
-  local key = icons.keys:get(self.key) or self.key
-
-  return lists(self:symbols()):push(key):join(' ')
-end
-
-
---
--- Returns an event handler functin for key-pressed, key-released, 
--- and key-repeat as return values 1, 2, and 3
---
----@param fn EventHandler
----@return { [0]: EventHandler, [0]:  EventHandler, [0]: EventHandler}
-function Hotkey:getEventHandlers(fn)
-  local evts = { 'pressed', 'released', 'repeat' } 
-  
-  local noop = function()
-    -- do nothing
+function Hotkey:disable()
+  if self.listener ~= nil then
+    self.listener:disable()
   end
-  
-  return lists(evts):map(function(evt)
-    return lists(self.keyevents):includes(evt) and fn or noop
-  end)
 end
 
 
 
 ---@return table
 function Hotkey:__toplain()
-  return tables.toplain(self, { 'symbols', 'label' })
+  -- return tables.toplain(self, { 'symbols', 'label' })
+  return tables.toplain(self, {})
 end
 
 
@@ -152,7 +204,5 @@ function Hotkey:__tojson()
 end
 
 
-return {
-  new = function(...) return Hotkey:new(...) end,
-  presets = preset_mods,
-}
+-- return setmetatable({}, { __index = Hotkey }) --[[@as ks.keys.hotkey]]
+return Hotkey
