@@ -78,7 +78,7 @@ end
 -- Maps a set of `Command` items to `HS.MenubarItem` items.
 --
 ---@param sections string[]
----@param cmds Command[]
+---@param cmds ks.command[]
 ---@return HS.MenubarItem[]
 local function menu_section(sections, cmds)
 
@@ -151,7 +151,7 @@ local function create_service_submenu(services)
 
     local subitems = lists({})
 
-    local servicecmds = menu_section({ service.name .. '.*' }, KittySupreme.commands)
+    local servicecmds = menu_section({ service.name .. '.*' }, KittySupreme.commands:values())
 
     if (#servicecmds > 0) then
       subitems:concat(servicecmds)
@@ -180,7 +180,7 @@ local MenuBar = {}
 
 
 function MenuBar.primary_items()
-  local cmds = KittySupreme.commands
+  local commands = KittySupreme.commands:values()
   local services = tables.vals(KittySupreme.services)
 
   local service_menu = submenu_item("Services", 'term', create_service_submenu(services))
@@ -189,11 +189,11 @@ function MenuBar.primary_items()
   local menuitems = lists({})
     :push(text_item("KittySupreme - uptime: %s", time.fmt_ago(_G.UpTime)))
     :push(text_item("-"))
-    :concat(menu_section({ "spaces.space.*", "apps.*" }, cmds))
+    :concat(menu_section({ "spaces.space.*", "apps.*" }, commands))
     :push(text_item("-"))
     :push(service_menu)
     :push(text_item("-"))
-    :concat(menu_section({ "ks.commands.*" }, cmds))
+    :concat(menu_section({ "ks.commands.*" }, commands))
 
   log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
 

@@ -41,7 +41,7 @@ end
 
 local function getTestText()
   return KittySupreme.commands:map(function(cmd) 
-    ---@cast cmd Command
+    ---@cast cmd ks.command
     return strings.join({ cmd.id, cmd:hasHotkey() and cmd.hotkey:label() or 'none' }, ': ')
   end):join('\n')
 end

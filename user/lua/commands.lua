@@ -1,23 +1,21 @@
 local console = require 'user.lua.interface.console'
 local desk    = require 'user.lua.interface.desktop'
-local collect = require 'user.lua.lib.collection'
+local Command = require 'user.lua.model.command'
 local lists   = require 'user.lua.lib.list'
 local fs      = require 'user.lua.lib.fs'
+local funcs   = require 'user.lua.lib.func'
 local paths   = require 'user.lua.lib.path'
+local proto   = require 'user.lua.lib.proto'
 local tables  = require 'user.lua.lib.table'
-local rdir    = require 'user.lua.ui.resource-dir'
 local types   = require 'user.lua.lib.typecheck'
-local Command = require 'user.lua.model.command'
-local logr  = require 'user.lua.util.logger'
-local funcs = require 'user.lua.lib.func'
+local rdir    = require 'user.lua.ui.resource-dir'
+local logr    = require 'user.lua.util.logger'
 
 
-local log = logr.new('commands', 'info')
-
-local EVT_FILTER = '!*.(evt|event|events).*'
+local log = logr.new('CommandList', 'info')
 
 
----@type Command[]
+---@type ks.command[]
 local command_list = {
   {
     id = 'ks.evt.onLoad',
@@ -56,7 +54,7 @@ local command_list = {
     mods = "btms",
     exec = function(cmd)
       funcs.delay(0.75, hs.reload)
-      return cmd:hotkeyLabel()
+      return cmd.hotkey.label
     end,
   },
   {
@@ -67,24 +65,56 @@ local command_list = {
     mods = "btms",
     exec = function(cmd)
       funcs.delay(0.75, hs.relaunch)
-      return cmd:hotkeyLabel()
+      return cmd.hotkey.label
     end,
   }
 }
 
+local EVT_FILTER = '!*.(evt|event|events).*'
 
-local function scanForCmds()
-  -- Stepping back 3 steps on the call stack to get calling module's filepath
-  -- local modInfo = debug.getinfo(3, 'S')
-  -- local rootdir = string.match(modInfo.source, '^@(.*)/')
-  local rootdir = hs.fs.currentDir() or '/asdf/asdf/asdf'
-  local mods = fs.loaddir(rootdir, 'user.lua')
 
+---@class ks.commandlist : List
+local CommandList = proto.setProtoOf({}, lists)
+
+
+
+--
+--
+--
+---@return ks.commandlist
+function CommandList:new()
+  ---@class ks.commandlist
+  local this = {
+    items = {}
+  }
+
+  return proto.setProtoOf({}, CommandList)
+end
+
+
+--
+--
+--
+---@return ks.command.config[]
+function CommandList:scanForConfigs()
   local commands = {}
+  local rootdir = paths.cwd()
+  local userpath = lists({ 'user', 'lua' })
+
+  log.f("Scanning for command configurations in [%s/*s]", rootdir, userpath:join('/'))
+
+  local mods = fs.loaddir(rootdir, userpath:join('.'))
+
   for module, exports in pairs(mods) do
+    
     if (types.isTable(exports) and tables.has(exports, 'cmds')) then
+
+      -- Support setting command's `module` prop value at the module level
+      -- (can also be set on the commands individually)
+      local modname = tables.has(exports, 'module') or module
+      
       for i, cmd in ipairs(exports.cmds) do
-        table.insert(commands, tables.merge({}, cmd, { module = module }))
+        table.insert(commands, tables.merge({ module = module }, cmd))
       end
     end
   end
@@ -92,12 +122,20 @@ local function scanForCmds()
   return commands
 end
 
-local Cmds = {}
 
-function Cmds.getCommands()
-  return lists(command_list)
-    :concat(scanForCmds())
+--
+--
+--
+---@return self
+function CommandList:initialize()
+  local commands = lists(command_list)
+    :concat(self:scanForConfigs())
     :map(function(cmd) return Command:new(cmd) end)
+
+  self.items = commands:values()
+
+  return self
 end
 
-return Cmds
+
+return setmetatable({}, { __index = CommandList }) --[[@as ks.commandlist]]

@@ -1,3 +1,4 @@
+---@diagnostic disable: redundant-parameter
 local assert = require 'luassert'
 local pretty = require 'pl.pretty'
 
@@ -13,7 +14,7 @@ local function indexOf(arr, item)
 end 
 
 
-describe('lib/table.lua', function()
+describe('user.lua.lib.table', function()
   local Tabl = require('user.lua.lib.table')
 
   describe('static methods', function()

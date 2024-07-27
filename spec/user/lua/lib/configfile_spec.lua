@@ -39,7 +39,7 @@ yabai -m config external_bar all:0:40]]
 
 
 
-insulate("user.lua.lib.configfile", function()
+insulate("user.lua.lib.configfile #wip", function()
 
   package.loaded[tutil.logger_mod] = tutil.mock_logger(spy)
 

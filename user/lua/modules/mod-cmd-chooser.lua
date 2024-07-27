@@ -22,12 +22,12 @@ local log = require('user.lua.util.logger').new('mod-cmd-chooser', 'debug')
 local get_cmd_choices = function()
   local EVT_FILTER = regex.glob('!*.(evt|event|events).*')
 
-  return lists(KittySupreme.commands)
+  return KittySupreme.commands
     :filter(function(cmd)
       return EVT_FILTER(cmd.id) and not lists(cmd.flags):includes('no-chooser')
     end)
     :map(function(cmd)
-      ---@cast cmd Command
+      ---@cast cmd ks.command
       return {
         id = cmd.id,
         text = cmd.title or cmd.id,
@@ -58,7 +58,7 @@ local on_choice = function(selected)
     error(('Could not find command with id %q'):format(chosen_id))
   end
 
-  ---@cast cmd Command
+  ---@cast cmd ks.command
   cmd:invoke('chooser', {})
 end
 
@@ -81,7 +81,7 @@ local on_invalid_choice = function(selected)
     error(('Could not find command with id %q'):format(chosen_id))
   end
 
-  ---@cast cmd Command
+  ---@cast cmd ks.command
   -- cmd:invoke('chooser', {}) -- possible new invoke type 'chooser-invald'?
 end
 
@@ -116,7 +116,7 @@ local ChooserModule = {
   
   exec = function (cmd, ctx, params)
     -- not necessary to call refresh unless chooser's options have changed
-    -- ctx.chooser:refreshChoicesCallback()
+    ctx.chooser:refreshChoicesCallback()
     ctx.chooser:show()
   end,
 

@@ -19,8 +19,9 @@ When using in a block, import them in the block itself, eg:
   <img src="{{ img_url }}" width="40" height="40" />
 {% endmacro %}
 
-{%- macro Button(color='primary', size='sm', content='') -%}
+{%- macro Button(color='primary', size='sm', attrs={}, content='') -%}
   <button 
+    {{ htmlattrs(attrs) }}
     {# class="btn btn-{{ color }} btn-{{ size }}" #}
     class="rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
   >

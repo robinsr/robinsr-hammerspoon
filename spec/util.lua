@@ -4,6 +4,27 @@ local plstr = require 'pl.stringx'
 
 local testutil = {}
 
+testutil.pretty = pretty
+
+
+--
+-- Get a variable-length list of single alpha characters
+--
+function testutil.alphalist(len)
+  len = len or 4
+  
+  local alphas = "abcdefghijklmnopqrstuvwxyz"
+  local chars = {}
+
+  for i=1,len do
+    table.insert(chars, alphas:sub(i, i))
+  end
+
+  return table.pack(table.unpack(chars))
+end
+
+
+
 ---@param pattern string
 ---@param ... any
 ---@return string

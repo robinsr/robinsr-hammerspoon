@@ -107,6 +107,17 @@ macro_func('macros.view' ,'Button', { 'color:string', 'size:string', 'content:st
 macro_func('macros.view' ,'DataImage', { 'name:string', 'width:number', 'height:number' })
 
 
+add_func('htmlattrs', {'args:table'}, function(__, args)
+  local output = strings.linewriter()
+
+  for k,v in pairs(args.args or {}) do
+    output:writef('%s="%s"', k, tostring(v))
+  end
+
+  return output:value():_replace(strings.char.newline, ' ')
+end)
+
+
 add_func('modelfn', {'model:table', 'fn:string', 'args:table'}, function(__, args)
   local ok, result = pcall(args.model[args.fn], args.model, table.unpack(args.args or {}))
 

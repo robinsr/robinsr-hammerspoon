@@ -4,8 +4,9 @@ local tables = require 'user.lua.lib.table'
 local types  = require 'user.lua.lib.typecheck'
 local vm     = require 'user.lua.ui.webview.viewmodel'
 local render = require 'user.lua.ui.webview.renderer'
+local json   = require 'user.lua.util.json'
 
-local log = require('user.lua.util.logger').new('webview', 'info')
+local log = require('user.lua.util.logger').new('webview', 'debug')
 
 ---@alias HS.Webview.Masks
 ---| 'HUD'
@@ -71,11 +72,26 @@ function Webview.new_webview()
   local controller = hs.webview.usercontent.new('kittysupreme') --[[@as hs.webview.usercontent]]
 
   controller:setCallback(function(msg)
-    log.i('webview controller callback', hs.inspect(msg.body))
+    log.df('webview controller post-message: %s', hs.inspect(msg.body))
+
+    local jsonok, json = pcall(function() return json.decode(msg.body) end)
+
+    if jsonok and json.action then
+      if json.action == 'pbcopy' then
+        return desk.setPasteBoard(json.data)
+      end
+
+      if json.action == 'print' then
+        return log.f('Webview print: %s', hs.inspect(json.data))
+      end
+
+      if json.action == 'close' then
+        return Webview.close_all()
+      end
+    end
 
     if msg.body == 'close' then
-      Webview.close_all()
-      return
+      return Webview.close_all()
     end
   end)
 

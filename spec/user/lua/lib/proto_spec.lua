@@ -1,9 +1,5 @@
-local assert = require 'luassert'
+---@diagnostic disable: redundant-parameter
 local testutil = require 'spec.util'
-
-local proto = require 'user.lua.lib.proto'
-
-local setProtoOf = proto.setProtoOf
 
 ---@class Food
 local Food = {
@@ -18,7 +14,11 @@ function Food:digest()
   return "rumble rumble rumble"
 end
 
-describe('lib/proto.lua', function()
+describe('user.lua.lib.proto', function()
+
+  local proto = require 'user.lua.lib.proto'
+  local setProtoOf = proto.setProtoOf
+
   describe('setProtoOf', function()
     it('Uses setProtoOf to create a prototype chain', function()
 

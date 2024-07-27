@@ -25,6 +25,7 @@ require('hs.ipc')
 hs.ipc.cliInstall('/opt/homebrew')
 
 local lists  = require 'user.lua.lib.list'
+local regex  = require 'user.lua.lib.regex'
 local tabl   = require 'user.lua.lib.table'
 local logger = require 'user.lua.util.logger'
 
@@ -39,37 +40,47 @@ console.configureHSConsole()
 console.setDarkMode(desk.darkMode())
 
 local KS = require 'user.lua.state'
+local CmdList = require 'user.lua.commands'
 
 
-KS.commands = require 'user.lua.commands'.getCommands()
+KS.commands = CmdList:new():initialize()
 
 
-log.i("Setting global hotkeys")
+log.i("Setting global hotkeys...")
+KS.commands:forEach(function(cmd) cmd:bindHotkey() end)
 
-KS.commands:forEach(function(cmd) 
-  cmd:bindHotkey()
-end)
 
-log.i("Setting up url handlers")
-lists(KS.commands):forEach(function(cmd) cmd:bindURL() end)
 
-log.i("Creating menubar item")
+log.i("Setting up url handlers...")
+KS.commands:forEach(function(cmd) cmd:bindURL() end)
+
+
+
+log.i("Creating menubar item...")
 require('user.lua.interface.menubar').install()
 
-log.i('Running onLoad commands')
 
-local post_loaded_cmd = KS.commands:first(function(cmd)
-  return cmd.id == "ks.evt.onLoad"
-end)
 
-if post_loaded_cmd then
-  local loadCmdOK, loadCmd = pcall(function() post_loaded_cmd:exec('load', {}) end)
+log.i('Running onLoad commands...')
 
-  if (not loadCmdOK) then
-    log.e('Onload error')
-    error(loadCmd)
-  end
-end
+local onLoadFilter = regex.glob('*.onLoad')
+
+local loadcmds = KS.commands
+  :filter(function(cmd)
+    return onLoadFilter(cmd.id)
+  end)
+  :reduce({ success = {}, error = {} }, function(m, cmd)
+    ---@cast cmd ks.command
+    local ok, result = pcall(function() cmd:invoke('load', {}) end)
+
+    table.insert(not ok and m.error or m.success, { cmd = cmd.id, result = result })
+
+    return m
+  end)
+
+log.inspect('inLoad command results:', loadcmds, logger.d3)
+
+
 
 log.i('Init complete')
 

@@ -45,7 +45,9 @@
     {% block page_script %}
       <script type="text/javascript">
         const onLoad = function () {
-          const doKsMsg = (data) => {
+          
+
+          window.ksPostMessage = (data) => {
             if (typeof data != "string") {
               data = JSON.stringify(data);
             }
@@ -61,14 +63,14 @@
             evt.preventDefault();
             evt.stopPropagation();
 
-            doKsMsg(evt);
+            ksPostMessage(evt);
 
             if (evt.key == "Escape") {
-              doKsMsg("close");
+              ksPostMessage({ action: "close" });
             }
           });
 
-          doKsMsg("Hello from webview");
+          ksPostMessage({ action: 'print', data: "Hello from webview" });
 
           setTimeout(() => {
             document.querySelector("#js-ok").textContent = "👍";

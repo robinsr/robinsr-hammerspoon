@@ -42,13 +42,13 @@ local log = logr.new('Command', 'info')
 ---@alias ks.command.flag 'invalid_choice' | 'test_flag' | 'no-chooser'
 
 
----@alias ks.command.execfn fun(cmd: Command, ctx: ks.command.context, params: table): string|nil
+---@alias ks.command.execfn fun(cmd: ks.command, ctx: ks.command.context, params: table): string|nil
 
 
----@alias ks.command.setupfn<T> fun(cmd: Command): T
+---@alias ks.command.setupfn<T> fun(cmd: ks.command): T
 
 
----@alias ks.command.trgger 'hotkey'|'menu'|'url'|'chooser'|'other'
+---@alias ks.command.trgger 'load'|'hotkey'|'menu'|'url'|'chooser'|'other'
 
 
 
@@ -69,7 +69,7 @@ local valid = {
 }
 
 
----@class Command : ks.command.config
+---@class ks.command : ks.command.config
 ---@field context any
 ---@field hotkey? ks.keys.hotkey
 local Command = {}
@@ -79,10 +79,10 @@ local Command = {}
 -- Command class
 --
 ---@param config ks.command.config
----@return Command
+---@return ks.command
 function Command:new(config)
 
-  ---@class Command
+  ---@class ks.command
   local this = config or {}
 
   validate(valid.id.type(this.id), 'id missing from %q', hs.inspect(this))
@@ -114,7 +114,7 @@ function Command:new(config)
     this.hotkey = Hotkey:new(this.mods, this.key)
   end
 
-  return proto.setProtoOf(this, Command) --[[@as Command]]
+  return proto.setProtoOf(this, Command) --[[@as ks.command]]
 end
 
 

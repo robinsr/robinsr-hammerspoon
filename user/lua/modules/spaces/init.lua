@@ -49,7 +49,7 @@ end
 -- Handles space change events
 -- Currently responds after Yabai has already changed the active space
 --
----@param cmd Command
+---@param cmd ks.command
 ---@param ctx ks.command.context The event context
 ---@param params SpaceChangeParams to/from index of change
 function Spaces.onSpaceChange(cmd, ctx, params)
@@ -125,11 +125,11 @@ end
 
 ---@type ks.command.config[]
 Spaces.cmds = {
-  -- {
-  --   id = 'spaces.evt.onSpaceChange',
-  --   exec = Spaces.onSpaceChange,
-  --   url = "spaces.changed",
-  -- },
+  {
+    id = 'spaces.evt.onSpaceChange',
+    exec = Spaces.onSpaceChange,
+    url = "spaces.changed",
+  },
   {
     id = 'spaces.evt.onSpaceCreated',
     exec = Spaces.onSpaceCreated,
