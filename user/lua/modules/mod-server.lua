@@ -1,6 +1,8 @@
-local ksutil   = require 'user.lua.util'
-local hotkey   = require 'user.lua.model.hotkey'
+
+local web      = require 'user.lua.interface.webserver'
+local Hotkey   = require 'user.lua.model.hotkey'
 local fs       = require 'user.lua.lib.fs'
+local func     = require 'user.lua.lib.func'
 local lists    = require 'user.lua.lib.list'
 local regex    = require 'user.lua.lib.regex'
 local paths    = require 'user.lua.lib.path'
@@ -8,15 +10,13 @@ local icons    = require 'user.lua.ui.icons'
 local images   = require 'user.lua.ui.image'
 local renderer = require 'user.lua.ui.webview.renderer'
 local json     = require 'user.lua.util.json'
-local cheat    = require 'user.lua.modules.cheatsheet'
 local logr     = require 'user.lua.util.logger' 
 local mime     = require 'user.lua.util.mimetypes'
 
-local webserver = require 'user.lua.interface.webserver'
 
 local log = logr.new('mod_server', 'info')
 
-local server = webserver:new()
+local server = web:new()
 
 log.inspect(server, { metatables = true })
 
@@ -54,9 +54,9 @@ server:get('glob:/keys', function(req, res)
   res:setView('cheatsheet.view')
   res:setModel({
     title = "Cheatsheet page",
-    mods = hotkey.presets,
+    mods = Hotkey.presets,
     symbols = icons.keys:toplain(),
-    groups = cheat.ks_keys(),
+    groups = KittySupreme.commands:getHotkeyGroups(),
   })
 end)
 
@@ -112,23 +112,15 @@ server:get('glob:/', function(req, res)
 end)
 
 
+local get_server = func.singleton(function()
+  local new_server = server:listen(3000)
 
-local server_instance = nil
-
-
-local function get_server()
-  if server_instance == nil then
-    local new_server = server:listen(3000)
-
-    if new_server == nil then
-      error('Failed to create hs.httpserver instance')
-    end
-
-    server_instance = new_server
+  if new_server == nil then
+    error('Failed to create hs.httpserver instance')
   end
 
-  return server_instance
-end
+  return new_server
+end)
 
 
 ---@type ks.command.config
@@ -137,17 +129,8 @@ local start_dev_server = {
   title = 'Starts/Restarts a HS server on port 3000',
   icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
   module = 'Dev Server',
-  setup = function(cmd) end,
   exec = function(cmd, ctx, params)
-    if server_instance ~= nil then
-      server_instance:stop()
-    end
-
-    local new_server = get_server()
-
-    if new_server ~= nil then
-      new_server:start()
-    end
+    get_server():start()
   end,
 }
 
@@ -159,23 +142,27 @@ local stop_dev_server = {
   module = 'Dev Server',
   setup = function(cmd) end,
   exec = function(cmd, ctx, params)
-    if server_instance ~= nil then
-      server_instance:stop()
-    end
+    get_server():stop()
+  end,
+}
+
+
+---@type ks.command.config
+local onload = {
+  id = 'ks.server.onLoad',
+  title = 'Onload handler for Dev Server module',
+  icon = 'info',
+  flags = { 'no-chooser' },
+  exec = function(cmd, ctx, params)
+    get_server():start()
   end,
 }
 
 return {
+  module = 'Dev Server',
   cmds = {
     start_dev_server,
     stop_dev_server,
-  },
-  kscmds = {
-    version = 'v2',
-    name = 'Dev Server',
-    items = {
-      start_dev_server,
-      stop_dev_server,
-    }
+    onload,
   }
 }

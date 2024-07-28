@@ -33,7 +33,7 @@ local get_cmd_choices = function()
         text = cmd.title or cmd.id,
         subText = cmd.desc or ("%s - %s"):format(cmd.id, cmd.module),
         image = cmd:getMenuIcon(256),
-        valid = types.isFalse(cmd:has_flag('invalid_choice'))
+        valid = types.isFalse(cmd:hasFlag('invalid_choice'))
       }
     end)
     :values()
@@ -145,9 +145,8 @@ local show_command_chooser = {
   id = 'ks.commands.show_command_chooser',
   title = "Show command chooser",
   icon = "filemenu.and.selection",
-  module = 'Command Chooser',
   desc = module_desc,
-  flags = { 'no-chooser' },
+  flags = { 'no-chooser', 'no-alert' },
   mods = 'btms',
   key = "space",
   setup = ChooserModule.setup,
@@ -156,6 +155,7 @@ local show_command_chooser = {
 
 
 return {
+  module = 'Command Chooser',
   cmds = {
     show_command_chooser
   }

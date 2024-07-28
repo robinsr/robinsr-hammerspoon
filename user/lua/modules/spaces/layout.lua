@@ -7,17 +7,16 @@ local send_message = space_util.send_message
 local dir_keys     = space_util.dir_keys
 
 ---@type Yabai
-local yabai      = KittySupreme.services.yabai
+local yabai = KittySupreme.services.yabai
 
-
-local shift = {}
-
-shift.cmds = {
+---@type ks.command.config[]
+local cmds = {
   {
     id = 'spaces.layout.rotate_windows',
     title = 'Rotate layout clockwise',
     mods = 'peace',
     key = 'r',
+    flags = { 'no-alert' },
     exec = send_message('space --rotate 90'),
   },
   {
@@ -25,6 +24,7 @@ shift.cmds = {
     title = 'Rebalance windows in space',
     mods = 'peace',
     key = 'e',
+    flags = { 'no-alert' },
     exec = send_message('space --balance', 'Rebalanced windows'),
   },
   {
@@ -32,7 +32,8 @@ shift.cmds = {
     title = 'Maximize active window',
     mods = 'peace',
     key = 'm',
-    exec = send_message('window --toggle zoom-fullscreen'),
+    flags = { 'no-alert' },
+    exec = send_message('window --toggle zoom-fullscreen', 'Maximize active window'),
   },
   {
     id = 'spaces.space.cycle',
@@ -40,6 +41,7 @@ shift.cmds = {
     icon = "tag",
     mods = "peace",
     key = "space",
+    flags = { 'no-alert' },
     exec = function(cmd)
       local layout = spaces.cycleLayout()
       return strings.fmt("Changed layout to %s", layout)
@@ -51,9 +53,9 @@ shift.cmds = {
     icon = "tag",
     mods = "btms",
     key = "L",
+    flags = { 'no-alert' },
     exec = function(cmd, ctx)
       spaces.rename()
-      return ctx.trigger == 'hotkey' and 'default' or nil
     end,
   },
   { 
@@ -62,11 +64,11 @@ shift.cmds = {
     icon = "float",
     exec = function (cmd, ctx)
       yabai:floatActiveWindow()
-      return ctx.trigger == 'hotkey' and 'default' or nil
     end
   },
-
 }
 
-
-return shift
+return {
+  module = "Spaces",
+  cmds = cmds,
+}

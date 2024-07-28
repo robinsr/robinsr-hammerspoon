@@ -13,6 +13,29 @@ end
 
 
 --
+-- Memoizes a function, caching the return value for all future calls
+--
+---@generic A
+---@generic T
+---@param fn fun(...: A): T   The function to memoize
+---@param ...? A              Optional args to pass to function
+---@return fun(...: A): T
+function func.singleton(fn, ...)
+  local fn_args = {...}
+  local memo = nil
+
+  return function()
+    
+    if (memo == nil) then
+      memo = fn(table.unpack(fn_args))
+    end
+
+    return memo
+  end
+end
+
+
+--
 -- Memoizes a function, caching the return value for a set number of seconds
 --
 ---@generic A

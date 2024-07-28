@@ -1,12 +1,12 @@
-local hotkey  = require 'user.lua.model.hotkey'
+local Hotkey  = require 'user.lua.model.hotkey'
 local lists   = require 'user.lua.lib.list'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 
 
 
----@class HSAppMenuItem
----@field AXChildren HSAppMenuItem[]
+---@class HS.AppMenuItem
+---@field AXChildren HS.AppMenuItem[]
 ---@field AXEnabled boolean
 ---@field AXMenuItemCmdChar string
 ---@field AXMenuItemCmdGlyph string
@@ -16,42 +16,52 @@ local types   = require 'user.lua.lib.typecheck'
 ---@field AXTitle string
 
 
----@class App
+
+---@class ks.app.menuitem
+---@field title       string
+---@field hasHotkey   boolean
+---@field hotkey      ks.keys.hotkey
+---@field children    ks.app.menuitem
+---@field hasChildren boolean
+
+
+---@class ks.app
 local App = {}
 
 
 ---@param app hs.application
 function App.new(self, app)
-  
+    
 end
 
 
----@param item HSAppMenuItem
----@return App.MenuItem
+---@param item HS.AppMenuItem
+---@return ks.app.menuitem
 function App.menuItem(item)
 
-  ---@class App.MenuItem
-  local o = {}
+  ---@class ks.app.menuitem
+  local menuitem = {}
   
-  o.title = item.AXTitle or '[no title]'
+  menuitem.title = item.AXTitle or '[no title]'
 
   local mods = item['AXMenuItemCmdModifiers']
   local char = item['AXMenuItemCmdChar']
 
-  local hk = hotkey:new(mods, char)
 
   if types.is_not.empty(char) then
-    o.hasHotkey = function() return true end
-    o.hotkey = tables.toplain(hk)
+    -- local hk = Hotkey:new(mods, char):setDescription(menuitem.title)
+
+    menuitem.hasHotkey = true
+    menuitem.hotkey = Hotkey:new(mods, char):setDescription(menuitem.title)
   else
-    o.hasHotkey = function() return false end
+    menuitem.hasHotkey = false
   end
 
-  o.has_children = types.isTable(item.AXChildren) and types.isTable(item.AXChildren[1])
+  menuitem.hasChildren = types.isTable(item.AXChildren) and types.isTable(item.AXChildren[1])
 
-  o.children = o.has_children and lists(item.AXChildren[1]):map(App.menuItem):values() or {}
+  menuitem.children = menuitem.hasChildren and lists(item.AXChildren[1]):map(App.menuItem):values() or {}
 
-  return o
+  return menuitem
 end
 
 

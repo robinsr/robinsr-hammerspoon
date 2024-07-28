@@ -22,7 +22,6 @@ print(string.rep('-', 15), time.fmt(), string.rep('-', 15))
 print(string.rep('-', 40))
 
 require('hs.ipc')
-hs.ipc.cliInstall('/opt/homebrew')
 
 local lists  = require 'user.lua.lib.list'
 local regex  = require 'user.lua.lib.regex'
@@ -32,6 +31,12 @@ local logger = require 'user.lua.util.logger'
 local log = logger.new('user:init', 'debug')
 
 log.i("Starting...")
+
+hs.ipc.cliInstall('/opt/homebrew')
+hs.ipc.localPort('testtest', function(d)
+  log.f('ipc message received: %s', tostring(d))
+  return ("Echo '%s'"):format(tostring(d))
+end)
 
 local console = require 'user.lua.interface.console'
 local desk    = require 'user.lua.interface.desktop'

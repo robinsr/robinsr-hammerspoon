@@ -1,7 +1,7 @@
 local sh   = require 'user.lua.adapters.shell'
 local logr = require 'user.lua.util.logger'
 
-local log = logr.new('ModSpaces/util', 'error')
+local log = logr.new('ModSpaces/util', 'info')
 
 
 local space_util = {}

@@ -1,13 +1,11 @@
--- local screen  = require 'hs.screen' --[[@as hs.screen]]
--- local mouse   = require 'hs.mouse' --[[@as hs.mouse]]
--- local win     = require 'hs.window' --[@as hs.window]
-local logr    = require 'user.lua.util.logger'
+local App     = require 'user.lua.model.application'
 local fns     = require 'user.lua.lib.func'
 local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local tables  = require 'user.lua.lib.table'
+local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('Desktop', 'debug')
 
@@ -25,28 +23,48 @@ local log = logr.new('Desktop', 'debug')
 ---@field subrole string
 ---@field title string
 
----@class KS.Desktop
+
+
+
+local query_dark_mode = fns.cooldown(10, function()
+  log.d('Querying "System Events" for current dark mode')
+
+  local ok, darkModeState = hs.osascript.javascript(
+    'Application("System Events").appearancePreferences.darkMode()'
+  )
+
+  if not ok then
+    error('Error executing osascript (js):' .. darkModeState)
+  end
+
+  return types.tobool(darkModeState) --[[@as boolean]]
+end)
+
+
+
+
+---@class ks.desktop
 local desktop = {}
 
 
----@alias ScreenSelector
----| 'main' # Screen containing the currently focused window / foremost app (the app receiving text input)
----| 'active' # Alias for the 'main' screen
----| 'mouse' # The screen containing the pointer
----| 'primary' # The primary screen contains the menubar and dock
+---@alias ks.desktop.selectscreen
+---| 'main'     Screen containing the currently focused window / foremost app (the app receiving text input)
+---| 'active'   Alias for the 'main' screen
+---| 'mouse'    The screen containing the pointer
+---| 'primary'  The primary screen contains the menubar and dock
 
----@type { [ScreenSelector]: fun(): hs.screen }
+---@type { [ks.desktop.selectscreen]: fun(): hs.screen }
 local selectors = {
-  main = hs.screen.mainScreen,
-  mouse = hs.mouse.getCurrentScreen,
-  active = hs.screen.mainScreen,
+  main    = hs.screen.mainScreen,
+  mouse   = hs.mouse.getCurrentScreen,
+  active  = hs.screen.mainScreen,
   primary = hs.screen.primaryScreen,
 }
 
 --
 -- Gets the relevant hs.screen object from HS
 --
----@param sel ScreenSelector
+---@param sel ks.desktop.selectscreen
 ---@return hs.screen
 function desktop.getScreen(sel)
   ---@type hs.screen
@@ -60,8 +78,13 @@ function desktop.getScreen(sel)
 end
 
 
+
+--
+-- Returns all screns
+--
+---@return hs.screen[]
 function desktop.screens()
-  return hs.screen.allScreens()
+  return hs.screen.allScreens() --[[@as hs.screen[] ]]
 end
 
 
@@ -96,9 +119,9 @@ end
 --
 -- Returns all the displayable properties of a `hs.application` object
 --
----@param app hs.application
----@param noWindows? boolean
----@return ks.desktop.app
+---@param app         hs.application
+---@param noWindows?  boolean
+---@return            ks.desktop.app
 function desktop.appInfo(app, noWindows)
   noWindows = noWindows or false
 
@@ -123,9 +146,9 @@ end
 --
 -- Returns all the displayable properties of a `hs.window` object
 --
----@param window hs.window
----@param noApp? boolean
----@return ks.desktop.window
+---@param window   hs.window
+---@param noApp?   boolean
+---@return         ks.desktop.window
 function desktop.windowInfo(window, noApp)
   noApp = noApp or false
 
@@ -155,42 +178,6 @@ end
 
 
 --
--- Not sure what this was supposed to do
---
-function desktop.bundleIDs()
-  local apps = hs.application.runningApplications()
-
-  local bundles = {}
-
-  for i, app in ipairs(apps) do
-    local no_key = strings.join{'unknown_', i}
-    local app_bid = app:bundleID() or no_key
-    local app_name = app:name() or no_key
-
-    bundles[app_bid] = app_name
-    bundles[app_name] = app_bid
-  end
-
-  return bundles
-end
-
-
-local query_dark_mode = fns.cooldown(10, function()
-  log.d('Querying "System Events" for current dark mode')
-
-  local ok, darkModeState = hs.osascript.javascript(
-    'Application("System Events").appearancePreferences.darkMode()'
-  )
-
-  if not ok then
-    error('Error executing osascript (js):' .. darkModeState)
-  end
-
-  return types.tobool(darkModeState) --[[@as boolean]]
-end)
-
-
---
 -- Returns the current state of dark mode
 --
 ---@return boolean
@@ -200,7 +187,7 @@ end
 
 
 --
---
+-- returns a geometry object describing the current position of the mouse
 --
 function desktop.mouse_position()
   return hs.mouse.absolutePosition()
@@ -210,8 +197,76 @@ end
 --
 -- Sets the pasteboard contents
 --
+---@param val string
 function desktop.setPasteBoard(val)
   hs.pasteboard.setContents(val)
 end
+
+
+
+--
+-- Gets the top window on screen
+--
+---@return hs.window
+function desktop.getTopWindow()
+  local screen = desktop.getScreen('mouse')
+
+  return lists(hs.window.orderedWindows())
+    :filter(function(win)
+      ---@cast win hs.window
+      return win:screen():id() == screen:id()
+    end)
+    :first(function(win) return win ~= nil end) --[[@as hs.window]]
+
+  -- return hs.window:frontmostWindow()
+end
+
+
+--
+--
+--
+function desktop.getMenuItems(app)
+  local rawitems = app:getMenuItems()
+  -- log.inspect(rawitems, logr.d3)
+  local menuitems = lists(rawitems):map(function(mi)
+    return App.menuItem(mi)
+  end)
+  -- log.inspect(menuitems:values(), logr.d3)
+  
+
+  ---@param memo table
+  ---@param item ks.app.menuitem
+  local function reducer(memo, item)
+    
+    if item.hasChildren then
+      for i,child in ipairs(item.children) do
+        reducer(memo, child)
+      end
+    else
+      table.insert(memo, item)
+    end
+
+    return memo
+  end
+
+  local reducio = menuitems:map(function(mi)
+    return {
+      title = mi.title,
+      items = lists(mi.children)
+        :reduce({}, reducer)
+        :filter(function(item) return item.hasHotkey end)
+        :values()
+    }
+  end)
+
+  log.inspect(reducio:values())
+
+  -- return { title = item.title, cmds = reduce({}, item.children) }
+  -- :groupBy('title')
+  
+
+  return reducio:values()
+end
+
 
 return desktop

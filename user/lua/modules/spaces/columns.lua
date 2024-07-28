@@ -14,6 +14,7 @@ cols.cmds = {
     icon = '@/resources/images/left-column.ios17outlined.template.png',
     mods = 'peace',
     key = '1',
+    flags = { 'no-alert' },
     exec = function(cmd)
       yabai:shiftWindow(desktop.activeWindowId(), { x = 0, y = 0 }, { x = 1, y = 1 })
       return cmd.title
@@ -25,6 +26,7 @@ cols.cmds = {
     icon = '@/resources/images/middle-column.ios17outlined.template.png',
     mods = 'peace',
     key = '2',
+    flags = { 'no-alert' },
     exec = function(cmd)
       yabai:shiftWindow(desktop.activeWindowId(), { x = 1, y = 0 }, { x = 1, y = 1 })
       return cmd.title
@@ -36,6 +38,7 @@ cols.cmds = {
     icon = '@/resources/images/right-column.ios17outlined.template.png',
     mods = 'peace',
     key = '3',
+    flags = { 'no-alert' },
     exec = function(cmd)
       yabai:shiftWindow(desktop.activeWindowId(), { x = 2, y = 0 }, { x = 1, y = 1 })
       return cmd.title
@@ -46,6 +49,7 @@ cols.cmds = {
     title = "Move window: 1st ⅔",
     mods = 'peace',
     key = '4',
+    flags = { 'no-alert' },
     exec = function(cmd)
       yabai:shiftWindow(desktop.activeWindowId(), { x = 0, y = 0 }, { x = 2, y = 1 })
       return cmd.title
@@ -56,6 +60,7 @@ cols.cmds = {
     title = "Move window: 2nd ⅔",
     mods = 'peace',
     key = '5',
+    flags = { 'no-alert' },
     exec = function(cmd)
       yabai:shiftWindow(desktop.activeWindowId(), { x = 1, y = 0 }, { x = 2, y = 1 })
       return cmd.title

@@ -18,6 +18,7 @@ local cmds = {
     title = "Swap current space neighbor to right",
     -- mods = "btms",
     -- key = "left",
+    flags = { 'no-alert' },
     exec = send_message('space --move next', 'Moved space to the right'),
   },
   {
@@ -25,6 +26,7 @@ local cmds = {
     title = "Swap current space neighbor to left",
     -- mods = "btms",
     -- key = "right",
+    flags = { 'no-alert' },
     exec = send_message('space --move prev', 'Moved space to the left'),
   },
   {
@@ -32,6 +34,7 @@ local cmds = {
     title = "Send window to next space",
     mods = "btms",
     key = "right",
+    flags = { 'no-alert' },
     exec = function(cmd, ctx)
       send_message('window --space next')()
       send_message('space mouse --focus next')()
@@ -44,6 +47,7 @@ local cmds = {
     title = "Send window to previous space",
     mods = "btms",
     key = "left",
+    flags = { 'no-alert' },
     exec = function(cmd, ctx)
       send_message('window --space prev')()
       send_message('space mouse --focus prev')()
@@ -64,6 +68,7 @@ local cmds = {
     title = 'Swap with window above',
     mods = 'claw',
     key = 'up',
+    flags = { 'no-chooser' },
     exec = send_message('window --swap north'),
   },
   {
@@ -71,6 +76,7 @@ local cmds = {
     title = 'Swap with window below',
     mods = 'claw',
     key = 'down',
+    flags = { 'no-chooser' },
     exec = send_message('window --swap south'),
   },
   {
@@ -78,6 +84,7 @@ local cmds = {
     title = 'Swap with window right',
     mods = 'claw',
     key = 'right',
+    flags = { 'no-chooser' },
     exec = send_message('window --swap east'),
   },
   {
@@ -85,6 +92,7 @@ local cmds = {
     title = 'Swap with window left',
     mods = 'claw',
     key = 'left',
+    flags = { 'no-chooser' },
     exec = send_message('window --swap west'),
   },
     {
@@ -92,32 +100,37 @@ local cmds = {
     title = 'Warp to window above',
     mods = 'peace',
     key = 'up',
-    exec = send_message('window --warp north'),
+    flags = { 'no-chooser' },
+    exec = send_message('window --warp north', 'Warp to window above'),
   },
   {
     id = 'spaces.arrange.warp_south',
     title = 'Warp to window below',
     mods = 'peace',
     key = 'down',
-    exec = send_message('window --warp south'),
+    flags = { 'no-chooser' },
+    exec = send_message('window --warp south', 'Warp to window below'),
   },
   {
     id = 'spaces.arrange.warp_east',
     title = 'Warp to window right',
     mods = 'peace',
     key = 'right',
-    exec = send_message('window --warp east'),
+    flags = { 'no-chooser' },
+    exec = send_message('window --warp east', 'Warp to window right'),
   },
   {
     id = 'spaces.arrange.warp_west',
     title = 'Warp to window left',
     mods = 'peace',
     key = 'left',
-    exec = send_message('window --warp west'),
+    flags = { 'no-chooser' },
+    exec = send_message('window --warp west', 'Warp to window left'),
   },
 }
 
 
 return {
-  cmds = cmds
+  module = "Arrange Windows",
+  cmds = cmds,
 }

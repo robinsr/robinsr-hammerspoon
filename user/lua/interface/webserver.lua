@@ -15,39 +15,34 @@ local mime     = require 'user.lua.util.mimetypes'
 
 local log = logr.new('webserver', 'info')
 
-local function dirty_page(content)
-  return strings.fmt([[<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KittySupreme Error</title>
-</head>
-<body>
-  <div><pre>%s</pre></div>
-</body>
-</html>]], content)
-end
 
+---@alias ks.web.http.verb     'GET'|'POST'|'PUT'|'DELETE'
+---@alias ks.web.http.headers  { [string]: string }
+---@alias ks.web.http.body     string
+---@alias ks.web.http.code     integer
+---@alias ks.web.http.port     integer
 
----@alias KS.Web.RouteHandler fun(req: Request, res: Response)
+---@alias ks.path.matcher fun(test:string):table
 
----@alias KS.PathMatcher fun(test:string):table
+---@class ks.web.route.config
+---@field pattern    string
+---@field match      ks.path.matcher
+---@field handle     ks.web.route.handler
 
----@class KS.Web.RouteConfig
----@field pattern string
----@field match KS.PathMatcher
----@field handle KS.Web.RouteHandler
+---@alias ks.web.route.handler fun(req: Request, res: Response)
 
----@alias KS.Web.RenderFn fun(viewname: string, viewmodel: table): string
+---@alias ks.web.renderfn fun(viewname: string, viewmodel: table): string
 
+---@alias ks.web.handler fun(method:ks.web.http.verb, path:string, headers:ks.web.http.headers, body:string): ks.web.http.body, ks.web.http.code, ks.web.http.headers
 
----@class KS.Web.Server
----@field props table
----@field listeners { [integer]: any }
+---@alias ks.web.routetable { [ks.web.http.verb]: ks.web.route.config[] }
+
+---@class ks.web.server
+---@field props      table
+---@field listeners  { [ks.web.http.port]: hs.httpserver }
 ---@field middleware { string: any }
----@field routes { [string]: KS.Web.RouteConfig[] }
----@field renderer KS.Web.RenderFn
+---@field routes     ks.web.routetable
+---@field renderer   ks.web.renderfn
 
 
 
@@ -75,6 +70,28 @@ local function default_model(method, path, headers, body)
 end
 
 
+--
+--
+--
+local function dirty_page(content)
+  return strings.fmt([[<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KittySupreme Error</title>
+</head>
+<body>
+  <div><pre>%s</pre></div>
+</body>
+</html>]], content)
+end
+
+
+
+--
+--
+--
 ---@param pattern string
 ---@return fun(test:string):boolean
 local function get_matcher(pattern)
@@ -106,7 +123,8 @@ end
 
 
 --
---
+-- The req object represents an incoming HTTP request and has properties for the
+-- request query string, parameters, body, HTTP headers, and so on.
 --
 ---@class Request
 local Request = {}
@@ -133,7 +151,9 @@ end
 
 
 --
---
+-- The res object represents the HTTP response that the server sends when it
+-- gets an HTTP request and has methods for settings response status, headers,
+-- contents (file content, renderable view), and so on.
 --
 ---@class Response
 local Response = {}
@@ -199,12 +219,12 @@ end
 
 
 
----@class KS.Web.Server
-local webserver = {}
+---@class ks.web.server
+local Webs = {}
 
-local webserver_meta = {
+local WebsMeta = {
   __index = function(ws, arg)
-    return webserver[arg]
+    return Webs[arg]
   end
 }
 
@@ -212,20 +232,18 @@ local webserver_meta = {
 --
 -- Creates a new webserver app
 --
----@return KS.Web.Server
-function webserver:new()
+---@return ks.web.server
+function Webs:new()
 
-  ---@class KS.Web.Server
-  local this = self == webserver and {} or self
+  ---@class ks.web.server
+  local this = self == Webs and {} or self
 
   this.props = {
     server_name = 'Hammerspoon Lua (KittySupreme)',
   }
 
   this.listeners = {}
-  
   this.middleware = {}
-  
   this.routes = {
     GET = {},
     POST = {},
@@ -235,7 +253,7 @@ function webserver:new()
     return "NO RENDER SET"
   end
 
-  return setmetatable(this, webserver_meta)
+  return setmetatable(this, WebsMeta)
 end
 
 
@@ -243,8 +261,8 @@ end
 -- Sets the rendering engine callback
 --
 ---@param ext string
----@param render KS.Web.RenderFn
-function webserver:engine(ext, render)
+---@param render ks.web.renderfn
+function Webs:engine(ext, render)
   self.renderer = render
   return self
 end
@@ -253,10 +271,10 @@ end
 
 ---@private
 ---@param pattern string
----@param handler KS.Web.RouteHandler
----@return KS.Web.RouteConfig
-function webserver:create_handler(pattern, handler)
-  ---@type KS.Web.RouteConfig
+---@param handler ks.web.route.handler
+---@return ks.web.route.config
+function Webs:create_handler(pattern, handler)
+  ---@type ks.web.route.config
   local new_route = {
     match = get_matcher(pattern), 
     pattern = pattern,
@@ -271,8 +289,8 @@ end
 -- Adds a GET route handler
 --
 ---@param pattern string
----@param handler KS.Web.RouteHandler
-function webserver:get(pattern, handler)
+---@param handler ks.web.route.handler
+function Webs:get(pattern, handler)
   table.insert(self.routes.GET, self:create_handler(pattern, handler))
   return self
 end
@@ -282,8 +300,8 @@ end
 -- Adds a POST route handler
 --
 ---@param pattern string
----@param handler KS.Web.RouteHandler
-function webserver:post(pattern, handler)
+---@param handler ks.web.route.handler
+function Webs:post(pattern, handler)
   table.insert(self.routes.POST, self:create_handler(pattern, handler))
   return self
 end
@@ -293,8 +311,8 @@ end
 -- Adds a middleware handler
 --
 ---@param pattern string
----@param handler KS.Web.RouteHandler
-function webserver:use(pattern, handler)
+---@param handler ks.web.route.handler
+function Webs:use(pattern, handler)
   table.insert(self.middleware, self:create_handler(pattern, handler))
 end
 
@@ -303,7 +321,7 @@ end
 -- TODO
 -- Sets and endables static file handling
 --
-function webserver:static(dirname)
+function Webs:static(dirname)
   local files = fs.listdir(dirname)
 
   ---@param req Request
@@ -315,12 +333,12 @@ end
 
 
 --
+-- Creates a new handler function that can receive and respond to HTTP requests
 --
---
+---@private
 ---@param port integer
-function webserver:listen(port)
-  params.assert.number(port, 1)
-
+---@return ks.web.handler
+function Webs:create_handler_chain(port)
   local serverlog = logr.new(('web[%d]'):format(port), 'info')
 
   local notfound = function(url)
@@ -351,14 +369,14 @@ function webserver:listen(port)
     local mids = lists(self.middleware):forEach(function(mid) mid.handle(req, res) end)
 
     local route_match = lists(self.routes[req.method]):first(function(r)
-      ---@cast r KS.Web.RouteConfig
+      ---@cast r ks.web.route.config
       return types.is.truthy(r.match(req.url))
     end)
     
     if route_match == nil then
       res:response(404, notfound(req.url), mime.html)
     else
-      ---@cast route_match KS.Web.RouteConfig
+      ---@cast route_match ks.web.route.config
 
       log.df('Matched route: %s', hs.inspect(route_match))
 
@@ -396,37 +414,48 @@ function webserver:listen(port)
     return res.body, res.status, res.headers
   end
 
+  ---@type ks.web.handler
+  ---@diagnostic disable-next-line redundant-parameter
+  local handler_chain = compose(send, web_handler, accept)
 
+  return handler_chain
+end
+
+
+--
+--
+--
+---@param port integer
+---@return hs.httpserver
+function Webs:getListener(port)
+  params.assert.number(port, 1)
+  
+  if self.listeners[port] then
+    return self.listeners[port]
+  end
+
+  error(('No listener on port %d'):format(port))
+end
+
+
+--
+--
+--
+---@param port integer
+---@return hs.httpserver
+function Webs:listen(port)
+  params.assert.number(port, 1)
+  
   if self.listeners[port] == nil then
-    local new_server = hs.httpserver.new(false, false)
+    local new_server = hs.httpserver.new(false, false) --[[@as hs.httpserver]]
 
     if new_server == nil then
       error('Failed to create hs.httpserver instance')
     end
 
-    new_server
-      :setInterface('localhost')
-      :setPort(port)
-
-      -- :getInterface()
-      -- :getName()
-      -- :getPort()
-      -- :maxBodySize()
-      -- :send()
-      -- :setCallback()
-      -- :setInterface()
-      -- :setName()
-      -- :setPassword()
-      -- :setPort()
-      -- :start()
-      -- :stop()
-      -- :websocket()
-
-
-    ---@diagnostic disable-next-line redundant-parameter
-    local handler_chain = compose(send, web_handler, accept)
-
-    new_server:setCallback(handler_chain)
+    new_server:setInterface('localhost')
+    new_server:setPort(port)
+    new_server:setCallback(self:create_handler_chain(port))
 
     self.listeners[port] = new_server
   end
@@ -435,4 +464,24 @@ function webserver:listen(port)
 end
 
 
-return setmetatable({}, webserver_meta) --[[@as KS.Web.Server]]
+return setmetatable({}, WebsMeta) --[[@as ks.web.server]]
+
+--[[
+
+hs.httpserver methods:
+
+:getInterface()
+:getName()
+:getPort()
+:maxBodySize()
+:send()
+:setCallback()
+:setInterface()
+:setName()
+:setPassword()
+:setPort()
+:start()
+:stop()
+:websocket()
+
+]]

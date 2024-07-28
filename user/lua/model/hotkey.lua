@@ -27,7 +27,8 @@ end
 ---@param key string
 ---@return string
 local function get_key_symbol(key)
-  return icons.keys:has(key) and icons.keys:get(key) or icons.replace
+  -- return icons.keys:has(key) and icons.keys:get(key) or icons.replace
+  return icons.keys:has(key) and icons.keys:get(key) or key
 end
 
 
@@ -70,16 +71,21 @@ local combo_presets = tables{
 ---@field symbols string[]
 ---@field listener hs.hotkey|nil
 
+---@class ks.keys.hotkey.static
+---@field presets ks.keys.presets
+
 
 ---@class ks.keys.hotkey
 local Hotkey = {}
+
+Hotkey.presets = combo_presets 
 
 
 --
 -- Returns a Hotkey configuration
 --
----@param mods ks.keys.modifiers The shortcut's modifier keys
----@param key ks.keys.keycode The shortcuts non-modifier key
+---@param mods ks.keys.modifiers        The shortcut's modifier keys
+---@param key  string|ks.keys.keycode   The shortcuts non-modifier key
 ---@return ks.keys.hotkey
 function Hotkey:new(mods, key)
 
@@ -110,10 +116,8 @@ function Hotkey:new(mods, key)
     error('mods is neither a list of mod keynames or a preset combo')
   end
 
-  local key_symbols = lists(this.mods):map(get_key_symbol)
-
-  this.symbols = key_symbols:values()
-
+  this.symbols = lists(this.mods):map(get_key_symbol):values()
+  this.label   = lists(this.mods):map(get_key_symbol):push(this.key):join(' ')
 
   return setmetatable(this, { __index = Hotkey }) --[[@as ks.keys.hotkey]]
 end
@@ -154,7 +158,7 @@ end
 --
 ---@param desc string
 function Hotkey:setDescription(desc)
-  self.label = ('%s: %s'):format(lists(self.mods):map(get_key_symbol):join(' '), desc)
+  self.label = ('%s: %s'):format(self.label, desc)
   return self
 end
 

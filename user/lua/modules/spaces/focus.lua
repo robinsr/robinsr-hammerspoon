@@ -11,6 +11,7 @@ YabaiCmds.cmds = {
     title = 'Focus window above',
     mods = 'lil',
     key = 'up',
+    flags = { 'no-alert' },
     exec = send_message('window --focus north'),
   },
   {
@@ -18,6 +19,7 @@ YabaiCmds.cmds = {
     title = 'Focus window below',
     mods = 'lil',
     key = 'down',
+    flags = { 'no-alert' },
     exec = send_message('window --focus south'),
   },
   {
@@ -25,6 +27,7 @@ YabaiCmds.cmds = {
     title = 'Focus window right',
     mods = 'lil',
     key = 'right',
+    flags = { 'no-alert' },
     exec = send_message('window --focus east'),
   },
   {
@@ -32,6 +35,7 @@ YabaiCmds.cmds = {
     title = 'Focus window left',
     mods = 'lil',
     key = 'left',
+    flags = { 'no-alert' },
     exec = send_message('window --focus west'),
   },
   {
@@ -39,6 +43,7 @@ YabaiCmds.cmds = {
     title = 'Go to next space (right)',
     mods = 'ctrl',
     key = 'right',
+    flags = { 'no-alert' },
     exec = send_message('space mouse --focus next'),
   },
   {
@@ -46,6 +51,7 @@ YabaiCmds.cmds = {
     title = 'Go to previous space (left)',
     mods = 'ctrl',
     key = 'left',
+    flags = { 'no-alert' },
     exec = send_message('space mouse --focus prev'),
   },
   {
@@ -53,6 +59,7 @@ YabaiCmds.cmds = {
     title = 'Go to next display (right)',
     mods = 'ctrl',
     key = '[',
+    flags = { 'no-alert' },
     exec = send_message('display --focus west'),
   },
   {
@@ -60,6 +67,7 @@ YabaiCmds.cmds = {
     title = 'Go to previous display (left)',
     mods = 'ctrl',
     key = ']',
+    flags = { 'no-alert' },
     exec = send_message('display --focus east'),
   },
   

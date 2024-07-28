@@ -1,6 +1,7 @@
 
 
 return {
+  module = "MacOS Utils",
   cmds = {
     {
       id = 'system.finder.refresh',
@@ -8,9 +9,6 @@ return {
       icon = 'info',
       key = 'end',
       mods = 'btms',
-      menukey = nil,
-      url = nil,
-      setup = function(cmd) end,
       exec = function(cmd, ctx, params)
         local ok, result, err = hs.osascript.applescript('tell application "Finder" to tell front window to update every item')
 

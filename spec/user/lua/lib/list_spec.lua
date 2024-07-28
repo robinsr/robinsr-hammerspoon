@@ -103,7 +103,7 @@ describe("user.lua.lib.list", function()
 
   describe('List methods', function()
 
-    describe("List#tostring", function()
+    describe("List.tostring", function()
       it("should return string version of list (for tostring operation)", function()
         local list = lists.new({ "z", "y", "x" })
 
@@ -120,7 +120,7 @@ describe("user.lua.lib.list", function()
       end)
     end)
 
-    describe("List#at", function()
+    describe("List.at", function()
       local list_at = lists(alpha(10))
 
       it("should return item at index", function()
@@ -145,7 +145,7 @@ describe("user.lua.lib.list", function()
       end)
     end)
 
-    describe("List#forEach", function()
+    describe("List.forEach", function()
       local result = ""
 
       local eachfn = spy.new(function(item)
@@ -176,7 +176,7 @@ describe("user.lua.lib.list", function()
       end)
     end)
 
-    describe("List#filter", function()
+    describe("List.filter", function()
       local filterfn = spy.new(function(item, i)
         return item.amt % 2 == 0
       end)
@@ -213,7 +213,7 @@ describe("user.lua.lib.list", function()
       end)
     end)
 
-    describe("List#map", function()
+    describe("List.map", function()
       local mapfn = spy.new(function(item, i)
         return { amt = item.amt * 10 }
       end)
@@ -254,7 +254,7 @@ describe("user.lua.lib.list", function()
       end)
     end)
 
-    describe("List#flatten", function()
+    describe("List.flatten", function()
       it("should flatten a 2d list", function()
         local ls = lists({
           { { item = '1' }, { item = '2' } },
@@ -305,6 +305,84 @@ describe("user.lua.lib.list", function()
         assert.are.same("baz", flatls[3])
       end)
     end)
+
+    describe("List.groupBy", function()
+      it("should categorize items using classifier function", function()
+        ---@class TestPerson
+        ---@field name string
+
+        local people = lists({
+          { name = 'Adam' },
+          { name = 'Beth' },
+          { name = 'Charlie' },
+          { name = 'Dylan' },
+          { name = 'Bob' },
+          { name = 'Amy' },
+        })
+
+        ---@type ClassifierFn<TestPerson, string>
+        local classifier = function(item) 
+          return string.sub(item.name, 1, 1)
+        end
+
+        local firstLetter = people:groupBy(classifier)
+
+        same({ { name = 'Adam' }, { name = 'Amy' } }, firstLetter['A'])
+        same({ { name = 'Beth' }, { name = 'Bob' } }, firstLetter['B'])
+        same({ { name = 'Charlie' } }, firstLetter['C'])
+        same({ { name = 'Dylan' } }, firstLetter['D'])
+      end)
+
+      it("should categorize items using a property of item", function()
+        local fruits = lists({
+          { price = 1, name = 'Apple' },
+          { price = 2, name = 'Banana' },
+          { price = 1, name = 'Grapes' },
+          { price = 6, name = 'Mango' },
+          { price = 7, name = 'Orange' },
+          { price = 6, name = 'Kiwi' },
+        })
+
+        local fruitByPrice = fruits:groupBy('price')
+
+        same({ { price = 1, name = 'Apple' }, { price = 1, name = 'Grapes' } }, fruitByPrice[1])
+        same({ { price = 2, name = 'Banana' } }, fruitByPrice[2])
+        same({ { price = 6, name = 'Mango' }, { price = 6, name = 'Kiwi' } }, fruitByPrice[6])
+        same({ { price = 7, name = 'Orange' } }, fruitByPrice[7])
+      end)
+
+      it("should categorize items by calling a function on item", function()
+        
+        ---@class TestFruit
+        ---@field name string
+        ---@field price number
+        local Fruit = {}
+
+        function Fruit:new(name, price)
+          return setmetatable({ name = name, price = price }, { __index = Fruit })
+        end
+
+        function Fruit:getPrice(multiplier)
+          return self.price * multiplier
+        end
+
+        local tFruitA = Fruit:new('Apple', 1)
+        local tFruitB = Fruit:new('Banana', 2)
+        local tFruitG = Fruit:new('Grapes', 1)
+        local tFruitM = Fruit:new('Mango', 6)
+        local tFruitO = Fruit:new('Orange', 7)
+        local tFruitK = Fruit:new('Kiwi', 6)
+
+        local fruits = lists({ tFruitA, tFruitB, tFruitG, tFruitM, tFruitO, tFruitK })
+
+        local fruitByPrice = fruits:groupBy('getPrice', 4)
+
+        same({ tFruitA, tFruitG }, fruitByPrice[4])
+        same({ tFruitB }, fruitByPrice[8])
+        same({ tFruitM, tFruitK }, fruitByPrice[24])
+        same({ tFruitO }, fruitByPrice[28])
+      end)
+    end)
   end)
 
   describe("Sub-classing List", function()
@@ -342,18 +420,9 @@ describe("user.lua.lib.list", function()
 
         local sublist = SpecialList:new({ item1, item2 })
 
-        testutil.dump(sublist)
-
         same({ item1, item2 }, sublist:values())
         same('boom! bang!', sublist:dazzle_items())
       end)
-
-      -- TODO
-      -- describe("(2) using setmetatable", function()
-      --   it("", function()
-          
-      --   end)
-      -- end)
     end)
   end)
 end)

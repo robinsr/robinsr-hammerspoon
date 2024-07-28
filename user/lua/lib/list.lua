@@ -1,6 +1,37 @@
 local pretty   = require 'pl.pretty'
+local params   = require 'user.lua.lib.params'
 local proto    = require 'user.lua.lib.proto'
 local types    = require 'user.lua.lib.typecheck'
+
+
+---@class ClassifiedList
+---@field store table
+local ClassifiedList = {}
+
+
+---@return ClassifiedList
+function ClassifiedList:new()
+  ---@class ClassifiedList
+  local this = {
+    store = {}
+  }
+  return setmetatable(this, { __index = ClassifiedList })
+end
+
+function ClassifiedList:add(key, item)
+  params.assert.notNil(key, 1)
+  params.assert.notNil(item, 2)
+
+  if self.store[key] == nil then
+    self.store[key] = { item }
+  else
+    table.insert(self.store[key], item)
+  end
+end
+
+function ClassifiedList:value()
+  return self.store
+end
 
 
 
@@ -8,10 +39,7 @@ local types    = require 'user.lua.lib.typecheck'
 ---@field items any[]
 ---@operator call:List
 local List = {}
-
-
 local ListMeta = {}
-
 
 ListMeta.__index = function(list, arg)
   if types.isNum(arg) then
@@ -22,14 +50,13 @@ ListMeta.__index = function(list, arg)
 end
 
 
-
 ---@return List
 local function create(ctx, init)
   if ListMeta.ident(ctx) then
     error('You meant to call this as a function, not a method')
   end
 
-  local o = { items = {} }
+  local this = { items = {} }
   
   if types.isTable(init) then
     if init.__index == List then
@@ -37,13 +64,13 @@ local function create(ctx, init)
     end
 
     if types.isTable(init.items) then
-      o = { items = init.items }
+      this = { items = init.items }
     end
 
-    o = { items = init }
+    this = { items = init }
   end
 
-  return setmetatable(o, ListMeta)
+  return setmetatable(this, ListMeta)
 end
 
 ListMeta.__call = function(list, init) return create({}, init) end
@@ -341,34 +368,41 @@ end
 --
 -- Returns the list items flattened one degree
 --
----@param fn string|CategoryFn - A string which is a key on every item in the list, or a function to return a string key
----@param ... any - if `fn` is a function property of i, these args are passed to `fn` 
----@return table
-function List:groupBy(fn, ...)
-  local org = {}
+---@generic T
+---@generic G
+---@param classifier string|ClassifierFn<T,G> - A string which is a key on every item in the list, or a function to return a string key
+---@param ... any                             - if `classifier` is a function property of i, these args are passed to `fn` 
+---@return { [G]: T[] }
+function List:groupBy(classifier, ...)
+  local cls_args = {...}
 
-  for i, v in ipairs(self.items) do
-
-    local key
-
-    if type(fn) == 'function' then
-      key = fn(v, i)
-    elseif type(v[fn]) == 'function' then
-      key = v[fn](v, table.unpack({...}))
-    else
-      key = v[fn]
+  local classifyItem = function(item, index)
+    if types.isFunc(classifier) then
+      return classifier(item, index)
     end
 
+    if types.isFunc(item[classifier]) then
+      return item[classifier](item, table.unpack(cls_args))
+    end
+
+    if types.notNil(item[classifier]) then
+      return item[classifier]
+    end
+
+    return ''
+  end
+
+  local sorted = ClassifiedList:new()
+
+  for i, item in ipairs(self.items) do
+    local key = classifyItem(item, i)
+
     if key ~= nil then
-      if org[key] == nil then
-        org[key] = { v }
-      else
-        table.insert(org[key], v)
-      end
+      sorted:add(key, item)
     end
   end
 
-  return org
+  return sorted:value()
 end
 
 

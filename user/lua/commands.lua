@@ -6,6 +6,7 @@ local fs      = require 'user.lua.lib.fs'
 local funcs   = require 'user.lua.lib.func'
 local paths   = require 'user.lua.lib.path'
 local proto   = require 'user.lua.lib.proto'
+local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local rdir    = require 'user.lua.ui.resource-dir'
@@ -15,7 +16,7 @@ local logr    = require 'user.lua.util.logger'
 local log = logr.new('CommandList', 'info')
 
 
----@type ks.command[]
+---@type ks.command.config[]
 local command_list = {
   {
     id = 'ks.evt.onLoad',
@@ -33,6 +34,7 @@ local command_list = {
     icon = "code",
     key = "I",
     mods = "btms",
+    flags = { 'no-alert' },
     exec = function()
       hs.toggleConsole()
       -- hs.openConsole(true)
@@ -42,6 +44,7 @@ local command_list = {
     id = 'ks.commands.toggle_darkmode',
     title = "Toggle dark mode",
     icon = "@/resources/images/ios-day-and-night.template.png",
+    flags = { 'no-alert' },
     exec = function()
       console.setDarkMode(desk.darkMode())
     end,
@@ -52,6 +55,7 @@ local command_list = {
     icon = "reload",
     key = "W",
     mods = "btms",
+    flags = { 'no-alert' },
     exec = function(cmd)
       funcs.delay(0.75, hs.reload)
       return cmd.hotkey.label
@@ -63,6 +67,7 @@ local command_list = {
     icon = "reload",
     key = "X",
     mods = "btms",
+    flags = { 'no-alert' },
     exec = function(cmd)
       funcs.delay(0.75, hs.relaunch)
       return cmd.hotkey.label
@@ -77,18 +82,44 @@ local EVT_FILTER = '!*.(evt|event|events).*'
 local CommandList = proto.setProtoOf({}, lists)
 
 
-
 --
 --
 --
----@return ks.commandlist
-function CommandList:new()
+---@param commands? ks.command.config[] Optional default set of commands
+---@return          ks.commandlist
+function CommandList:new(commands)
   ---@class ks.commandlist
   local this = {
-    items = {}
+    items = commands or {}
   }
 
-  return proto.setProtoOf({}, CommandList)
+  return proto.setProtoOf(this, CommandList)
+end
+
+
+--
+-- 
+--
+---@return { [string]: ks.command[] }
+function CommandList:getHotkeyGroups()
+  ---@param cmd ks.command
+  local notHidden = function(cmd) return cmd:hasntFlag('hidden') end
+
+  ---@param cmd ks.command
+  local hasHotkey = function(cmd) return cmd:hasHotkey() end
+
+  ---@type ClassifierFn<ks.command, string>
+  local getCmdGroup = function(cmd, i)
+    local key = (cmd.module or '')
+      :gsub('user%.lua%.', '')
+      :gsub('modules%.', '')
+      :gsub('%.', ' → ')
+
+      return not types.isEmpty(key) and key or 'Init'
+  end
+      
+
+  return self:filter(notHidden):filter(hasHotkey):groupBy(getCmdGroup)
 end
 
 
@@ -101,7 +132,7 @@ function CommandList:scanForConfigs()
   local rootdir = paths.cwd()
   local userpath = lists({ 'user', 'lua' })
 
-  log.f("Scanning for command configurations in [%s/*s]", rootdir, userpath:join('/'))
+  log.f("Scanning for command configurations in [%s/%s]", rootdir, userpath:join('/'))
 
   local mods = fs.loaddir(rootdir, userpath:join('.'))
 
@@ -111,10 +142,10 @@ function CommandList:scanForConfigs()
 
       -- Support setting command's `module` prop value at the module level
       -- (can also be set on the commands individually)
-      local modname = tables.has(exports, 'module') or module
+      local modname = exports.module or module
       
       for i, cmd in ipairs(exports.cmds) do
-        table.insert(commands, tables.merge({ module = module }, cmd))
+        table.insert(commands, tables.merge({ module = modname }, cmd))
       end
     end
   end

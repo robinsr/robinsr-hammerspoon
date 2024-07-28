@@ -1,5 +1,6 @@
 local alert  = require 'user.lua.interface.alert'
 local desk   = require 'user.lua.interface.desktop'
+local func   = require 'user.lua.lib.func'
 local tables = require 'user.lua.lib.table'
 local types  = require 'user.lua.lib.typecheck'
 local vm     = require 'user.lua.ui.webview.viewmodel'
@@ -55,6 +56,8 @@ end
 function Webview.close_all()
   if types.notNil(Webview.current) then
     Webview.current = Webview.current:delete(true, FADE_TIME)
+
+    func.delay(0.1, function() desk.getTopWindow():focus() end)
     return
   end
 end

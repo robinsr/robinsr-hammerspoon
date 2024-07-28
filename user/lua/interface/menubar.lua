@@ -15,19 +15,19 @@ local symbols = require 'user.lua.ui.symbols'
 
 
 ---@class HS.MenubarItem
----@field title string
----@field fn? fun(mods: table, thisItem: HS.MenubarItem)
----@field checked? boolean
----@field state? 'on'|'off'|'mixed'
----@field disabled? boolean
----@field menu? HS.MenubarItem[] 
----@field image? hs.image
----@field tooltip? string
----@field shortcut? string
----@field indent? integer
----@field onStateImage? hs.image
----@field offStateImage? hs.image
----@field mixedStateImage? hs.image
+---@field title               string
+---@field fn?                 fun(mods: table, thisItem: HS.MenubarItem)
+---@field checked?            boolean
+---@field state?              'on'|'off'|'mixed'
+---@field disabled?           boolean
+---@field menu?               HS.MenubarItem[] 
+---@field image?              hs.image
+---@field tooltip?            string
+---@field shortcut?           string
+---@field indent?             integer
+---@field onStateImage?       hs.image
+---@field offStateImage?      hs.image
+---@field mixedStateImage?    hs.image
 
 
 local log = require('user.lua.util.logger').new('menubar', 'info')
@@ -90,7 +90,7 @@ local function menu_section(sections, cmds)
     log.df("Mapping menubar section %s", section)
 
     return lists(cmds):map(function(cmd)
-        return section_glob(cmd.id) and cmd:as_menu_item() or false
+        return section_glob(cmd.id) and cmd:asMenuItem() or false
     end)
     :filter(types.is_not.False):values()
   end):flatten():values()

@@ -19,18 +19,18 @@ local log = logr.new('Command', 'info')
 
 
 ---@class ks.command.config
----@field id       string              - Unique string to identify command
----@field module?  string              - (optional) source module of the command
----@field title?   string              - (optional) A title for command
----@field desc?    string              - (optional) What commmand do?
----@field exec     ks.command.execfn   - A callback function for the command, optionally returning an alert string
----@field setup?   ks.command.setupfn  - (optional) A setup function, the return value passed to fn
----@field flags?   ks.command.flag[]   - (optional) List of command feature flags
----@field icon?    string|hs.image     - (optional) A icon for the command
----@field mods?    ks.keys.modifiers   - (optional) A mods group for the hotkey binding
----@field key?     ks.keys.keycode     - (optional) A key for the hotkey binding
----@field menukey? ks.keys.keycode     - (optional) A shortcut key for use in the KS menubar menu
----@field url?     string              - (optional) A hammerspoon url to bind to
+---@field id       string                   - Unique string to identify command
+---@field module?  string                   - (optional) source module of the command
+---@field title?   string                   - (optional) A title for command
+---@field desc?    string                   - (optional) What commmand do?
+---@field exec     ks.command.execfn        - A callback function for the command, optionally returning an alert string
+---@field setup?   ks.command.setupfn       - (optional) A setup function, the return value passed to fn
+---@field flags?   ks.command.flag[]        - (optional) List of command feature flags
+---@field icon?    string|hs.image          - (optional) A icon for the command
+---@field mods?    ks.keys.modifiers        - (optional) A mods group for the hotkey binding
+---@field key?     string|ks.keys.keycode   - (optional) A key for the hotkey binding
+---@field menukey? string|ks.keys.keycode   - (optional) A shortcut key for use in the KS menubar menu
+---@field url?     string                   - (optional) A hammerspoon url to bind to
 
 
 ---@class ks.command.context
@@ -39,7 +39,12 @@ local log = logr.new('Command', 'info')
 ---@field activeWindow   hs.window|nil       - Currently active window ID
 
 
----@alias ks.command.flag 'invalid_choice' | 'test_flag' | 'no-chooser'
+---@alias ks.command.flag 
+---|'test_flag'      Test purposes
+---|'invalid_choice' Calls the "invalid" handler in command chooser
+---|'hidden'         Hides the command from user view
+---|'no-chooser'     Hides the command from appearing in the command chooser
+---|'no-alert'       Disables the default alert generated when commands hotkey is invoked
 
 
 ---@alias ks.command.execfn fun(cmd: ks.command, ctx: ks.command.context, params: table): string|nil
@@ -162,10 +167,22 @@ end
 
 
 --
----@param flag string
+-- Returns true if this command has been flagged with `flag` 
+--
+---@param flag ks.command.flag
 ---@return boolean
-function Command:has_flag(flag)
+function Command:hasFlag(flag)
   return lists(self.flags or {}):includes(flag or 'NO_FLAG')
+end
+
+
+--
+-- Returns true if this command has NOT been flagged with `flag` 
+--
+---@param flag ks.command.flag
+---@return boolean
+function Command:hasntFlag(flag)
+  return not self:hasFlag(flag)
 end
 
 
@@ -196,9 +213,9 @@ end
 -- Returns a table that can be used in Hammerspoon menus
 --
 ---@return HS.MenubarItem
-function Command:as_menu_item()
+function Command:asMenuItem()
   local title = self.title or self.id
-  local subtext = self.hotkey and self.hotkey.symbols or ''
+  local subtext = self.hotkey and lists(self.hotkey.symbols):join('') or ''
 
   ---@type HS.MenubarItem
   local menuitem = {
@@ -294,6 +311,7 @@ function Command:bindHotkey()
   if (self.hotkey ~= nil) then
     self.hotkey:setCallback(plfunc.bind(self.invoke, self, 'hotkey', {}))
     self.hotkey:setDescription(self.title)
+    self.hotkey:setAlert(not self:hasFlag('no-alert'))
 
     local hotkey = self.hotkey:enable()
 

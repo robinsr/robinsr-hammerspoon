@@ -35,7 +35,8 @@
 ---@alias PredicateFn fun(item: T, index: integer): boolean
 
 ---@generic T: any
----@alias CategoryFn fun(item: T, index: integer): string
+---@generic C: any
+---@alias ClassifierFn fun(item: T, index?: integer): C
 
 
 ---@generic I: any Input type

@@ -12,17 +12,13 @@ local log = logr.log('core.state', 'info')
 
 
 ---@class KittySupremeGlobal
----@field commands List
----@field boundkeys hs.hotkey[]
----@field urlhanders table[]
+---@field commands ks.commandlist
 ---@field menubar hs.menubar|nil
 ---@field services Services
 
 ---@type KittySupremeGlobal
 KittySupreme = {
-  commands = lists({}),
-  boundkeys = {},
-  urlhanders = {},
+  commands = {},
   menubar = nil,
   services = {
     yabai      = require('user.lua.adapters.yabai'):new(),

@@ -1,6 +1,6 @@
 local sh      = require 'user.lua.adapters.shell'
 local alert   = require 'user.lua.interface.alert'
-local option  = require 'user.lua.lib.optional'
+local Option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
 local webview = require 'user.lua.ui.webview'
 local logr    = require 'user.lua.util.logger'
@@ -14,6 +14,8 @@ local yabai = KittySupreme.services.yabai
 
 
 local YabaiCmds = {}
+
+YabaiCmds.module = "Yabai Commands"
 
 ---@type ks.command.config[]
 YabaiCmds.cmds = {
@@ -31,30 +33,29 @@ YabaiCmds.cmds = {
     icon = "@/resources/images/yabai-logo.png",
     title = "Manage app's windows",
     exec = function()
-      local active = hs.window.focusedWindow()
-      local app = option.ofNil(active:application()):orElse({ title = function() return 'idk' end })
-      local appName = app:title()
+      return Option:ofNil(ctx.activeApp)
+        :map(function(app) return app:title() end)
+        :map(function(appName)
+          -- yabai:addRule({ app = appName, manage = 'off' })
 
-      return strings.fmt('Managing windows for app %s with yabai...', appName)
+          return strings.fmt('Managing windows for app %s with yabai...', appName)
+        end)
+        :orElse('No active app')
     end,
   },
   {
     id = 'yabai.manage.remove',
     icon = "@/resources/images/yabai-logo.png",
     title = "Ignore app's windows",
-    exec = function()
-      local active = hs.window.focusedWindow()
-      local app = option.ofNil(active:application()):orElse({ title = function() return 'idk' end })
-      local appName = app:title()
-
-      local new_rule = {
-        app = appName,
-        manage = 'off',
-      }
-
-      yabai:addRule(new_rule)
-
-      return strings.fmt('Ignore windows for app %s with yabai...', appName)
+    exec = function(cmd, ctx)
+      return Option:ofNil(ctx.activeApp)
+        :map(function(app) return app:title() end)
+        :map(function(appName)
+          -- yabai:removeRule()
+          -- yabai:addRule({ app = appName, manage = 'off' })
+          return strings.fmt('Ignore windows for app %s with yabai...', appName)
+        end)
+        :orElse('No active app')
     end,
   },
   {
