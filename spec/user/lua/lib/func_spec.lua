@@ -54,7 +54,7 @@ insulate("user.lua.lib.func", function()
       assert.same(1, memod_fn())
       assert.same(1, memod_fn())
 
-      system_sleep(0.6)
+      system_sleep(1)
 
       assert.same(2, memod_fn())
       assert.same(2, memod_fn())

@@ -1,0 +1,11 @@
+return {
+  _all = {
+    ["exclude-tags"] = {"wip"}
+  },
+  default = {
+    ROOT = {"spec/user/lua"},
+  },
+  ["unit-lib"] = {
+    ROOT = {"spec/user/lua/lib"},
+  }
+}

@@ -20,26 +20,28 @@ local function verify_methods(tabl)
   end
 end
 
-local function verify_list(ls, items)
+local function verify_list(ls, expect)
   verify_methods(ls)
 
   group('should allow item access via index', function()
-    for i,v in ipairs(items) do
-      same(v, ls[i], msgf('expected item at index [%d] to be %q', i, tostring(v)))
+    for i,expected in ipairs(expect) do
+      same(expected, ls[i], msgf('expected item at index [%d] to be %q', i, tostring(expected)))
     end
   end)
 
   group('should allow item access via `at()`', function()
-    for i,v in ipairs(items) do
-      same(v, ls:at(i), msgf('expected item at index [%d] to be %q', i, tostring(v)))
+    for i,expected in ipairs(expect) do
+      same(expected, ls:at(i), msgf('expected item at index [%d] to be %q', i, tostring(expected)))
     end
   end)
 end
 
 
-describe("user.lua.lib.list", function()
+insulate("user.lua.lib.list", function()
+
 
   local lists = require('user.lua.lib.list')
+  _G.print = testutil.dump
 
   describe("Lua-LSP Type", function()
     it("can understand type annotations", function()
@@ -65,8 +67,8 @@ describe("user.lua.lib.list", function()
     end)
   end)
 
-  describe("Create with", function()
-    describe("__call", function()
+  describe("List creation", function()
+    describe("call metamethod", function()
       it("should create a new list with nil", function()
         verify_list(lists(), {})
       end)
@@ -76,26 +78,42 @@ describe("user.lua.lib.list", function()
       end)
     end)
 
-    describe("new()", function()
+    describe("List.new", function()
       it("(called as function) should create a new list", function()
         verify_list(lists.new({ "z", "y", "x" }), { "z", "y", "x" })
       end)
 
       it("(called as method) should error", function()
         assert.has.error(function()
-          verify_list(lists:new({ "z", "y", "x" }), { "z", "y", "x" })
+          lists:new({ "z", "y", "x" })
         end)
       end)
     end)
 
-    describe("pack()", function()
+    describe("List.pack", function()
       it("(called as function) should pack args into list instance", function()
         verify_list(lists.pack("z", "y", "x"), { "z", "y", "x" })
       end)
 
       it("(called as method) should error", function()
         assert.has.error(function()
-          verify_list(lists:pack("z", "y", "x"), { "z", "y", "x" })
+          lists:pack("z", "y", "x")
+        end)
+      end)
+    end)
+
+    describe("List.collect #wip", function()
+      local alist = testutil.alphalist(6)
+      local iter, tabl, ind = ipairs(alist)
+      testutil.dump(ipairs(alist))
+
+      it("should collection items from an iterator into list instance", function()
+        verify_list(lists.collect(ipairs(alist)), alist)
+      end)
+
+      it("(called as method) should error", function()
+        assert.has.error(function()
+          lists.collect(ipairs(alist))
         end)
       end)
     end)
@@ -107,7 +125,7 @@ describe("user.lua.lib.list", function()
       it("should return string version of list (for tostring operation)", function()
         local list = lists.new({ "z", "y", "x" })
 
-        eq(pretty.write(list:values()), tostring(list))
+        eq(pretty(list:values()), tostring(list))
       end)
     end)
 
@@ -424,5 +442,5 @@ describe("user.lua.lib.list", function()
         same('boom! bang!', sublist:dazzle_items())
       end)
     end)
-  end)
+end)
 end)

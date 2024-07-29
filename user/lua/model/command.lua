@@ -2,6 +2,7 @@ local plfunc  = require 'pl.func'
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
 local lists   = require 'user.lua.lib.list'
+local Option  = require 'user.lua.lib.optional'
 local paths   = require 'user.lua.lib.path'
 local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
@@ -76,7 +77,7 @@ local valid = {
 
 ---@class ks.command : ks.command.config
 ---@field context any
----@field hotkey? ks.keys.hotkey
+---@field hotkey? ks.hotkey
 local Command = {}
 
 
@@ -115,7 +116,7 @@ function Command:new(config)
     log.trace(context, "command setup error [%s]", config.id)
   end
 
-  if types.notNil(this.key) and types.isString(this.mods) then
+  if types.notNil(this.key) and types.notNil(this.mods) then
     this.hotkey = Hotkey:new(this.mods, this.key)
   end
 
@@ -215,7 +216,11 @@ end
 ---@return HS.MenubarItem
 function Command:asMenuItem()
   local title = self.title or self.id
-  local subtext = self.hotkey and lists(self.hotkey.symbols):join('') or ''
+  
+  local subtext = Option:ofNil(self.hotkey)
+    :map(function(hk) return hk:getLabel('keys') --[[@as string]] end)
+    :map(function(label) return ('  - (%s)'):format(label) end)
+    :orElse('')
 
   ---@type HS.MenubarItem
   local menuitem = {
@@ -278,7 +283,7 @@ end
 ---@deprecated
 ---@return string
 function Command:hotkeyLabel()
-  return self.hotkey.label
+  return self.hotkey:getLabel('keys')
 end
 
 
@@ -319,20 +324,9 @@ function Command:bindHotkey()
       error(('Could not create hotkey for command [%s]'):format(self.id))
     end
 
-    log.f("Command (%s) mapped to hotkey: %s", strings.padEnd(self.id, 20), self.hotkey.label)
+    log.f("Mapped hotkey (%s) to command [%s]", strings.padEnd(self.hotkey:getLabel('keys'), 12), self.id)
   end
 end
 
-
-
---
--- Returns the command as a data-table row 
--- 
--- See: https://stevedonovan.github.io/Penlight/api/libraries/pl.data.html
---
----@return table
-function Command:asdatarow()
-  return { self.id, self.title, self.flags, self.hotkey and self.hotkey.mods, self.hotkey and self.hotkey.key, self.url }
-end
 
 return Command

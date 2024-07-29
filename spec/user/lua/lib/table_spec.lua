@@ -1,6 +1,5 @@
 ---@diagnostic disable: redundant-parameter
-local assert = require 'luassert'
-local pretty = require 'pl.pretty'
+local testutil = require 'spec.util'
 
 
 local function indexOf(arr, item)
@@ -17,41 +16,38 @@ end
 describe('user.lua.lib.table', function()
   local Tabl = require('user.lua.lib.table')
 
-  describe('static methods', function()
-    it("Tabl.keys(t)", function()
+  describe("Table.keys", function()
 
-      local coolt = { 
-        foo = 'bar',
-        baz = 'qux'
-      }
+    local test_table = { 
+      foo = 'bar',
+      baz = 'qux'
+    }
 
-      local coolkeys = Tabl.keys(coolt)
+    local expected_keys = { 'foo', 'baz' }
 
-      assert.equal(2, #coolkeys, 'There should be 2 keys in `coolt`')
-      assert.True(indexOf(coolkeys, 'foo') > 0, 'Could not find item `foo` in ' .. pretty.write(coolkeys))
-      assert.True(indexOf(coolkeys, 'baz') > 0, 'Could not find item `baz` in ' .. pretty.write(coolkeys))
+    local verify_keys = function(keylist)
+      assert.is_not.Nil(keylist)
+      assert.are.same(2, #keylist)
+      assert.is.True(indexOf(keylist, 'foo') > 0, 'Could not find item `foo` in ' .. testutil.pretty(keylist))
+      assert.is.True(indexOf(keylist, 'baz') > 0, 'Could not find item `baz` in ' .. testutil.pretty(keylist))
+    end
+
+    describe('(as function)', function()
+      it("returns a list of keys in the table", function()
+        verify_keys(Tabl.keys(test_table))
+      end)
+    end)
+
+    describe('(as method of Table)', function()
+      it("returns a list of keys in the table", function()
+        verify_keys(Tabl(test_table):keys())
+      end)
     end)
   end)
 
-  describe('instance methods', function()
-    it("t:keys()", function()
 
-      local Coolt = Tabl{ 
-        foo = 'bar',
-        baz = 'qux'
-      }
-
-      local coolkeys = Coolt:keys()
-
-      assert.equal(2, #coolkeys, 'There should be 2 keys in `coolt`')
-      assert.True(indexOf(coolkeys, 'foo') > 0, 'Could not find item `foo` in ' .. pretty.write(coolkeys))
-      assert.True(indexOf(coolkeys, 'baz') > 0, 'Could not find item `baz` in ' .. pretty.write(coolkeys))
-    end)
-  end)
-
-
-  describe("merged", function()
-    it("simple merge", function()
+  describe("Table.merge", function()
+    it("should merge top-level table properties into a single table", function()
 
       local ta = {
         variables = 'are'
@@ -67,7 +63,7 @@ describe('user.lua.lib.table', function()
       assert.are.same('cool', result.very)
     end)
 
-    it("depth merge", function()
+    it("should merge deep table properties into a single table", function()
       local tA = {
         foo = 'foo',
         bar = {
@@ -94,6 +90,28 @@ describe('user.lua.lib.table', function()
       assert.are.same('baz@tB', result.bar.baz)
       assert.are.same('only on tA', result.bar.tA_only)
       assert.are.same('only on tB', result.bar.tB_only)
+    end)
+  end)
+
+  describe("Table.entries", function()
+    it("should return an iterator of entires in table", function()
+      
+      local tabl = Tabl(testutil.ttable())
+
+      local eachfn = spy.new(function() end)
+
+      for k,v in tabl:entries() do
+        eachfn(testutil.msgf("{%s=%q}",k,v))
+      end
+
+      assert.spy(eachfn).called(5)
+
+      assert.spy(eachfn).called_with('{bar="rab"}')
+      assert.spy(eachfn).called_with('{quuz="zuuq"}')
+      assert.spy(eachfn).called_with('{foo="oof"}')
+      assert.spy(eachfn).called_with('{baz="zab"}')
+      assert.spy(eachfn).called_with('{quz="zuq"}')
+
     end)
   end)
 end)

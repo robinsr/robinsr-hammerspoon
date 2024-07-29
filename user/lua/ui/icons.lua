@@ -26,26 +26,10 @@ local static_icons = tables{
 }
 
 
----@type Table
-local key_symbols = tables{
-  cmd   = "⌘",
-  ctrl  = "⌃",
-  alt   = "⌥",
-  shift = "⇧",
-  right = '→',
-  left  = '←',
-  up    = '↑',
-  down  = '↓',
-  space = '␣',
+---@class ks.icons
+local Ico = {
+  static = static_icons,
+  replace = utf8.char(0xFFFD),
 }
-
-
-
----@module 'ui.icons'
-local Ico = {}
-Ico.static = static_icons
-Ico.keys = key_symbols
-Ico.replace = utf8.char(0xFFFD)
-
 
 return Ico

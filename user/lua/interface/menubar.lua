@@ -62,14 +62,14 @@ end
 
 --
 ---@param title string
----@param icon_name string
----@param menu_items HS.MenubarItem[]
+---@param items HS.MenubarItem[]
+---@param icon? string
 ---@return HS.MenubarItem
-function submenu_item(title, icon_name, menu_items)
+function submenu_item(title, items, icon)
   return {
     title = title,
-    menu = menu_items,
-    image = image.from_icon('term'),
+    menu = items,
+    image = image.from_icon(icon or 'term'),
   }
 end
 
@@ -90,14 +90,15 @@ local function menu_section(sections, cmds)
     log.df("Mapping menubar section %s", section)
 
     return lists(cmds):map(function(cmd)
-        return section_glob(cmd.id) and cmd:asMenuItem() or false
+      ---@cast cmd ks.command
+      return section_glob(cmd.id) and cmd:asMenuItem() or false
     end)
     :filter(types.is_not.False):values()
   end):flatten():values()
 end
 
 
----@param service Service
+---@param service ks.service
 ---@return string, string
 local function serviceMenuProps(service)
   if (service.pid) then
@@ -183,7 +184,7 @@ function MenuBar.primary_items()
   local commands = KittySupreme.commands:values()
   local services = tables.vals(KittySupreme.services)
 
-  local service_menu = submenu_item("Services", 'term', create_service_submenu(services))
+  local service_menu = submenu_item("Services", create_service_submenu(services), 'term')
 
 
   local menuitems = lists({})
@@ -200,12 +201,11 @@ function MenuBar.primary_items()
   return menuitems:values()
 end
 
+
 --
 -- Adds the main KS menu to the menubar
 --
-function MenuBar.install()
-
-  
+function MenuBar.install()  
   local getItems = function(keymods)
     log.f('KS menubar clicked with modifier keys: %s', hs.inspect(keymods))
 
@@ -227,31 +227,5 @@ function MenuBar.install()
 
   KittySupreme.menubar = ksmbar
 end
-
-
-
-MenuBar.cmds = {
-  {
-    id = 'ks.commands.show_context_menu',
-    title = 'Shows the context menu on global hotkey',
-    flags = { 'no-chooser' },
-    icon = 'info',
-    key = 'home',
-    mods = 'hyper',
-    setup = function(cmd) end,
-    exec = function(cmd, ctx, params)
-      local ctx_menu = hs.menubar.new(false, "kittysupreme-ctx")
-
-      if (ctx_menu == nil) then
-        error('Could not create context menu')
-      end
-
-      ctx_menu:setMenu(MenuBar.primary_items())
-      ctx_menu:popupMenu(desktop.mouse_position())
-    end,
-  },
-}
-
-
 
 return MenuBar

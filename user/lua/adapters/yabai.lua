@@ -1,14 +1,16 @@
-local apps        = require 'hs.application'
-local win         = require 'hs.window'
-local winf        = require 'hs.window.filter'
+-- local apps        = require 'hs.application'
+-- local win         = require 'hs.window'
+-- local winf        = require 'hs.window.filter'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
 local desktop     = require 'user.lua.interface.desktop'
 local sh          = require 'user.lua.adapters.shell'
 local system      = require 'user.lua.interface.system'
 local lists       = require 'user.lua.lib.list'
+local Option      = require 'user.lua.lib.optional'
 local paths       = require 'user.lua.lib.path'
 local params      = require 'user.lua.lib.params'
 local proto       = require 'user.lua.lib.proto'
+local regex       = require 'user.lua.lib.regex'
 local strings     = require 'user.lua.lib.string'
 local types       = require 'user.lua.lib.typecheck'
 local tables      = require 'user.lua.lib.table'
@@ -19,7 +21,6 @@ local stringio = require('pl.stringio')
 local qt = sh.quote
 
 local log = logr.new('Yabai', 'debug')
-
 
 
 --- TODO - where should custom yabai config live?
@@ -35,18 +36,6 @@ local my_yabai_rules = {
 ---@class Yabai.Config.Writer
 ---@field asCliArgs string[]
 ---@field asConfig type
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ---@class Yabai: LaunchAgent
@@ -98,11 +87,26 @@ function Yabai:onEnvChange(evt)
 end
 
 
-function Yabai:message(args, msg)
-  local args = { 'yabai', '-m', table.unpack(sh.split(args)) }
-  
-  return function(cmd, ctx)
-    local result = sh.result(args)
+--
+-- Runs `yabai -m` with supplied args
+--
+---@param ... any  args to use on each invoke of fn
+---@return ShellResult
+function Yabai.message(...)
+  return sh.result({ 'yabai', '-m', table.unpack({...}) })
+end
+
+
+--
+-- wef
+--
+---@generic R
+---@param args string  static args to use on each invoke of fn
+---@param msg? R       optional return object
+---@return fun(...: any): R
+function Yabai.createMessageFn(args, msg)
+  return function()
+    local result = Yabai.message(table.unpack(sh.split(args)))
     log.df('Yabai cmd "%s" exited with code %q', result.command, result.status or 'none')
     return msg
   end
@@ -150,7 +154,7 @@ end
 function Yabai:addRule(rule)
   local args = lists({ 'yabai', '-m', 'rule', '--add' })
 
-  args:push(sh.kv('app', strings.topattern(rule.app), '""'))
+  args:push(sh.kv('app', regex.topattern(rule.app), '""'))
   args:push(sh.kv('manage', rule.manage))
   
   local add_reuslt = sh.result(args:values())
@@ -246,6 +250,7 @@ function Yabai:scratchWindow(selector)
   end
 end
 
+
 --
 -- Adds a value to window.scratchpad for the given window
 -- thus removing it from normal management by Yabai
@@ -260,19 +265,23 @@ function Yabai:descratchWindow(selector)
 end
 
 
+
 function Yabai:floatActiveWindow()
   local rules = self:getRules()
 
   log.inspect{ 'Yabai Rules:', rules }
 
-  local active = desktop:activeWindow()
-  local title = active:title()
-  local id = active:id()
+  Option:ofNil(desktop:activeWindow())
+    :ifPresent(function(win)
+      ---@cast win hs.window
+      local title = win:title()
+      local id = win:id()
 
-  local label = strings.fmt('hsfloat-%s', title:gsub("%s", ""):lower())
+      local label = strings.fmt('hsfloat-%s', title:gsub("%s", ""):lower())
 
-  log.f('Active window: "%s" "%s" "%s";', id, title)
-  log.f('Created label: "%s"', label) 
+      log.f('Active window: "%s" "%s" "%s";', id, title)
+      log.f('Created label: "%s"', label) 
+  end)
 end
 
 --

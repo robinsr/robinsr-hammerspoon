@@ -51,7 +51,7 @@ local cmd = {
 }
 
 
----@class BrewService: Service
+---@class ks.service.brew: ks.service
 local BrewService = {}
 
 
@@ -62,10 +62,10 @@ function BrewService.list()
 end
 
 
----@return BrewService
+---@return ks.service.brew
 function BrewService:new(name)
 
-  ---@class BrewService
+  ---@class ks.service.brew
   local this = Service.new(self == BrewService and {} or self, name)
 
   local exec = sh.result({ 'brew', 'services', 'info', name, '--json' })

@@ -1,15 +1,14 @@
 local pltable = require 'pl.tablex'
 local plseq   = require 'pl.seq'
+local plmap   = require 'pl.Map'
 local types   = require 'user.lua.lib.typecheck'
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 
 
-
 ---@class Table
 ---@operator call:Table
 
----@alias ks.lib.table Table
 
 ---@class Table
 local Table = {}
@@ -17,6 +16,7 @@ local Table = {}
 local TablMeta = {}
 
 TablMeta.__index = Table
+
 
 --
 -- Returns a new table instance
@@ -49,8 +49,11 @@ end
 --
 -- Returns a interator of key/value pairs in table
 --
+---@generic K,V
+---@param tabl table<K,V>
+---@return fun():K,V
 function Table.entries(tabl)
-  return plseq.list(tabl)
+  return plmap(tabl):iter()
 end
 
 
@@ -170,12 +173,16 @@ end
 
 
 --
+-- Basically just nil checks the arguments
 --
---
+---@param tabl table
+---@param key string
+---@param value any
+---@return table
 function Table.set(tabl, key, value)
   params.assert.tabl(tabl, 1)
   params.assert.string(key, 2)
-  params.assert.any(types.notNil, value, 3)
+  params.assert.notNil(value, 3)
 
   tabl[key] = value
 

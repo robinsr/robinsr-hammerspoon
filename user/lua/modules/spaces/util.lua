@@ -16,11 +16,4 @@ function space_util.send_message(args, msg)
   end
 end
 
-space_util.dir_keys = {
-  north = 'w',
-  south = 's',
-  east = 'd',
-  west = 'a',
-}
-
 return space_util

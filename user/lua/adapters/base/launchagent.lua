@@ -8,7 +8,7 @@ local data    = require 'pl.data'
 local log = logr.new('LaunchAgent', 'info')
 
 
----@class LaunchAgent: Service
+---@class LaunchAgent: ks.service
 local LaunchAgent = {}
 
 

@@ -58,7 +58,7 @@ local command_list = {
     flags = { 'no-alert' },
     exec = function(cmd)
       funcs.delay(0.75, hs.reload)
-      return cmd.hotkey.label
+      return cmd.hotkey:getLabel('full')
     end,
   },
   {
@@ -70,7 +70,7 @@ local command_list = {
     flags = { 'no-alert' },
     exec = function(cmd)
       funcs.delay(0.75, hs.relaunch)
-      return cmd.hotkey.label
+      return cmd.hotkey:getLabel('full')
     end,
   }
 }
@@ -136,7 +136,7 @@ function CommandList:scanForConfigs()
 
   local mods = fs.loaddir(rootdir, userpath:join('.'))
 
-  for module, exports in pairs(mods) do
+  for module, exports in tables.entries(mods) do
     
     if (types.isTable(exports) and tables.has(exports, 'cmds')) then
 
@@ -167,6 +167,11 @@ function CommandList:initialize()
 
   return self
 end
+
+
+--
+-- Get 
+--
 
 
 return setmetatable({}, { __index = CommandList }) --[[@as ks.commandlist]]

@@ -102,6 +102,18 @@ end
 
 
 ---@return List
+---@param iter fun():any
+---@param ... any
+function List.collect(iter, ...)
+  local elems = {}
+  for index, value in iter do
+    table.insert(elems, value)
+  end
+  return create({}, elems)
+end
+
+
+---@return List
 function List:clone()
   local newitems = table.pack(table.unpack(self.items))
   return create(newitems)

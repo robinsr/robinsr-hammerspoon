@@ -11,7 +11,7 @@ local logr        = require 'user.lua.util.logger'
 local log = logr.new('SketchyBar', 'debug')
 
 
----@class SketchyBar: BrewService
+---@class SketchyBar: ks.service.brew
 local SketchyBar = {}
 
 

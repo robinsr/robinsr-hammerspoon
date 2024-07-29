@@ -1,6 +1,15 @@
 ---@class lib.function
 local func = {}
 
+
+--
+-- A do-nothing function
+--
+function func.noop()
+end
+
+
+
 --
 -- Delays the execution of function fn by msec
 --
@@ -60,5 +69,30 @@ function func.cooldown(sec, fn, ...)
     return memo
   end
 end
+
+
+--
+-- Returns a function that runs each function in sequence, passing return values to the next
+--
+---@generic F1, R1, F2, R2, F3, R3, F4, R4, F5, R5, F6, R6
+---@param fn1 fun(arg: F1): R1
+---@param fn2 fun(arg: F2): R2
+---@param fn3? fun(arg: F3): R3
+---@param fn4? fun(arg: F4): R4
+---@param fn5? fun(arg: F5): R5
+---@param fn6? fun(arg: F6): R6
+---@return fun(F1):R1
+function func.sequence(fn1, fn2, fn3, fn4, fn5, fn6)
+  return function(...)
+    local args = {...}
+
+    for i,fn in ipairs({ fn1, fn2, fn3, fn4, fn5, fn6 }) do
+      args = table.pack(fn(table.unpack(args)))
+    end
+
+    return args
+  end
+end
+
 
 return setmetatable({}, { __index = func }) --[[@as lib.function]]

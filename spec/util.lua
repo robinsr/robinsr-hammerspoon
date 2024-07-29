@@ -4,12 +4,15 @@ local plstr = require 'pl.stringx'
 
 local testutil = {}
 
-testutil.pretty = pretty
+local print = print
+
+testutil.pretty = pretty.write
 
 
 --
 -- Get a variable-length list of single alpha characters
 --
+---@param len? integer desired length of list
 function testutil.alphalist(len)
   len = len or 4
   
@@ -23,6 +26,21 @@ function testutil.alphalist(len)
   return table.pack(table.unpack(chars))
 end
 
+
+--
+-- Get a test table
+--
+---@return table<string,string>
+function testutil.ttable()
+  local keys = string.split('foo bar baz quz quuz', ' ')
+  local tbl = {}
+
+  for i,v in ipairs(keys) do
+    tbl[v] = string.reverse(v)
+  end
+
+  return tbl
+end
 
 
 ---@param pattern string
@@ -109,8 +127,12 @@ testutil.logger_mod = "user.lua.util.logger"
 --
 -- Usage: package.loaded[tutil.logger_mod] = tutil.mock_logger(spy)
 --
-function testutil.mock_logger(spy)
+---@param spy any
+---@param level 'off'|'inspect'\'verbose'|'debug'|'info'|'warning'|'error'
+function testutil.mock_logger(spy, level)
   local hs_noop = spy.new(function() end)
+
+  level = level or 'off'
 
   local mock_logger = {
     new = spy(function()
@@ -125,7 +147,7 @@ function testutil.mock_logger(spy)
         df = hs_noop,
         v = hs_noop,
         vf = hs_noop,
-        inspect = hs_noop,
+        inspect = level =='inspect' and testutil.dump or hs_noop,
       }
     end)
   }

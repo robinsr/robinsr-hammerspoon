@@ -12,7 +12,7 @@ local STATUS = {
 }
 
 
----@class Service
+---@class ks.service
 ---@field name string
 ---@field pid integer
 local Service = {}
@@ -20,7 +20,7 @@ local Service = {}
 Service.STATUS = STATUS
 
 
----@return Service
+---@return ks.service
 function Service:new(name)
   local this = self == Service and {} or self
   

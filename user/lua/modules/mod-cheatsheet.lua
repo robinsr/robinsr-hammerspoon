@@ -4,6 +4,7 @@ local Option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
 local appls   = require 'user.lua.model.application'
 local hotkey  = require 'user.lua.model.hotkey'
+local keys    = require 'user.lua.model.keys'
 local webview = require 'user.lua.ui.webview.webview'
 local icons   = require 'user.lua.ui.icons'
 local logr    = require 'user.lua.util.logger'
@@ -26,8 +27,8 @@ cheat.cmds = {
     exec = function(cmd)
       local model = {
         title = "KittySupreme Hotkeys",
-        mods = hotkey.presets,
-        symbols = icons.keys:toplain(),
+        mods = keys.presets,
+        symbols = keys.symbols,
         groups = KittySupreme.commands:getHotkeyGroups(),
       }
 
@@ -52,8 +53,8 @@ cheat.cmds = {
 
           return {
             title = ("Hotkeys for app %s"):format(title),
-            mods = hotkey.presets,
-            symbols = icons.keys,
+            mods = keys.presets,
+            symbols = keys.symbols,
             groups = menus,
           }
       end)

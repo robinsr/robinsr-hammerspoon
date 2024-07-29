@@ -44,20 +44,22 @@ local desk    = require 'user.lua.interface.desktop'
 console.configureHSConsole()
 console.setDarkMode(desk.darkMode())
 
-local KS = require 'user.lua.state'
-local CmdList = require 'user.lua.commands'
+local KState  = require('user.lua.model.state'):new()
+KittySupreme = KState.store
+
+local CmdList = require('user.lua.model.commands')
 
 
-KS.commands = CmdList:new():initialize()
+KittySupreme.commands = CmdList:new():initialize()
 
 
 log.i("Setting global hotkeys...")
-KS.commands:forEach(function(cmd) cmd:bindHotkey() end)
+KittySupreme.commands:forEach(function(cmd) cmd:bindHotkey() end)
 
 
 
 log.i("Setting up url handlers...")
-KS.commands:forEach(function(cmd) cmd:bindURL() end)
+KittySupreme.commands:forEach(function(cmd) cmd:bindURL() end)
 
 
 
@@ -70,7 +72,7 @@ log.i('Running onLoad commands...')
 
 local onLoadFilter = regex.glob('*.onLoad')
 
-local loadcmds = KS.commands
+local loadcmds = KittySupreme.commands
   :filter(function(cmd)
     return onLoadFilter(cmd.id)
   end)

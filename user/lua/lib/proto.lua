@@ -41,9 +41,11 @@ function SubClass:new()
 end
 ```
 ]]
----@param target table A table that derives from base
----@param base table The base table
----@param opts? SetProtoOpts 
+---@generic T, B
+---@param target T             Target table/class to set prototype of
+---@param base   B             Base table/class to use as the prototype
+---@param opts? SetProtoOpts   Optional options
+---@return T | B
 function P.setProtoOf(target, base, opts)
   local options = opts or {}
 

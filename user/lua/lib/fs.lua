@@ -115,6 +115,7 @@ end
 --
 ---@param dir string Directory path to load modules from
 ---@param pkg string Lua package prefix
+---@return table<string, table>
 function FS.loaddir(dir, pkg)
   log.f('Loading lua modules in package [%s] from directory [%s]', pkg, dir)
   

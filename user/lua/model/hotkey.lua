@@ -1,3 +1,4 @@
+local fn      = require 'user.lua.lib.func'
 local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
@@ -5,6 +6,7 @@ local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local valua   = require 'user.lua.lib.valua'
+local keys    = require 'user.lua.model.keys'
 local icons   = require 'user.lua.ui.icons'
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
@@ -12,100 +14,53 @@ local logr    = require 'user.lua.util.logger'
 local log = logr.new('HotKey', 'info')
 
 
----@type ks.keys.keyevent[]
-local KEY_EVENTS = { 'pressed', 'released', 'repeat' } 
+---@class ks.hotkey
+---@field key         ks.keys.keycode     The non-modifier key to bind to
+---@field mods        ks.keys.modkey[]    List of modifier keys to bind to
+---@field keyevents   ks.keys.keyevent[]  List of keyevents to bind to
+---@field handlerfn   ks.keys.callback    The callback function when the hotkey fires
+---@field showAlert   boolean             A boolean, when true will use the default Hammerspoon alert
+---@field description string              A string description of what the keycode does
+---@field symbols     string[]            A list of symbols (display characters), signifying the modifier keys
+---@field listener    hs.hotkey|nil       The actual hammerspoon key binding
 
 
-local noop = function()
-  -- do nothing
-end
+---@alias ks.hotkey.disp_fmt
+---|'mods'    Modifier symbols only
+---|'keys'    Modifier symbols and keycode (all keys involved)
+---|'full'    Modifier symbols, keycode, and description
 
 
---
--- Returns the symbol character that corresponds to a key name
---
----@param key string
----@return string
-local function get_key_symbol(key)
-  -- return icons.keys:has(key) and icons.keys:get(key) or icons.replace
-  return icons.keys:has(key) and icons.keys:get(key) or key
-end
-
-
----@class ks.keys.presets
----@field [ks.keys.modcombo] ks.keys.modkey[]
-
----@type Table|ks.keys.presets
-local combo_presets = tables{
-  hyper  = { "ctrl", "alt", "shift", "cmd" }, -- all the keys!
-  meh    = { "ctrl", "alt", "shift"        }, -- its just whatev
-  peace  = { "ctrl", "alt", "shift"        }, -- "the peace sign" (same as "meh", just easier to remember)
-  claw   = { "ctrl",        "shift", "cmd" }, -- THE CLAW! (same as fake-meh)
-  btms   = { "ctrl", "alt",          "cmd" }, -- bottoms
-  lil    = { "ctrl", "alt"                 }, -- just a "lil" thing
-
-  -- Individual keys
-  cmd    = {                         "cmd" },
-  shift  = {                "shift"        },
-  alt    = {         "alt"                 },
-  ctrl   = { "ctrl"                        },
-
-  -- Command+ combos
-  ctcmd  = { "ctrl",                 "cmd" },
-  altcmd = {         "alt",          "cmd" },
-  scmd   = {                "shift", "cmd" },
-
-  -- Others
-  option_shift = { "alt", "shift" },
-}
-
-
-
----@class ks.keys.hotkey
----@field key string
----@field mods ks.keys.modkey[]
----@field keyevents ks.keys.keyevent[]
----@field handlerfn ks.keys.callback
----@field showAlert boolean
----@field label string
----@field symbols string[]
----@field listener hs.hotkey|nil
-
----@class ks.keys.hotkey.static
----@field presets ks.keys.presets
-
-
----@class ks.keys.hotkey
+---@class ks.hotkey
 local Hotkey = {}
 
-Hotkey.presets = combo_presets 
 
 
 --
 -- Returns a Hotkey configuration
 --
----@param mods ks.keys.modifiers        The shortcut's modifier keys
----@param key  string|ks.keys.keycode   The shortcuts non-modifier key
----@return ks.keys.hotkey
+---@param mods ks.keys.modifiers   The shortcut's modifier keys
+---@param key  ks.keys.keycode     The shortcuts non-modifier key
+---@return ks.hotkey
 function Hotkey:new(mods, key)
 
-  ---@class ks.keys.hotkey
+  ---@class ks.hotkey
   local this = {
     key = key,
     keyevents = { "pressed" },
     mods = {},
     showAlert = false,
-    label = '',
+    description = '',
     symbols = {},
-    handler = noop,
+    handler = fn.noop,
     listener = nil,
   }
 
 
   if types.isString(mods) then
     ---@cast mods ks.keys.modcombo
-    if combo_presets:has(mods) then
-      this.mods = combo_presets:get(mods) --[[@as ks.keys.modkey[] ]]
+    if keys.presets:has(mods) then
+      this.mods = keys.presets:get(mods) --[[@as ks.keys.modkey[] ]]
     else
       error(('Unrecognized mod combo "%s"'):format(mods))
     end
@@ -116,10 +71,9 @@ function Hotkey:new(mods, key)
     error('mods is neither a list of mod keynames or a preset combo')
   end
 
-  this.symbols = lists(this.mods):map(get_key_symbol):values()
-  this.label   = lists(this.mods):map(get_key_symbol):push(this.key):join(' ')
+  this.symbols = lists(this.mods):map(keys.getSymbol):values()
 
-  return setmetatable(this, { __index = Hotkey }) --[[@as ks.keys.hotkey]]
+  return setmetatable(this, { __index = Hotkey }) --[[@as ks.hotkey]]
 end
 
 
@@ -158,8 +112,32 @@ end
 --
 ---@param desc string
 function Hotkey:setDescription(desc)
-  self.label = ('%s: %s'):format(self.label, desc)
+  self.description = desc
   return self
+end
+
+
+--
+-- Returns a string combining the hotkey's modifier symbols, keycode, and description
+--
+---@param format? ks.hotkey.disp_fmt
+---@return string
+function Hotkey:getLabel(format)
+  format = format or 'keys'
+
+  local symbols = lists(self.symbols):join('')
+  local key = self.key
+  local desc = self.description
+
+  if format == 'mods' then
+    return symbols
+  end
+
+  if format == 'keys' then
+    return symbols..self.key
+  end
+
+  return ('%s %s: %s'):format(symbols, self.key, self.description)
 end
 
 
@@ -169,11 +147,11 @@ end
 function Hotkey:enable()
   if self.listener == nil then
     local self_events = lists(self.keyevents)
-    local triggers = lists(KEY_EVENTS):map(function(evt)
-      return self_events:includes(evt) and self.handlerfn or noop
+    local triggers = lists(keys.events):map(function(evt)
+      return self_events:includes(evt) and self.handlerfn or fn.noop
     end)
 
-    local message = self.showAlert and self.label or nil
+    local message = self.showAlert and self.description or nil
 
     self.listener = hs.hotkey.new(self.mods, self.key, message, triggers:unpack())
   end
@@ -197,7 +175,6 @@ end
 
 ---@return table
 function Hotkey:__toplain()
-  -- return tables.toplain(self, { 'symbols', 'label' })
   return tables.toplain(self, {})
 end
 
@@ -208,5 +185,4 @@ function Hotkey:__tojson()
 end
 
 
--- return setmetatable({}, { __index = Hotkey }) --[[@as ks.keys.hotkey]]
 return Hotkey

@@ -20,7 +20,7 @@ local types   = require 'user.lua.lib.typecheck'
 ---@class ks.app.menuitem
 ---@field title       string
 ---@field hasHotkey   boolean
----@field hotkey      ks.keys.hotkey
+---@field hotkey      ks.hotkey
 ---@field children    ks.app.menuitem
 ---@field hasChildren boolean
 

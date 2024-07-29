@@ -1,77 +1,88 @@
----@meta
+local params = require 'user.lua.lib.params'
+local Option = require 'user.lua.lib.optional'
+local tables = require 'user.lua.lib.table'
 
----@alias ks.keys.modcombo 'hyper'|'meh'|'btms'|'peace'|'claw'|'lil'|'shift'|'alt'|'ctrl'|'cmd'
 
 ---@alias ks.keys.modkey 'shift'|'alt'|'ctrl'|'cmd'
 
----@alias ks.keys.modifiers ks.keys.modcombo|ks.keys.modkey[]
+---@alias ks.keys.modcombo 'hyper'|'meh'|'btms'|'peace'|'claw'|'lil'|'shift'|'alt'|'ctrl'|'cmd'
+
+---@alias ks.keys.modifiers ks.keys.modcombo | ks.keys.modkey[]
+
+---@alias ks.keys.presets  { [ks.keys.modcombo]: ks.keys.modkey[] }
 
 ---@alias ks.keys.keyevent 'pressed'|'released'|'repeat'
 
 ---@alias ks.keys.callback fun(): any
 
+---@alias ks.keys.keycode string|number
 
----@alias ks.keys.keycode
----| 'f1'
----| 'f2'
----| 'f3'
----| 'f4'
----| 'f5'
----| 'f6'
----| 'f7'
----| 'f8'
----| 'f9'
----| 'f10'
----| 'f11'
----| 'f12'
----| 'f13'
----| 'f14'
----| 'f15'
----| 'f16'
----| 'f17'
----| 'f18'
----| 'f19'
----| 'f20'
----| 'pad.'
----| 'pad*'
----| 'pad+'
----| 'pad/'
----| 'pad-'
----| 'pad='
----| 'pad0'
----| 'pad1'
----| 'pad2'
----| 'pad3'
----| 'pad4'
----| 'pad5'
----| 'pad6'
----| 'pad7'
----| 'pad8'
----| 'pad9'
----| 'padclear'
----| 'padenter'
----| 'return'
----| 'tab'
----| 'space'
----| 'delete'
----| 'escape'
----| 'help'
----| 'home'
----| 'pageup'
----| 'forwarddelete'
----| 'end'
----| 'pagedown'
----| 'left'
----| 'right'
----| 'down'
----| 'up'
----| 'shift'
----| 'rightshift'
----| 'cmd'
----| 'rightcmd'
----| 'alt'
----| 'rightalt'
----| 'ctrl'
----| 'rightctrl'
----| 'capslock'
----| 'fn'
+
+local Keys = {}
+
+
+---@type ks.keys.keyevent[]
+Keys.events = { 'pressed', 'released', 'repeat' } 
+
+
+---@type Table | table<string, string>
+Keys.symbols = tables{
+  cmd   = "⌘",
+  ctrl  = "⌃",
+  alt   = "⌥",
+  shift = "⇧",
+  right = '→',
+  left  = '←',
+  up    = '↑',
+  down  = '↓',
+  space = '␣',
+}
+
+
+---@type Table | table<string, string>
+Keys.cardinal = tables{
+  north = 'w',
+  south = 's',
+  east = 'd',
+  west = 'a',
+}
+
+
+---@type Table | ks.keys.presets
+Keys.presets = tables{
+  hyper  = { "ctrl", "alt", "shift", "cmd" }, -- all the keys!
+  meh    = { "ctrl", "alt", "shift"        }, -- its just whatev
+  peace  = { "ctrl", "alt", "shift"        }, -- "the peace sign" (same as "meh", just easier to remember)
+  claw   = { "ctrl",        "shift", "cmd" }, -- THE CLAW! (same as fake-meh)
+  btms   = { "ctrl", "alt",          "cmd" }, -- bottoms
+  lil    = { "ctrl", "alt"                 }, -- just a "lil" thing
+
+  -- Individual keys
+  cmd    = {                         "cmd" },
+  shift  = {                "shift"        },
+  alt    = {         "alt"                 },
+  ctrl   = { "ctrl"                        },
+
+  -- Command+ combos
+  ctcmd  = { "ctrl",                 "cmd" },
+  altcmd = {         "alt",          "cmd" },
+  scmd   = {                "shift", "cmd" },
+
+  -- Others
+  option_shift = { "alt", "shift" },
+}
+
+
+--
+-- Returns the symbol character that corresponds to a key name
+--
+---@param key string
+---@return string
+function Keys.getSymbol(key)
+  params.assert.string(key)
+
+  return Keys.symbols:get(key) or key
+end
+
+
+return Keys
