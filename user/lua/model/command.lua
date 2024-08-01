@@ -1,6 +1,6 @@
-local plfunc  = require 'pl.func' 
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
+local func    = require 'user.lua.lib.func'
 local lists   = require 'user.lua.lib.list'
 local Option  = require 'user.lua.lib.optional'
 local paths   = require 'user.lua.lib.path'
@@ -11,9 +11,11 @@ local tables  = require 'user.lua.lib.table'
 local valua   = require 'user.lua.lib.valua'
 local types   = require 'user.lua.lib.typecheck'
 local Hotkey  = require 'user.lua.model.hotkey'
-local image   = require 'user.lua.ui.image'
+local colors  = require 'user.lua.ui.color'
+local images  = require 'user.lua.ui.image'
 local text    = require 'user.lua.ui.text'
 local symbols = require 'user.lua.ui.symbols'
+local hs      = require 'user.lua.util.hs-objects'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('Command', 'info')
@@ -21,40 +23,44 @@ local log = logr.new('Command', 'info')
 
 ---@class ks.command.config
 ---@field id       string                   - Unique string to identify command
+---@field exec     ks.command.execfn        - Callback function for the command, optionally returning an alert string
 ---@field module?  string                   - (optional) source module of the command
----@field title?   string                   - (optional) A title for command
+---@field title?   string                   - (optional) title for command
 ---@field desc?    string                   - (optional) What commmand do?
----@field exec     ks.command.execfn        - A callback function for the command, optionally returning an alert string
----@field setup?   ks.command.setupfn       - (optional) A setup function, the return value passed to fn
----@field flags?   ks.command.flag[]        - (optional) List of command feature flags
----@field icon?    string|hs.image          - (optional) A icon for the command
----@field mods?    ks.keys.modifiers        - (optional) A mods group for the hotkey binding
----@field key?     string|ks.keys.keycode   - (optional) A key for the hotkey binding
----@field menukey? string|ks.keys.keycode   - (optional) A shortcut key for use in the KS menubar menu
----@field url?     string                   - (optional) A hammerspoon url to bind to
+---@field setup?   ks.command.setupfn       - (optional) setup function, the return value passed to fn
+---@field verify?  ks.command.verifyfn[]    - (optional) set of functions to verify if command shoul run
+---@field flags?   ks.command.flag[]        - (optional) list of command feature flags
+---@field icon?    string|hs.image          - (optional) icon for the command
+---@field mods?    ks.keys.modifiers        - (optional) modifier keysfor the hotkey binding
+---@field key?     string|ks.keys.keycode   - (optional) key for the hotkey binding
+---@field menukey? string|ks.keys.keycode   - (optional) keycode for use in the KS menubar menu
+---@field url?     string                   - (optional) hammerspoon url to bind to
 
 
 ---@class ks.command.context
 ---@field trigger        ks.command.trgger   - Source invoking the command
 ---@field activeApp      hs.application|nil  - Currently active app
----@field activeWindow   hs.window|nil       - Currently active window ID
+---@field activeWindow   hs.window|nil       - Currently active window
+---@field activeSpace    integer             - Currently active space ID
 
 
----@alias ks.command.flag 
----|'test_flag'      Test purposes
----|'invalid_choice' Calls the "invalid" handler in command chooser
----|'hidden'         Hides the command from user view
----|'no-chooser'     Hides the command from appearing in the command chooser
----|'no-alert'       Disables the default alert generated when commands hotkey is invoked
+---@alias ks.command.flag
+---|'test_flag'    Test purposes
+---|'invalid'      Calls the "invalid" handler in command chooser
+---|'hidden'       Hides the command from user view
+---|'no-chooser'   Hides the command from appearing in the command chooser
+---|'no-alert'     Disables the default alert generated when commands hotkey is invoked
 
 
----@alias ks.command.execfn fun(cmd: ks.command, ctx: ks.command.context, params: table): string|nil
-
+---@alias ks.command.execfn<T> fun(cmd: ks.command, ctx: T|ks.command.context, params: table): string|ks.command.err|nil
 
 ---@alias ks.command.setupfn<T> fun(cmd: ks.command): T
 
+---@alias ks.command.verifyfn fun(cmd: ks.command, ctx: ks.command.context, params: table): boolean
 
 ---@alias ks.command.trgger 'load'|'hotkey'|'menu'|'url'|'chooser'|'other'
+
+---@alias ks.command.err { err: string }
 
 
 
@@ -127,48 +133,64 @@ end
 --
 -- Runs the command's execute callback
 --
----@param from ks.command.trgger
+---@param trigger ks.command.trgger
 ---@param params? table
 ---@return nil
-function Command:invoke(from, params)
+function Command:invoke(trigger, params)
   if types.is_not.func(self.exec) then
     error(('No exec function on command [%s]'):format(self.id or 'none'))
   end
 
   ---@type ks.command.context
-  local ctx = { 
-    trigger = from,
+  local ctx = {
+    trigger = trigger,
     activeApp = desktop.activeApp(),
     activeWindow = desktop.activeWindow(),
+    activeSpace = desktop.activeSpace(),
   }
 
-  local ok, post_msg = xpcall(function()
+  local verified = lists(self.verify or {}):every(function(verifier)
+    return verifier(self, tables.merge(ctx, self.context), params or {})
+  end)
+
+  if not verified then
+    log.df("Skipping execution of command [%s]", self.id)
+    return
+  end
+
+  local ok, result = xpcall(function()
     return self.exec(self, tables.merge(ctx, self.context), params or {}) --[[@as string]]
   end, debug.traceback)
 
   if not ok then
-    log.ef("command invoke error [%s]\n%s", self.id, post_msg)
+    log.ef("command invoke error [%s]\n%s", self.id, result)
     return
   end
 
-  if types.isNil(post_msg) then
+  if types.isNil(result) then
     return
+  end
+
+  if result.err ~= nil then
+    return alert:new("Command failed (%s): %s", self.id, result.err)
+                :style({ textColor = colors.red })
+                :show()
   end
 
   -- todo: command callback alert logic moved up somewhere
-  if (post_msg == 'default') then
-    alert:fmt('%s: %s', self.hotkey:label(), self.title):show()
+  if (result == 'default') then
+    alert:fmt('%s: %s', self.hotkey:getLabel('keys'), self.title):show()
     return
   end
 
-  if (post_msg ~= '') then
-    alert:new(post_msg):show()
+  if (result ~= '') then
+    alert:new(result):icon(self:getMenuIcon(16)):show()
   end
 end
 
 
 --
--- Returns true if this command has been flagged with `flag` 
+-- Returns true if this command has been flagged with `flag`
 --
 ---@param flag ks.command.flag
 ---@return boolean
@@ -178,7 +200,7 @@ end
 
 
 --
--- Returns true if this command has NOT been flagged with `flag` 
+-- Returns true if this command has NOT been flagged with `flag`
 --
 ---@param flag ks.command.flag
 ---@return boolean
@@ -189,7 +211,7 @@ end
 
 --
 -- Returns the first or second partial of the command ID string
--- Example command if "foo.bar.baz" 
+-- Example command if "foo.bar.baz"
 --    - cmd:getGroup(1) -> "foo"
 --    - cmd:getGroup(2) -> "bar"
 --    - cmd:getGroup(3) -> "baz"
@@ -216,7 +238,7 @@ end
 ---@return HS.MenubarItem
 function Command:asMenuItem()
   local title = self.title or self.id
-  
+
   local subtext = Option:ofNil(self.hotkey)
     :map(function(hk) return hk:getLabel('keys') --[[@as string]] end)
     :map(function(label) return ('  - (%s)'):format(label) end)
@@ -231,7 +253,7 @@ function Command:asMenuItem()
       self:invoke('menu', {})
     end
   }
-  
+
   return menuitem
 end
 
@@ -243,37 +265,35 @@ end
 ---@return hs.image
 function Command:getMenuIcon(size)
   size = size or 12
-  
+
   log.df("icon type %s for command %s", type(self.icon), self.id)
 
-  local icon = self.icon or 'info'
+  local icon = self.icon
 
-  if types.isNil(self.icon) then
-    return image.from_icon('info', size)
+  if types.isNil(icon) then
+    return images.from_icon('info', size)
   end
 
-  if type(self.icon) == "string" then
-    local icon = self.icon --[[@as string]]
-      
+  if type(icon) == "string" then
     if symbols.has_codepoint(icon) then
-      return image.from_icon(icon, size)
+      return images.from_icon(icon, size)
     end
 
     if paths.exists(icon) then
-      return image.from_path(icon, size, size)
+      return images.from_path(icon, size, size)
     end
-
-    return image.from_icon('info', size)
   end
 
-  -- local ok, img = pcall(function()
-  --   ---@diagnostic disable-next-line: param-type-mismatch
-  --   return image.from_icon(icon, size)
-  -- end)
+  if type(icon) == 'userdata' then
+    ---@cast icon hs.image
+    return images.resize(icon, hs.geometry.size(size, size))
+  end
 
-  -- return ok and img or image.from_icon('info', size) --[[@as hs.image]]
+  if type(icon) == 'table' then
+    return images.resize(images.from_data(icon), hs.geometry.size(size, size))
+  end
 
-  return self.icon --[[@as hs.image]]
+  return images.from_icon('info', size)
 end
 
 
@@ -292,7 +312,7 @@ end
 --
 ---@return boolean
 function Command:hasHotkey()
-  return types.isString(self.key) and types.isString(self.mods)
+  return types.notNil(self.hotkey)
 end
 
 
@@ -312,20 +332,51 @@ end
 -- Binds the command hotkey
 --
 function Command:bindHotkey()
-
-  if (self.hotkey ~= nil) then
-    self.hotkey:setCallback(plfunc.bind(self.invoke, self, 'hotkey', {}))
-    self.hotkey:setDescription(self.title)
-    self.hotkey:setAlert(not self:hasFlag('no-alert'))
-
-    local hotkey = self.hotkey:enable()
-
-    if hotkey == nil then
-      error(('Could not create hotkey for command [%s]'):format(self.id))
-    end
-
-    log.f("Mapped hotkey (%s) to command [%s]", strings.padEnd(self.hotkey:getLabel('keys'), 12), self.id)
+  if (self.hotkey == nil) then
+    return
   end
+
+  self.hotkey:setCallback(func.bind(self.invoke, self, 'hotkey', {}))
+  self.hotkey:setDescription(self.title)
+  self.hotkey:setAlert(not self:hasFlag('no-alert'))
+
+  local hotkey = self.hotkey:enable()
+
+  if hotkey == nil then
+    error(('Could not create hotkey for command [%s]'):format(self.id))
+  end
+
+  log.f("Mapped hotkey (%s) to command [%s]", strings.padEnd(self.hotkey:getLabel('keys'), 12), self.id)
+end
+
+
+--
+-- Disables the command's hotkey. Optionally will re-enable the hotkey after
+-- time specified in `sec`
+--
+---@param sec? int
+function Command:disableHotkey(sec)
+  if (self.hotkey == nil) then
+    return
+  end
+
+  self.hotkey:disable()
+
+  if sec ~= nil then
+    func.delay(sec, function()
+      self.hotkey:enable()
+    end)
+  end
+end
+
+
+--
+-- Returns a error object for the given error message
+--
+---@param message string
+---@return ks.command.err
+function Command:fail(message)
+  error({ message = ('Command [%s] failed to execute - %s'):format(self.id, message) })
 end
 
 

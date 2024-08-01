@@ -16,8 +16,12 @@
   lightuserdata
 ]]
 
+---@alias int integer
+---@alias num number
+---@alias bool boolean
 
----@class Array<T>: { [integer]: T }
+
+---@class Array<T>: { [int]: T }
 
 ---@class Dict<T>: { [string]: T }
 
@@ -29,24 +33,30 @@
 ---@field static table
 
 ---@generic T: any
----@alias IteratorFn fun(item: T, index: integer): nil
+---@alias IteratorFn fun(item: T, index: int): nil
 
 ---@generic T: any
----@alias PredicateFn fun(item: T, index: integer): boolean
+---@alias PredicateFn<T> fun(item: T, index: int): boolean
 
 ---@generic T: any
----@generic C: any
----@alias ClassifierFn fun(item: T, index?: integer): C
+---@alias boolfn<T> fun(item: T, index: int): bool
+
+---@generic T: any - Input items type
+---@generic C: any - Type items will be classified by
+---@alias ClassifierFn<T,C> fun(item: T, index?: int): C
 
 
 ---@generic I: any Input type
 ---@generic O: any Output type
----@alias MappingFn<I, O> fun(item: I, index: integer): O
+---@alias MappingFn<I, O> fun(item: I, index: int): O
 
 
 ---@generic T: any List item type
 ---@generic R: any Type list is reduced to
----@alias ReducerFn fun(memo: R, item: T, index: integer): R
+---@alias ReducerFn fun(memo: R, item: T, index: int): R
+
+
+---@alias Coord { x: num, y: num }
 
 
 return {}

@@ -108,10 +108,13 @@ end
 ---@generic T
 ---@param self { value: T, present: boolean }
 ---@param consumer fun(val: T)
+---@return Optional
 function Optional:ifPresent(consumer)
   if self.present == true then
     consumer(self.value)
   end
+    
+  return self
 end
 
 
@@ -166,8 +169,6 @@ function Optional:map(mapper)
     if ok then
       return Optional:ofNil(result)
     end
-
-    -- return Optional:ofNil(mapper(self.value))
   end
   
   return Optional:ofNil(nil)

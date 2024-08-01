@@ -98,25 +98,9 @@ end
 
 
 --
--- wef
---
----@generic R
----@param args string  static args to use on each invoke of fn
----@param msg? R       optional return object
----@return fun(...: any): R
-function Yabai.createMessageFn(args, msg)
-  return function()
-    local result = Yabai.message(table.unpack(sh.split(args)))
-    log.df('Yabai cmd "%s" exited with code %q', result.command, result.status or 'none')
-    return msg
-  end
-end
-
-
---
 -- TODO - WIP
 --
-function Yabai:suggest()
+function Yabai.suggest()
 
   local screens = lists(desktop.screens())
 
@@ -190,30 +174,30 @@ end
 --
 -- Shifts windows around on a grid
 --
----@param windowId string|number Window ID, index or other window selector
----@param start { x: number, y: number } Grid coornidates to position window to (the top-left)
----@param span { x: number, y: number } number of grid units the window will span
----@param gridrows? number Optionally define number of grid rows; defaults 1
----@param gridcols? number Optionally define number of grid columns; default 3
-function Yabai:shiftWindow(windowId, start, span, gridrows, gridcols)
+---@param windowId  string|number     - Window ID, index or other window selector
+---@param start     Coord             - Grid coornidates to position window to (the top-left)
+---@param span      Coord             - number of grid units the window will span
+---@param gridrows? number            - (Optional) number of grid rows; defaults 1
+---@param gridcols? number            - (Optional) number of grid columns; default 3
+function Yabai.setGrid(windowId, start, span, gridrows, gridcols)
 
-  local window = self:getWindow(windowId)
+  local window = Yabai.getWindow(windowId)
 
   if window == nil then
     error('Cannot get Yabai window: ' .. tostring(windowId))
   end
 
-  local space = self:getSpace(window.space)
+  local space = Yabai:getSpace(window.space)
 
   if (space.type ~= 'float') then
-    self:setLayout(space.id, 'float')
+    Yabai:setLayout(space.id, 'float')
   end
 
   local gridargs = { gridrows or 1, gridcols or 3, start.x, start.y, span.x, span.y }
 
   local yargs = { 'yabai', '-m', 'window', windowId, '--grid', strings.join(gridargs, ':') }
 
-  log.f('Yabai#shiftWindow: %s', sh.join(yargs))
+  log.f('Yabai#setGrid: %s', sh.join(yargs))
 
   sh.result(yargs)
 end
@@ -222,15 +206,39 @@ end
 --
 -- Returns the yabai window object for a windowId
 --
----@param selector Yabai.Selector.Window
+---@param selector? Yabai.Selector.Window
 ---@return Yabai.Window
-function Yabai:getWindow(selector)
+function Yabai.getWindow(selector)
   selector = selector or ''
 
   local result = sh.result({ 'yabai', '-m', 'query', '--windows', '--window', selector })
 
   if result:ok() then
     return result:json()--[[@as Yabai.Window]]
+  else
+    error(result:error_msg())
+  end
+end
+
+
+--
+-- Returns the yabai window object for a windowId
+--
+---@param space? integer
+---@return Yabai.Window|nil
+function Yabai.getActiveWindow(space)
+  local result = sh.result({ 'yabai', '-m', 'query', '--windows' })
+
+  if result:ok() then
+    local windows = result:json()--[[@as Yabai.Window[] ]]
+
+    return lists(windows)
+      :filter(function(win)
+        return space == nil or win.space == space
+      end)
+      :first(function(win)
+        return win['has-focus']
+      end)
   else
     error(result:error_msg())
   end
@@ -265,17 +273,21 @@ function Yabai:descratchWindow(selector)
 end
 
 
-
-function Yabai:floatActiveWindow()
+--
+--
+--
+---@param windowId string
+function Yabai:floatActiveWindow(windowId)
   local rules = self:getRules()
 
   log.inspect{ 'Yabai Rules:', rules }
 
-  Option:ofNil(desktop:activeWindow())
+  Option:ofNil(windowId)
+    :map(Yabai.getWindow)
     :ifPresent(function(win)
-      ---@cast win hs.window
-      local title = win:title()
-      local id = win:id()
+      ---@cast win Yabai.Window
+      local title = win.title
+      local id = win.id
 
       local label = strings.fmt('hsfloat-%s', title:gsub("%s", ""):lower())
 

@@ -2,7 +2,7 @@ local putil  = require 'pl.utils'
 local tables = require 'user.lua.lib.table'
 local colors = require 'user.lua.ui.mariana'
 
----@type HS.StyledText
+---@type HS.TextStyles
 local console_text_styles = {
   font = {
     size = 13,

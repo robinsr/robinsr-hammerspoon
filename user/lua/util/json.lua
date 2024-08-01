@@ -18,7 +18,8 @@ local json = {}
 function json.decode(rawjson)
   params.assert.string(rawjson)
 
-  local tabl = hs.json.decode(rawjson)
+  -- local tabl = hs.json.decode(rawjson)
+  local tabl = dkjson.decode(rawjson)
   
   if (type(tabl) ~= "nil") then
     return tabl --[[@as table]]

@@ -252,9 +252,10 @@ end
 --
 -- Filters items in a list to just those that pass predicate
 --
----@generic T
+---@generic T : any
+---@param self { items: T[] }
 ---@param fn PredicateFn<T> The filter function
----@return List The filtered list
+---@return List : T[]
 function List:filter(fn)
   local filtered = {}
 
@@ -383,7 +384,7 @@ end
 ---@generic T
 ---@generic G
 ---@param classifier string|ClassifierFn<T,G> - A string which is a key on every item in the list, or a function to return a string key
----@param ... any                             - if `classifier` is a function property of i, these args are passed to `fn` 
+---@param ...? any                            - if `classifier` is a function property of i, these args are passed to `fn` 
 ---@return { [G]: T[] }
 function List:groupBy(classifier, ...)
   local cls_args = {...}

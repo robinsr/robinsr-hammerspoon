@@ -1,76 +1,80 @@
-local send_message = require('user.lua.modules.spaces.util').send_message
+local keys   = require 'user.lua.model.keys'
+local spaces = require 'user.lua.modules.spaces'
 
+local mod = {}
 
-local YabaiCmds = {}
+mod.module = "Window Focus"
 
 ---@type ks.command.config[]
-YabaiCmds.cmds = {
-
+mod.cmds = {
   {
-    id = 'spaces.focus.north',
-    title = 'Focus window above',
-    mods = 'lil',
-    key = 'up',
-    flags = { 'no-alert' },
-    exec = send_message('window --focus north'),
+    id     = 'window.focus.north',
+    title  = 'Focus window above',
+    mods   = keys.preset.lil,
+    key    = keys.code.UP,
+    flags  = spaces.NO_ALERT,
+    verify = spaces.HAS_ACTIVE,
+    exec   = function(cmd, ctx) ctx.activeWindow:focusWindowNorth() end,
   },
   {
-    id = 'spaces.focus.south',
-    title = 'Focus window below',
-    mods = 'lil',
-    key = 'down',
-    flags = { 'no-alert' },
-    exec = send_message('window --focus south'),
+    id     = 'window.focus.south',
+    title  = 'Focus window below',
+    mods   = keys.preset.lil,
+    key    = keys.code.DOWN,
+    flags  = spaces.NO_ALERT,
+    verify = spaces.HAS_ACTIVE,
+    exec   = function(cmd, ctx) ctx.activeWindow:focusWindowSouth() end,
   },
   {
-    id = 'spaces.focus.east',
-    title = 'Focus window right',
-    mods = 'lil',
-    key = 'right',
-    flags = { 'no-alert' },
-    exec = send_message('window --focus east'),
+    id     = 'window.focus.east',
+    title  = 'Focus window right',
+    mods   = keys.preset.lil,
+    key    = keys.code.RIGHT,
+    flags  = spaces.NO_ALERT,
+    verify = spaces.HAS_ACTIVE,
+    exec   = function(cmd, ctx) ctx.activeWindow:focusWindowEast() end,
   },
   {
-    id = 'spaces.focus.west',
-    title = 'Focus window left',
-    mods = 'lil',
-    key = 'left',
-    flags = { 'no-alert' },
-    exec = send_message('window --focus west'),
+    id     = 'window.focus.west',
+    title  = 'Focus window left',
+    mods   = keys.preset.lil,
+    key    = keys.code.LEFT,
+    flags  = spaces.NO_ALERT,
+    verify = spaces.HAS_ACTIVE,
+    exec   = function(cmd, ctx) ctx.activeWindow:focusWindowWest() end,
   },
   {
-    id = 'spaces.focus.next_space',
-    title = 'Go to next space (right)',
-    mods = 'ctrl',
-    key = 'right',
-    flags = { 'no-alert' },
-    exec = send_message('space mouse --focus next'),
-  },
+    id     = 'spaces.focus.next',
+    title  = 'Go to next space (right)',
+    mods   = keys.preset.ctrl,
+    key    = keys.code.RIGHT,
+    flags  = spaces.NO_ALERT,
+    exec   = spaces.createMessageFn('space --focus next'),
+    },
   {
-    id = 'spaces.focus.prev_space',
-    title = 'Go to previous space (left)',
-    mods = 'ctrl',
-    key = 'left',
-    flags = { 'no-alert' },
-    exec = send_message('space mouse --focus prev'),
-  },
+    id     = 'spaces.focus.prev',
+    title  = 'Go to previous space (left)',
+    mods   = keys.preset.ctrl,
+    key    = keys.code.LEFT,
+    flags  = spaces.NO_ALERT,
+    exec   = spaces.createMessageFn('space --focus prev'),
+    },
   {
-    id = 'spaces.focus.next_display',
-    title = 'Go to next display (right)',
-    mods = 'ctrl',
-    key = '[',
-    flags = { 'no-alert' },
-    exec = send_message('display --focus west'),
-  },
+    id     = 'displays.focus.next',
+    title  = 'Go to next display (right)',
+    mods   = keys.preset.ctrl,
+    key    = keys.code.OPEN_BRACKET,
+    flags  = spaces.NO_ALERT,
+    exec   = spaces.createMessageFn('display --focus west'),
+    },
   {
-    id = 'spaces.focus.prev_display',
-    title = 'Go to previous display (left)',
-    mods = 'ctrl',
-    key = ']',
-    flags = { 'no-alert' },
-    exec = send_message('display --focus east'),
+    id     = 'displays.focus.prev',
+    title  = 'Go to previous display (left)',
+    mods   = keys.preset.ctrl,
+    key    = keys.code.CLOSE_BRACKET,
+    flags  = spaces.NO_ALERT,
+    exec   = spaces.createMessageFn('display --focus east'),
   },
-  
 }
 
-return YabaiCmds
+return mod

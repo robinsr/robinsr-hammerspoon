@@ -128,7 +128,7 @@ testutil.logger_mod = "user.lua.util.logger"
 -- Usage: package.loaded[tutil.logger_mod] = tutil.mock_logger(spy)
 --
 ---@param spy any
----@param level 'off'|'inspect'\'verbose'|'debug'|'info'|'warning'|'error'
+---@param level? 'off'|'inspect'\'verbose'|'debug'|'info'|'warning'|'error'
 function testutil.mock_logger(spy, level)
   local hs_noop = spy.new(function() end)
 

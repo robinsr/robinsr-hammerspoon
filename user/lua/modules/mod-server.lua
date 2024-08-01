@@ -1,6 +1,7 @@
 
 local web      = require 'user.lua.interface.webserver'
 local Hotkey   = require 'user.lua.model.hotkey'
+local keys     = require 'user.lua.model.keys'
 local fs       = require 'user.lua.lib.fs'
 local func     = require 'user.lua.lib.func'
 local lists    = require 'user.lua.lib.list'
@@ -54,8 +55,8 @@ server:get('glob:/keys', function(req, res)
   res:setView('cheatsheet.view')
   res:setModel({
     title = "Cheatsheet page",
-    mods = Hotkey.presets,
-    symbols = icons.keys:toplain(),
+    mods = keys.presets,
+    symbols = keys.symbols:values(),
     groups = KittySupreme.commands:getHotkeyGroups(),
   })
 end)
@@ -80,7 +81,7 @@ server:get('uri:/icon-editor', function(req, res)
   res:setView('icon-editor.view')
   res:updateModel('title', ('Icon editor - %s'):format('New icon'))
   res:updateModel('image_data', {})
-  res:updateModel('image_uri', images.encode_from_path('@/resources/images/yabai-logo.png', 500, 500))
+  res:updateModel('image_uri', images.from_path('@/resources/images/yabai-logo.png', 500, 500):encodeAsURLString())
 end)
 
 server:get('uri:/icon-editor/{+filepath}', function(req, res)

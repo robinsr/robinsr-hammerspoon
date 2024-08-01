@@ -1,5 +1,6 @@
 local sh      = require 'user.lua.adapters.shell'
 local alert   = require 'user.lua.interface.alert'
+local lists   = require 'user.lua.lib.list'
 local Option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
 local webview = require 'user.lua.ui.webview'
@@ -32,7 +33,7 @@ YabaiCmds.cmds = {
     id = 'yabai.manage.add',
     icon = "@/resources/images/yabai-logo.png",
     title = "Manage app's windows",
-    exec = function()
+    exec = function(cmd, ctx)
       return Option:ofNil(ctx.activeApp)
         :map(function(app) return app:title() end)
         :map(function(appName)
@@ -76,11 +77,11 @@ YabaiCmds.cmds = {
   {
     id = 'yabai.info.window',
     icon = "@/resources/images/yabai-logo.png",
-    title = "Show info for active app",
+    title = "Show info for focused window",
     exec = function()
       local vm = {
         title = 'Yabai - active window',
-        data = yabai:getWindow(''),
+        data = yabai.getWindow(''),
       }
 
       webview.file('json.view', vm, vm.title)
@@ -91,9 +92,13 @@ YabaiCmds.cmds = {
     icon = "@/resources/images/yabai-logo.png",
     title = "Show info current space",
     exec = function()
+      local spaceinfo = yabai:getSpace('mouse')
+      
+      spaceinfo.windows = lists(spaceinfo.windows):map(yabai.getWindow):values()
+
       local vm = {
         title = 'Yabai - current space',
-        data = yabai:getSpace('mouse'),
+        data = spaceinfo,
       }
 
       webview.file('json.view', vm, vm.title)

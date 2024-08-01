@@ -57,6 +57,23 @@ function Table.entries(tabl)
 end
 
 
+--
+-- Returns the table as a list of key/value tuples
+--
+---@param tabl table
+---@return any[] list of keys
+function Table.list(tabl)
+  params.assert.tabl(tabl)
+
+  local tups = {}
+
+  for key, val in pairs(tabl) do
+    table.insert(tups, { key, val })
+  end
+
+  return tups
+end
+
 
 --
 -- Returns a list of values found in `tabl`

@@ -34,7 +34,7 @@ local tile_active = tables.merge({},
 local tile_inactive = tables.merge({},
   tile_active,
   bg.none,
-  border.dashed({ 4, 8 })
+  border.dash({ 4, 8 })
 )
 
 

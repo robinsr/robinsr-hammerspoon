@@ -2,6 +2,7 @@ local hsalert   = require 'hs.alert'
 local hscanvas  = require 'hs.canvas'
 local alert     = require 'user.lua.interface.alert'
 local desk      = require 'user.lua.interface.desktop'
+local fs        = require 'user.lua.lib.fs'
 local lists     = require 'user.lua.lib.list'
 local paths     = require 'user.lua.lib.path'
 local strings   = require 'user.lua.lib.string'
@@ -42,7 +43,7 @@ end
 local function getTestText()
   return KittySupreme.commands:map(function(cmd) 
     ---@cast cmd ks.command
-    return strings.join({ cmd.id, cmd:hasHotkey() and cmd.hotkey:label() or 'none' }, ': ')
+    return strings.join({ cmd.id, cmd:hasHotkey() and cmd.hotkey:getLabel('full') or 'none' }, ': ')
   end):join('\n')
 end
 
@@ -73,46 +74,70 @@ function P.testpanel()
     return
   end
 
-  local image_data = loadfile(paths.mod('user.lua.ui.drawing.tile-icon'))()
 
-  log.f('image_data json: %s', json.encode(image_data))
+  local function on_choice(choice)
+    local image_data = loadfile(paths.mod(choice.id))()
 
-  -- local panel_dimensions = desk.getScreen('active'):frame():scale({ w = 0.50, h = 0.90 })
-  local screen_frame = desk.getScreen('active'):frame()
+    log.f('image_data json: %s', json.encode(image_data))
+
+    -- local panel_dimensions = desk.getScreen('active'):frame():scale({ w = 0.50, h = 0.90 })
+    local screen_frame = desk.getScreen('active'):frame()
+    
+    local panel_dimensions = { 
+      w = image_data.frame.w,
+      h = image_data.frame.h,
+      x = (screen_frame.w - image_data.frame.w) / 2,
+      y = (screen_frame.h - image_data.frame.h) / 2,
+    }
+
+    ---@type hs.canvas
+    local panel = hscanvas.new(panel_dimensions)
+    
+    -- panel:insertElement(elem("panel-frame", "rectangle", ALERT_ATTRS, {
+    --   roundedRectRadii = { xRadius = 10.0, yRadius = 10.0 }
+    -- }))
+
+    for i,elem in ipairs(image_data.elements) do
+      panel:insertElement(elem)
+    end
+
+    if image_data.debug then
+      log.f("image data: %s", hs.inspect(image_data, { depth = 4 }))
+    end
+
+    if image_data.filename then
+      local save_path = paths.expand(image_data.filename)
+
+      log.f("Saving file to [%s]", save_path)
+
+      panel:imageFromCanvas():saveToFile(save_path, 'png')
+    end
+
+
+    P.current = panel:show(FADE_TIME)
+
+    close_panel(function()
+      panel:delete(FADE_TIME)
+      P.current = nil
+    end)
+  end
+
+  local get_image_options = function()
+    local icons_dir = fs.mapdir(paths.cwd(), 'user.lua.ui.drawing.icons')
+
+    return lists(tables(icons_dir):values())
+      :map(function(mod)
+        return { id = mod, text = mod }
+      end)
+      :values()
+  end 
+
+  local img_chooser = hs.chooser.new(on_choice)
+      :choices(get_image_options)
+      :placeholderText('Choose image to show in panel')
+      :show()
+
   
-  local panel_dimensions = { 
-    w = image_data.frame.w,
-    h = image_data.frame.h,
-    x = (screen_frame.w - image_data.frame.w) / 2,
-    y = (screen_frame.h - image_data.frame.h) / 2,
-  }
-
-  ---@type hs.canvas
-  local panel = hscanvas.new(panel_dimensions)
-  
-  -- panel:insertElement(elem("panel-frame", "rectangle", ALERT_ATTRS, {
-  --   roundedRectRadii = { xRadius = 10.0, yRadius = 10.0 }
-  -- }))
-
-  for i,elem in ipairs(image_data.elements) do
-    panel:insertElement(elem)
-  end
-
-  if image_data.debug then
-    log.f("image data: %s", hs.inspect(image_data, { depth = 4 }))
-  end
-
-  if image_data.filename then
-    panel:imageFromCanvas():saveToFile(image_data.filename, 'png')
-  end
-
-
-  P.current = panel:show(FADE_TIME)
-
-  close_panel(function()
-    panel:delete(FADE_TIME)
-    P.current = nil
-  end)
 
   -- local real_colors = lists(tables(colors):values())
   -- local elems = lists(image_data.elements)

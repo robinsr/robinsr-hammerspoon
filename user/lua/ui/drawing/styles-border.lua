@@ -1,21 +1,30 @@
 local colors = require 'user.lua.ui.color'
 
+
+--
+--
+--
+---@param width integer
+---@return table
 local _strokeWidth = function(width)
   width = width or 0.0
 
   return { 
     strokeWidth = width,
-    -- strokeCapStyle = "butt",
-    strokeCapStyle = "round",
-    -- strokeCapStyle = "square"
   }
 end
 
+
+--
+--
+--
+---@param color HS.Color
+---@return table
 local _strokeColor = function(color)
   color = color or colors.black
 
   return { 
-    strokeColor = colors.blue
+    strokeColor = color
   }
 end
 
@@ -30,21 +39,38 @@ end
 -- The array repeats to fully stroke the element. Ignored for the canvas, image, and text types.
 --
 ---@param pattern number[]
----@return { strokeDashPattern: number[] }
+---@return table
 local _strokeDashPattern = function(pattern)
-  -- pattern = pattern or {}
-
   return { 
-    strokeDashPattern = pattern
+    strokeDashPattern = pattern,
   }
 end
+
+
+--
+--
+--
+---@param capstyle? "butt"|"round"|"square"
+---@return table
+local _strokeCapStyle = function(capstyle)
+  capstyle = capstyle or 'butt'
+  
+  return {
+    strokeCapStyle = capstyle,
+  }
+end
+
+
 
 local border = setmetatable({
   none = _strokeWidth(0),
   sm   = _strokeWidth(2),
   md   = _strokeWidth(4),
   lg   = _strokeWidth(8),
-  dashed = _strokeDashPattern
+  dash = _strokeDashPattern,
+  cap  = _strokeCapStyle,
+  color = _strokeColor,
+  width = _strokeWidth,
 }, {
   __call = function(tabl, val) return _strokeColor(val) end
 })

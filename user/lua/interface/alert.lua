@@ -26,15 +26,15 @@ local keydown = hs.eventtap.event.types.keyDown
 
 
 
----@class AlertConfig
----@field text string
----@field style HS.AlertStyle
----@field icon hs.image
----@field timing AlertTime
+---@class ks.alert.config
+---@field text     string|hs.styledtext
+---@field style    HS.AlertStyle
+---@field icon     hs.image
+---@field timing   AlertTime
 
 
----@class Alert
----@field config AlertConfig
+---@class ks.alert
+---@field config ks.alert.config
 local Alert = {}
 
 
@@ -49,10 +49,10 @@ Alert.timing = {
 --
 -- Returns a builder for a new alert
 --
----@param pattern string
+---@param text string|hs.styledtext
 ---@param ... any pattern variables
----@return Alert
-function Alert.new(self, pattern, ...)
+---@return ks.alert
+function Alert.new(self, text, ...)
 
   -- Modify alert style as needed
   local style = hs.alert.defaultStyle
@@ -62,8 +62,10 @@ function Alert.new(self, pattern, ...)
   -- 2: bottom edge
   style.atScreenEdge = 0
 
+  text = type(text) == "string" and strings.fmt(text, ...) or text
+
   local config = {
-    text = strings.fmt(pattern, ...),
+    text = text,
     timing = Alert.timing.LONG,
     style = style
   }
@@ -79,7 +81,7 @@ Alert.fmt = Alert.new
 
 
 ---@param style HS.AlertStyle
----@return Alert
+---@return ks.alert
 function Alert.style(self, style)
   self.config.style = style
   return self
@@ -87,7 +89,7 @@ end
 
 
 ---@param icon hs.image
----@return Alert
+---@return ks.alert
 function Alert.icon(self, icon)
   self.config.icon = icon
   return self

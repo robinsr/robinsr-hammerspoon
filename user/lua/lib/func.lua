@@ -1,3 +1,7 @@
+local pk = table.pack
+local unpk = table.unpack
+
+
 ---@class lib.function
 local func = {}
 
@@ -8,6 +12,32 @@ local func = {}
 function func.noop()
 end
 
+
+--
+-- Creates an identity function for value `v`. Returns a function that
+-- always returns `v`
+--
+---@generic T
+---@param v T
+---@returns fun(...: any): T
+function func.ident(v)
+  return function() return v end
+end
+
+
+--
+-- Binds a function to arguments
+--
+---@generic T
+---@param fn fun(...:any):T   - A function of at least one argument
+---@param ... any             - values or placeholder variables
+---@return fun(...:any):T
+function func.bind(fn, ...)
+  local boundargs = {...}
+  return function(...)
+    return fn(unpk(boundargs), unpk({...}))
+  end
+end
 
 
 --
@@ -26,8 +56,8 @@ end
 --
 ---@generic A
 ---@generic T
----@param fn fun(...: A): T   The function to memoize
----@param ...? A              Optional args to pass to function
+---@param fn fun(...: A): T   - The function to memoize
+---@param ...? A              - Optional args to pass to function
 ---@return fun(...: A): T
 function func.singleton(fn, ...)
   local fn_args = {...}
@@ -36,7 +66,7 @@ function func.singleton(fn, ...)
   return function()
     
     if (memo == nil) then
-      memo = fn(table.unpack(fn_args))
+      memo = fn(unpk(fn_args))
     end
 
     return memo
@@ -49,9 +79,9 @@ end
 --
 ---@generic A
 ---@generic T
----@param sec integer         Seconds to keep the memoized value
----@param fn fun(...: A): T   The function to memoize
----@param ...? A              Optional args to pass to function
+---@param sec integer         - Seconds to keep the memoized value
+---@param fn fun(...: A): T   - The function to memoize
+---@param ...? A              - Optional args to pass to function
 ---@return fun(...: A): T
 function func.cooldown(sec, fn, ...)
   local fn_args = {...}
@@ -63,7 +93,7 @@ function func.cooldown(sec, fn, ...)
     
     if (memo == nil) or (now > prev + sec) then
       prev = now
-      memo = fn(table.unpack(fn_args))
+      memo = fn(unpk(fn_args))
     end
 
     return memo
@@ -87,7 +117,7 @@ function func.sequence(fn1, fn2, fn3, fn4, fn5, fn6)
     local args = {...}
 
     for i,fn in ipairs({ fn1, fn2, fn3, fn4, fn5, fn6 }) do
-      args = table.pack(fn(table.unpack(args)))
+      args = pk(fn(unpk(args)))
     end
 
     return args

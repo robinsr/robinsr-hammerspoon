@@ -2,9 +2,11 @@ local App     = require 'user.lua.model.application'
 local fns     = require 'user.lua.lib.func'
 local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
+local paths   = require 'user.lua.lib.path'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local tables  = require 'user.lua.lib.table'
+local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('Desktop', 'debug')
@@ -114,6 +116,35 @@ function desktop.activeApp()
   local focused = desktop.activeWindow()
   return focused and focused:application()
 end
+
+
+--
+-- Returns the space ID for the currently focused space. The focused space is
+-- the currently active space on the currently active screen (i.e. that the 
+-- user is working on)
+--
+---@return integer
+function desktop.activeSpace()
+  return hs.spaces.focusedSpace()
+end
+
+
+-- --
+-- -- Gets the spaceId's for the selected screen (defaults to active screen)
+-- --
+-- ---@param screen? ks.desktop.selectscreen
+-- ---@return integer[]
+-- function desktop.screenSpaces(screen)
+--   screen = screen or 'active'
+
+--   local screen_ids, err = hs.spaces.spacesForScreen(desktop.getScreen(screen))
+
+--   if err ~= nil then
+--     error(err)
+--   end
+
+--   return screen_ids --[[@as integer[] ]]
+-- end
 
 
 --
@@ -227,17 +258,12 @@ end
 --
 function desktop.getMenuItems(app)
   local rawitems = app:getMenuItems()
-  -- log.inspect(rawitems, logr.d3)
-  local menuitems = lists(rawitems):map(function(mi)
-    return App.menuItem(mi)
-  end)
-  -- log.inspect(menuitems:values(), logr.d3)
   
+  json.write('~/Desktop/menuitems.json', rawitems)
 
   ---@param memo table
   ---@param item ks.app.menuitem
   local function reducer(memo, item)
-    
     if item.hasChildren then
       for i,child in ipairs(item.children) do
         reducer(memo, child)
@@ -248,24 +274,37 @@ function desktop.getMenuItems(app)
 
     return memo
   end
-
-  local reducio = menuitems:map(function(mi)
-    return {
-      title = mi.title,
-      items = lists(mi.children)
-        :reduce({}, reducer)
-        :filter(function(item) return item.hasHotkey end)
-        :values()
-    }
-  end)
-
-  log.inspect(reducio:values())
-
-  -- return { title = item.title, cmds = reduce({}, item.children) }
-  -- :groupBy('title')
+  
+  -- log.inspect(rawitems, logr.d3)
   
 
-  return reducio:values()
+  local menuitems = lists(rawitems)
+    :map(function(mi)
+      return App.menuItem(mi)
+    end)
+    :map(function(mi)
+      local parent = mi.title
+      local childs = lists(mi.children):reduce({}, reducer)
+    
+      return lists(childs)
+        :filter(function(item)
+          return item.title ~= ""
+        end)
+        :map(function(item) 
+          item.children = nil
+          item.hasChildren = nil
+          item.hasHotkey = nil
+          item.parent = mi.title
+          return item
+        end)
+        :values()
+    end)
+    :flatten()
+    :values()
+
+  log.inspect(menuitems)
+  
+  return menuitems
 end
 
 

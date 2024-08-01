@@ -141,7 +141,7 @@ function ShellResult:error_msg()
     return ''
   end
 
-  return cmd_error(self, nil)
+  return cmd_error(self, self.output)
 end
 
 

@@ -1,74 +1,68 @@
-local strings    = require 'user.lua.lib.string'
-local spaces     = require 'user.lua.modules.spaces'
-local space_util = require 'user.lua.modules.spaces.util'
-local logr       = require 'user.lua.util.logger'
-
-local send_message = space_util.send_message
-local dir_keys     = space_util.dir_keys
+local Option = require 'user.lua.lib.optional'
+local keys   = require 'user.lua.model.keys'
+local spaces = require 'user.lua.modules.spaces'
 
 ---@type Yabai
 local yabai = KittySupreme.services.yabai
 
+local mod = {}
+
+mod.module = "Window Layout"
+
 ---@type ks.command.config[]
-local cmds = {
+mod.cmds = {
   {
-    id = 'spaces.layout.rotate_windows',
+    id    = 'spaces.layout.rotate_windows',
     title = 'Rotate layout clockwise',
-    mods = 'peace',
-    key = 'r',
-    flags = { 'no-alert' },
-    exec = send_message('space --rotate 90'),
+    mods  = keys.preset.peace,
+    key   = keys.code.R,
+    flags = spaces.NO_ALERT,
+    exec  = spaces.createMessageFn('space --rotate 90'),
   },
   {
-    id = 'spaces.layout.rebalance',
+    id    = 'spaces.layout.rebalance',
     title = 'Rebalance windows in space',
-    mods = 'peace',
-    key = 'e',
-    flags = { 'no-alert' },
-    exec = send_message('space --balance', 'Rebalanced windows'),
+    mods  = keys.preset.peace,
+    key   = keys.code.E,
+    flags = spaces.NO_ALERT,
+    exec  = spaces.createMessageFn('space --balance', 'Rebalanced windows'),
   },
   {
-    id = 'spaces.layout.toggle_fullscreen',
+    id    = 'spaces.layout.toggle_fullscreen',
     title = 'Maximize active window',
-    mods = 'peace',
-    key = 'm',
-    flags = { 'no-alert' },
-    exec = send_message('window --toggle zoom-fullscreen', 'Maximize active window'),
+    mods  = keys.preset.peace,
+    key   = keys.code.M,
+    flags = spaces.NO_ALERT,
+    exec  = spaces.createMessageFn('window --toggle zoom-fullscreen', 'Maximize active window'),
   },
   {
-    id = 'spaces.space.cycle',
+    id    = 'spaces.space.cycle',
     title = "Cycle current space layout (bsp, float, stack)",
-    icon = "tag",
-    mods = "peace",
-    key = "space",
-    flags = { 'no-alert' },
-    exec = function(cmd)
-      local layout = spaces.cycleLayout()
-      return strings.fmt("Changed layout to %s", layout)
-    end,
+    icon  = "tag",
+    mods  = keys.preset.peace,
+    key   = keys.code.SPACE,
+    flags = spaces.NO_ALERT,
+    exec  = spaces.cycleLayout,
   },
    {
-    id = 'spaces.space.rename',
+    id    = 'spaces.space.rename',
     title = "Label current space",
-    icon = "tag",
-    mods = "btms",
-    key = "L",
-    flags = { 'no-alert' },
-    exec = function(cmd, ctx)
-      spaces.rename()
-    end,
+    icon  = "tag",
+    mods  = keys.preset.btms,
+    key   = keys.code.L,
+    flags = spaces.NO_ALERT,
+    exec  = spaces.rename,
   },
   { 
-    id = "spaces.space.float_active_window",
+    id    = "spaces.space.float_active_window",
     title = "Float active window",
-    icon = "float",
-    exec = function (cmd, ctx)
-      yabai:floatActiveWindow()
+    icon  = "float",
+    exec  = function(cmd, ctx)
+      Option:ofNil(ctx.activeWindow):ifPresent(function(win)
+        yabai:floatActiveWindow(win:id())
+      end)
     end
   },
 }
 
-return {
-  module = "Spaces",
-  cmds = cmds,
-}
+return mod

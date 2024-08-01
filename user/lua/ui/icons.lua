@@ -7,7 +7,7 @@ local symbols = require 'user.lua.ui.symbols'
 --
 -- Preconfigured SF Symbol code points, see symbols.lua for more
 --
----@type Hash<string, hs.image>
+---@type Table : { [string]: hs.image }
 local static_icons = tables{
   kitty      = image.from_icon("cat", 12, colors.black),
   info       = image.from_icon("info.circle", 13, colors.disabled),

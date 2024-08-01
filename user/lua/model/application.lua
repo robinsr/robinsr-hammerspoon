@@ -52,7 +52,7 @@ function App.menuItem(item)
     -- local hk = Hotkey:new(mods, char):setDescription(menuitem.title)
 
     menuitem.hasHotkey = true
-    menuitem.hotkey = Hotkey:new(mods, char):setDescription(menuitem.title)
+    menuitem.hotkey = Hotkey:new(mods, char):setDescription(menuitem.title):__toplain()
   else
     menuitem.hasHotkey = false
   end

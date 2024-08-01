@@ -9,13 +9,13 @@ local tables = require 'user.lua.lib.table'
 
 ---@alias ks.keys.modifiers ks.keys.modcombo | ks.keys.modkey[]
 
----@alias ks.keys.presets  { [ks.keys.modcombo]: ks.keys.modkey[] }
+---@alias ks.keys.presets  table<ks.keys.modcombo, ks.keys.modkey[]>
 
 ---@alias ks.keys.keyevent 'pressed'|'released'|'repeat'
 
 ---@alias ks.keys.callback fun(): any
 
----@alias ks.keys.keycode string|number
+---@alias ks.keys.keycode string
 
 
 local Keys = {}
@@ -23,6 +23,67 @@ local Keys = {}
 
 ---@type ks.keys.keyevent[]
 Keys.events = { 'pressed', 'released', 'repeat' } 
+
+Keys.code = {
+  A = "a",
+  B = "b",
+  C = "c",
+  D = "d",
+  E = "e",
+  F = "f",
+  G = "g",
+  H = "h",
+  I = "i",
+  J = "j",
+  K = "k",
+  L = "l",
+  M = "m",
+  N = "n",
+  O = "o",
+  P = "p",
+  Q = "q",
+  R = "r",
+  S = "s",
+  T = "t",
+  U = "u",
+  V = "v",
+  W = "w",
+  X = "x",
+  Z = "z",
+  Y = "y",
+  TICK = '`',
+  OPEN_BRACKET = '[',
+  CLOSE_BRACKET = ']',
+  OPEN_ANGLE = ',',
+  CLOSE_ANGLE = '.',
+  OPEN_PAREN = '9',
+  CLOSE_PAREN = '0',
+  UP = 'up',
+  DOWN = 'down',
+  LEFT = 'left',
+  RIGHT = 'right',
+  PAGEUP = 'pageup',
+  PAGEDOWN = 'pagedown',
+  BACKSLASH = '\\',
+  SEMICOLON = ';',
+  QUOTE = "'",
+  SLASH = '/',
+  QUESTION = '/',
+  PLUS = '=',
+  MINUS = '-',
+  BANG = '1',
+  AT = '2',
+  HASH = '3',
+  DOLLAR = '4',
+  PERCENT = '5',
+  CARET = '6',
+  AMP = '7',
+  ASTERISK = '8',
+  HOME = 'home',
+  END = 'end',
+  SPACE = "space",
+  TAB = "tab",
+}
 
 
 ---@type Table | table<string, string>
@@ -48,8 +109,7 @@ Keys.cardinal = tables{
 }
 
 
----@type Table | ks.keys.presets
-Keys.presets = tables{
+Keys.preset = {
   hyper  = { "ctrl", "alt", "shift", "cmd" }, -- all the keys!
   meh    = { "ctrl", "alt", "shift"        }, -- its just whatev
   peace  = { "ctrl", "alt", "shift"        }, -- "the peace sign" (same as "meh", just easier to remember)
@@ -71,6 +131,10 @@ Keys.presets = tables{
   -- Others
   option_shift = { "alt", "shift" },
 }
+
+
+---@type Table | ks.keys.presets
+Keys.presets = tables(Keys.preset)
 
 
 --

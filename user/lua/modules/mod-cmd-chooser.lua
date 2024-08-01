@@ -1,39 +1,34 @@
-local chooser = require 'hs.chooser'
+local chooser = require 'user.lua.interface.chooser'
 local lists   = require 'user.lua.lib.list'
 local regex   = require 'user.lua.lib.regex'
 local strings = require 'user.lua.lib.string'
-local texts   = require 'user.lua.ui.text'
 local types   = require "user.lua.lib.typecheck"
+local keys    = require "user.lua.model.keys"
+local texts   = require 'user.lua.ui.text'
+local loggr   = require 'user.lua.util.logger'
 
-local log = require('user.lua.util.logger').new('mod-cmd-chooser', 'debug')
-
-
----@class ChooserModCtx
----@field chooser hs.chooser
-
----@class ChooserModules
----@field setup ks.command.setupfn<ChooserModCtx | ks.command.context>
----@field exec ks.command.execfn<ChooserModCtx | ks.command.context>
+local log = loggr.new('mod-cmd-chooser', 'debug')
 
 
 --
 --
 --
-local get_cmd_choices = function()
+local getChoices = function()
   local EVT_FILTER = regex.glob('!*.(evt|event|events).*')
 
   return KittySupreme.commands
     :filter(function(cmd)
-      return EVT_FILTER(cmd.id) and not lists(cmd.flags):includes('no-chooser')
+      ---@cast cmd ks.command
+      return EVT_FILTER(cmd.id) and not cmd:hasFlag('no-chooser')
     end)
     :map(function(cmd)
       ---@cast cmd ks.command
       return {
         id = cmd.id,
-        text = cmd.title or cmd.id,
-        subText = cmd.desc or ("%s - %s"):format(cmd.id, cmd.module),
+        text = chooser.mainText(cmd.title or cmd.id),
+        subText = chooser.subTextMono(cmd.desc or ("%s - %s"):format(cmd.id, cmd.module)),
         image = cmd:getMenuIcon(256),
-        valid = types.isFalse(cmd:hasFlag('invalid_choice'))
+        valid = types.isFalse(cmd:hasFlag('invalid'))
       }
     end)
     :values()
@@ -41,9 +36,9 @@ end
 
 
 --
+-- Valid item handler
 --
---
-local on_choice = function(selected)
+local onItemChosen = function(selected)
    log.f("Chosen item: %s", hs.inspect(selected))
 
   if types.isNil(selected) then
@@ -66,7 +61,7 @@ end
 --
 --
 --
-local on_invalid_choice = function(selected)
+local onInvalidChosen = function(selected)
   log.f("Chosen (invalid) item: %s", hs.inspect(selected))
 
   if types.isNil(selected) then
@@ -80,57 +75,53 @@ local on_invalid_choice = function(selected)
   if types.isNil(cmd) then
     error(('Could not find command with id %q'):format(chosen_id))
   end
-
-  ---@cast cmd ks.command
-  -- cmd:invoke('chooser', {}) -- possible new invoke type 'chooser-invald'?
 end
 
 
 --
+-- WIP - Right-click handler. Currently no use for this
 --
---
-local on_right_click = function(index)
+---@param index int
+local onRightClick = function(index)
   if types.isNil(index) then
     error('No selection passed to chooser invalid handler')
   end
 
-  local all_choices = get_cmd_choices()
+  local all_choices = getChoices()
 
   log.df("Chooser items: %s", hs.inspect(all_choices))
-  
-  local cmd = all_choices[index]
 
-  if types.isNil(cmd) then
+  if types.isNil(all_choices[index]) then
     error(('Could not find command with index %q'):format(index))
   end
 
-  log.f("right-click on item %s", hs.inspect(cmd))
+  log.f("right-click on item %s", hs.inspect(all_choices[index]))
 end
 
 
---
---
---
----@type ChooserModules
+
+
 local ChooserModule = {
   
-  exec = function (cmd, ctx, params)
-    -- not necessary to call refresh unless chooser's options have changed
-    ctx.chooser:refreshChoicesCallback()
-    ctx.chooser:show()
-  end,
-
+  ---@type ks.command.setupfn<{ chooser: hs.chooser }>
   setup = function (cmd)
-    local cmd_chooser = chooser.new(on_choice)
-      :choices(get_cmd_choices)
-      :invalidCallback(on_invalid_choice)
-      :rightClickCallback(on_right_click)
+    local cmd_chooser = hs.chooser.new(onItemChosen)
+      :choices(getChoices)
+      :invalidCallback(onInvalidChosen)
+      :rightClickCallback(onRightClick)
       :placeholderText('Search KittySupreme commands')
       :searchSubText(true)
 
 
     return { chooser = cmd_chooser }
-  end
+  end,
+
+  ---@type ks.command.execfn<{ chooser: hs.chooser }>
+  exec = function (cmd, ctx, params)
+    -- not necessary to call refresh unless chooser's options have changed
+    ctx.chooser:refreshChoicesCallback()
+    ctx.chooser:show()
+  end,
 }
 
 
@@ -142,15 +133,15 @@ Note — limited to just the commands invocable from the chooser, ie with no arg
 
 ---@type ks.command.config
 local show_command_chooser = {
-  id = 'ks.commands.show_command_chooser',
+  id    = 'ks.commands.show_command_chooser',
   title = "Show command chooser",
-  icon = "filemenu.and.selection",
-  desc = module_desc,
-  flags = { 'no-chooser', 'no-alert' },
-  mods = 'btms',
-  key = "space",
+  icon  = "filemenu.and.selection",
+  desc  = module_desc,
+  mods  = keys.preset.btms,
+  key   = keys.code.SPACE,
   setup = ChooserModule.setup,
-  exec = ChooserModule.exec,
+  exec  = ChooserModule.exec,
+  flags = { 'no-chooser', 'no-alert' },
 }
 
 

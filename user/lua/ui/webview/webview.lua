@@ -57,7 +57,7 @@ function Webview.close_all()
   if types.notNil(Webview.current) then
     Webview.current = Webview.current:delete(true, FADE_TIME)
 
-    func.delay(0.1, function() desk.getTopWindow():focus() end)
+    func.delay(0.5, function() desk.getTopWindow():focus() end)
     return
   end
 end

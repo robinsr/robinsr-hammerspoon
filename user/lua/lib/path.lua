@@ -64,6 +64,30 @@ end
 
 
 --
+-- Return a suitable full path to a new temporary file name
+--
+---@return string
+function Paths.tmp()
+  return plpath.tmpname()
+end
+
+
+--
+-- Returns a boolean if supplied path matches the pattern
+--
+---@param path string
+---@param pattern string
+---@param options? table
+---@return boolean
+function Paths.matches(path, pattern, options)
+  params.assert.string(path, 1)
+  params.assert.string(pattern, 2)
+  
+  return (path or ''):match(pattern) ~= nil
+end
+
+
+--
 -- Returns the current dir (location of root init.lua file)
 --
 ---@return string 

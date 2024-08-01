@@ -1,156 +1,161 @@
 local Option = require 'user.lua.lib.optional' 
-local func   = require 'user.lua.lib.func'
-local logr   = require 'user.lua.util.logger'
+local keys   = require 'user.lua.model.keys'
+local spaces = require 'user.lua.modules.spaces'
 
-local yabai = KittySupreme.services.yabai
+local yabai  = KittySupreme.services.yabai
 
-local log = logr.new('ModSpaces/warp', 'debug')
+local mod = {}
 
-local ensure_window = function(fn)
-  return function(cmd, ctx)
-    return Option:ofNil(ctx.activeWindow):map(fn):orElse('No active window')
-  end
-end
+mod.module = "Arrange Windows"
 
-
-local arrange = {}
 
 ---@type ks.command.config[]
-local cmds = {
+mod.cmds = {
   {
-    id = 'spaces.space.swap_with_next',
+    id    = 'spaces.space.swap_with_next',
     title = "Swap current space neighbor to right",
-    flags = { 'no-alert' },
-    exec = yabai.createMessageFn('space --move next', 'Moved space to the right'),
+    flags = spaces.NO_ALERT,
+    exec  = spaces.createMessageFn('space --move next', 'Moved space to the right'),
   },
   {
-    id = 'spaces.space.swap_with_prev',
+    id    = 'spaces.space.swap_with_prev',
     title = "Swap current space neighbor to left",
-    flags = { 'no-alert' },
-    exec = yabai.createMessageFn('space --move prev', 'Moved space to the left'),
+    flags = spaces.NO_ALERT,
+    exec  = spaces.createMessageFn('space --move prev', 'Moved space to the left'),
   },
   {
-    id = 'spaces.arrange.move_to_next_space',
+    id    = 'windows.arrange.move_to_next_space',
     title = "Send window to next space",
-    mods = "btms",
-    key = "right",
-    flags = { 'no-alert' },
-    exec = ensure_window(function(win)
-      yabai.message('window --space next')
-      yabai.message('space mouse --focus next')
-      win:focus()
+    icon  = "@/resources/images/next-space.template.png",
+    mods  = keys.preset.btms,
+    key   = keys.code.RIGHT,
+    flags = spaces.NO_ALERT,
+    exec = function(cmd, ctx)
+      return Option:ofNil(ctx.activeWindow):map(function(win)
+        yabai.message('window --space next')
+        yabai.message('space mouse --focus next')
+        win:focus()
 
-      return 'Moved window to right one space'
-    end),
+        return 'Moved window to right one space'
+      end)
+      :orElse('No active window')
+    end
   },
   {
-    id = 'spaces.arrange.move_to_prev_space',
+    id    = 'windows.shift.to_prev_space',
     title = "Send window to previous space",
-    mods = "btms",
-    key = "left",
-    flags = { 'no-alert' },
-    exec = ensure_window(function(win)
-      yabai.message('window --space prev')
-      yabai.message('space mouse --focus prev')
-      win:focus()
+    -- icon = "@/resources/images/prev-space.template.png",
+    mods  = keys.preset.btms,
+    key   = keys.code.LEFT,
+    flags = spaces.NO_ALERT,
+    exec  = function(cmd, ctx)
+      return Option:ofNil(ctx.activeWindow):map(function(win)
+        yabai.message('window --space prev')
+        yabai.message('space mouse --focus prev')
+        win:focus()
 
-      return 'Moved window to left one space'
-    end),
+        return 'Moved window to left one space'
+      end)
+      :orElse('No active window')
+    end,
   },
   {
-    id = 'spaces.arrange.move_to_next_display',
+    id    = 'windows.shift.to_next_display',
     title = "Send window to next display",
-    mods = "btms",
-    key = ']',
-    flags = { 'no-alert' },
-    exec = ensure_window(function(win)
-      yabai.message('window --display prev')
-      yabai.message('window --focus recent')
+    mods  = keys.preset.btms,
+    key   = keys.code.CLOSE_BRACKET,
+    flags = spaces.NO_ALERT,
+    exec  = function(cmd, ctx)
+      return Option:ofNil(ctx.activeWindow):map(function(win)
+        yabai.message('window --display prev')
+        yabai.message('window --focus recent')
 
-      return 'Moved window to "previous" display'
-    end)
+        return 'Moved window to "previous" display'
+      end)
+      :orElse('No active window')
+    end,
   },
   {
-    id = 'spaces.arrange.move_to_prev_display',
+    id    = 'windows.shift.to_prev_display',
     title = "Send window to previous display",
-    mods = "btms",
-    key = '[',
-    flags = { 'no-alert' },
-    exec = ensure_window(function(win)
-      yabai.message('window --display next')
-      yabai.message('window --focus recent')
+    mods  = keys.preset.btms,
+    key   = keys.code.OPEN_BRACKET,
+    flags = spaces.NO_ALERT,
+    exec  = function(cmd, ctx)
+      return Option:ofNil(ctx.activeWindow):map(function(win)
+        yabai.message('window --display next')
+        yabai.message('window --focus recent')
 
-      return 'Moved window to "next" display'
-    end),
+        return 'Moved window to "next" display'
+      end)
+      :orElse('No active window')
+    end,
   },
   {
-    id = 'spaces.arrange.swap_north',
+    id    = 'windows.swap.to_north',
     title = 'Swap with window above',
-    mods = 'claw',
-    key = 'up',
+    mods  = keys.preset.claw,
+    key   = keys.code.UP,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --swap north', 'Swapped window north'),
+    exec  = spaces.createMessageFn('window --swap north', 'Swapped window north'),
   },
   {
-    id = 'spaces.arrange.swap_south',
+    id    = 'windows.swap.to_south',
     title = 'Swap with window below',
-    mods = 'claw',
-    key = 'down',
+    mods  = keys.preset.claw,
+    key   = keys.code.DOWN,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --swap south', 'Swapped window south'),
+    exec  = spaces.createMessageFn('window --swap south', 'Swapped window south'),
   },
   {
-    id = 'spaces.arrange.swap_east',
+    id    = 'windows.swap.to_east',
     title = 'Swap with window right',
-    mods = 'claw',
-    key = 'right',
+    mods  = keys.preset.claw,
+    key   = keys.code.RIGHT,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --swap east', 'Swapped window east'),
+    exec  = spaces.createMessageFn('window --swap east', 'Swapped window east'),
   },
   {
-    id = 'spaces.arrange.swap_west',
+    id    = 'windows.swap.to_west',
     title = 'Swap with window left',
-    mods = 'claw',
-    key = 'left',
+    mods  = keys.preset.claw,
+    key   = keys.code.LEFT,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --swap west', 'Swapped window west'),
+    exec  = spaces.createMessageFn('window --swap west', 'Swapped window west'),
   },
     {
-    id = 'spaces.arrange.warp_north',
+    id    = 'windows.warp.to_north',
     title = 'Warp to window above',
-    mods = 'peace',
-    key = 'up',
+    mods  = keys.preset.peace,
+    key   = keys.code.UP,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --warp north', 'Warp to window above'),
+    exec  = spaces.createMessageFn('window --warp north', 'Warp to window above'),
   },
   {
-    id = 'spaces.arrange.warp_south',
+    id    = 'windows.warp.to_south',
     title = 'Warp to window below',
-    mods = 'peace',
-    key = 'down',
+    mods  = keys.preset.peace,
+    key   = keys.code.DOWN,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --warp south', 'Warp to window below'),
+    exec  = spaces.createMessageFn('window --warp south', 'Warp to window below'),
   },
   {
-    id = 'spaces.arrange.warp_east',
+    id    = 'windows.warp.to_east',
     title = 'Warp to window right',
-    mods = 'peace',
-    key = 'right',
+    mods  = keys.preset.peace,
+    key   = keys.code.RIGHT,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --warp east', 'Warp to window right'),
+    exec  = spaces.createMessageFn('window --warp east', 'Warp to window right'),
   },
   {
-    id = 'spaces.arrange.warp_west',
+    id    = 'windows.warp.to_west',
     title = 'Warp to window left',
-    mods = 'peace',
-    key = 'left',
+    mods  = keys.preset.peace,
+    key   = keys.code.LEFT,
     flags = { 'no-chooser', 'no-alert' },
-    exec = yabai.createMessageFn('window --warp west', 'Warp to window left'),
+    exec  = spaces.createMessageFn('window --warp west', 'Warp to window left'),
   },
 }
 
 
-return {
-  module = "Arrange Windows",
-  cmds = cmds,
-}
+return mod
