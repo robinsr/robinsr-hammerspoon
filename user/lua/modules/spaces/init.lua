@@ -44,7 +44,7 @@ function Spaces.rename()
     space.label = input
 
     yabai:setSpaceLabel(space.index, input or '""')
-    sketchybar:onSpaceEnvChange(space)
+    sketchybar:setSpaceLabel(space.index, input)
   end
 end
 
@@ -98,6 +98,7 @@ function Spaces.cycleLayout(cmd, ctx)
 
   local space = yabai:getSpace()
   local layout = space.type or 'stack'
+  local index = space.index
 
   local nextlayout
   for i, nl in ipairs(layouts) do
@@ -106,8 +107,8 @@ function Spaces.cycleLayout(cmd, ctx)
     end
   end
 
-  yabai:setLayout(space.index, nextlayout)
-  sketchybar:onSpaceEnvChange(space)
+  yabai:setLayout(index, nextlayout)
+  sketchybar:setSpaceIcon(index, nextlayout, #space.windows)
 
   return ("Changed layout to %s"):format(nextlayout)
 end

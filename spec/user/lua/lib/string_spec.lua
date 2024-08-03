@@ -8,10 +8,35 @@ local dump = tutil.dump
 
 insulate('user.lua.lib.string', function()
 
-  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy)
-  package.loaded['zzz_dump'] = dump
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "inspect")
   
   local strings = require('user.lua.lib.string')
+
+  describe("String instances", function()
+    it("should create a new String", function()
+      local my = strings("Hello, world")
+
+      assert.are.same("Hello, world", my)
+    end)
+
+    it("should provide String methods", function()
+      local my = strings("Hello, %s")
+
+      assert.is_function(my.fmt)
+      assert.are.same("Hello, Buddy", my:fmt('Buddy'))
+      assert.are.same("Hello, Guy", my:fmt('Guy'))
+      assert.are.same("Hello, Friend", my:fmt('Friend'))
+    end)
+
+    it("should provide base Lua string methods", function()
+      local my = strings("Hello, %s")
+
+      assert.is_function(my.format)
+      assert.are.same("Hello, Buddy", my:format('Buddy'))
+      assert.are.same("Hello, Guy", my:format('Guy'))
+      assert.are.same("Hello, Friend", my:format('Friend'))
+    end)
+  end)
   
 
   describe('static', function()

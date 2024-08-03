@@ -19,15 +19,25 @@ When using in a block, import them in the block itself, eg:
   <img src="{{ img_url }}" width="40" height="40" />
 {% endmacro %}
 
-{%- macro Button(color='primary', size='sm', attrs={}, content='') -%}
-  <button 
-    {{ htmlattrs(attrs) }}
-    {# class="btn btn-{{ color }} btn-{{ size }}" #}
-    class="rounded bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-  >
+
+
+{%- macro Button(color='primary', classnames={}, size='sm', attrs={}, content='') -%}
+  {% set variants = {
+    'btn-primary'  : 'bg-indigo-600 font-medium text-white hover:bg-indigo-700 rounded px-3 py-1.5 text-sm',
+    'btn-secondary': 'btn btn-secondary',
+    'btn-success'  : 'btn btn-success',
+    'btn-danger'   : 'btn btn-danger',
+    'btn-info'     : 'btn btn-info',
+    'btn-light'    : 'btn btn-light',
+    'btn-dark'     : 'btn btn-dark'
+  } %}
+
+  <button class="{{ classnames|join(' ')|replace(variants) }}" {{ htmlattrs(attrs) }} >
     {{ content ? content : children }}
   </button>
 {%- endmacro -%}
+
+
 
 {%- macro KBD(keys='', scale=75) %}
   <kbd class="kbd scale-{{ scale }} mx-0">
@@ -35,8 +45,34 @@ When using in a block, import them in the block itself, eg:
   </kbd>
 {% endmacro %}
 
+
+
+{%- macro Keycap(keys='', classnames={}, scale=100) %}
+  {% set symbols = {'cmd': "⌘", 'ctrl': "⌃", 'alt': "⌥", 'shift': "⇧", 'right': '→', 'left': '←', 'up': '↑', 'down': '↓', 'space': '␣'} %}
+
+  {% set variants = {
+    'btn-primary': 'kbc-button-primary',
+    'btn-secondary': 'kbc-button-secondary',
+    'btn-success': 'kbc-button-success',
+    'btn-danger': 'kbc-button-danger',
+    'btn-info': 'kbc-button-info',
+    'btn-light': 'kbc-button-light',
+    'btn-dark': 'kbc-button-dark'
+  } %}
+
+  <kbd class="kbc-button no-container scale-{{ scale }} {{ classnames|join(' ')|replace(variants) }}">
+    {%- if symbols[keys] -%}
+      {{- symbols[keys] -}}
+    {%- else -%}
+      {{- keys -}}
+    {%- endif %}
+  </kbd>
+{% endmacro %}
+
+
+
 {%- macro Card(title='', classnames={}, content='') -%}
-  <div class="card bg-base-200 {{ classnames|join(' ') }} w-full shadow-sm">
+  <div class="card bg-base-200 w-full shadow-sm {{ classnames|join(' ') }}">
     <div class="card-body">
       <h2 class="card-title">{{ title }}</h2>
       {{ content ? content : children }}
@@ -44,11 +80,15 @@ When using in a block, import them in the block itself, eg:
   </div>
 {%- endmacro -%}
 
-{%- macro SVG(content='') -%}
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-5 w-5 stroke-current">
+
+
+{%- macro SVG(classnames={}, vbw=24, vbh=24, content='') -%}
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 {{vbw}} {{vbh}}" class="inline-block stroke-current {{ classnames|join(' ') }}">
     {{ content ? content : children }}
   </svg>
 {%- endmacro -%}
+
+
 
 {%- macro Collapse(title='', classnames=['collapse-arrow'], content='') -%}
 <div tabindex="0" class="collapse border-base-300 bg-base-200 border {{ classnames|join(' ') }}">

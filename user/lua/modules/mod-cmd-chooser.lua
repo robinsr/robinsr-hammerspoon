@@ -1,18 +1,19 @@
-local chooser = require 'user.lua.interface.chooser'
+local ichooser = require 'user.lua.interface.chooser'
 local lists   = require 'user.lua.lib.list'
 local regex   = require 'user.lua.lib.regex'
 local strings = require 'user.lua.lib.string'
 local types   = require "user.lua.lib.typecheck"
 local keys    = require "user.lua.model.keys"
+local color   = require 'user.lua.ui.color'
 local texts   = require 'user.lua.ui.text'
 local loggr   = require 'user.lua.util.logger'
+local desktop = require 'user.lua.interface.desktop'
 
 local log = loggr.new('mod-cmd-chooser', 'debug')
 
 
 --
---
---
+---@return HS.Chooser.Item[]
 local getChoices = function()
   local EVT_FILTER = regex.glob('!*.(evt|event|events).*')
 
@@ -23,12 +24,12 @@ local getChoices = function()
     end)
     :map(function(cmd)
       ---@cast cmd ks.command
-      return {
-        id = cmd.id,
-        text = chooser.mainText(cmd.title or cmd.id),
-        subText = chooser.subTextMono(cmd.desc or ("%s - %s"):format(cmd.id, cmd.module)),
-        image = cmd:getMenuIcon(256),
-        valid = types.isFalse(cmd:hasFlag('invalid'))
+      return ichooser.newItem{
+        id      = cmd.id,
+        text    = cmd.title or cmd.id,
+        subText = cmd.desc or ("%s - %s"):format(cmd.id, cmd.module),
+        image   = cmd:getMenuIcon(256),
+        valid   = cmd:hasFlag('invalid') == false
       }
     end)
     :values()
@@ -103,23 +104,30 @@ end
 
 local ChooserModule = {
   
-  ---@type ks.command.setupfn<{ chooser: hs.chooser }>
-  setup = function (cmd)
-    local cmd_chooser = hs.chooser.new(onItemChosen)
-      :choices(getChoices)
-      :invalidCallback(onInvalidChosen)
-      :rightClickCallback(onRightClick)
-      :placeholderText('Search KittySupreme commands')
-      :searchSubText(true)
-
-
-    return { chooser = cmd_chooser }
-  end,
+  -- ---@type ks.command.setupfn<{ chooser: hs.chooser }>
+  -- setup = function (cmd)
+  --   return { chooser = ichooser.create(cmd_chooser) }
+  -- end,
 
   ---@type ks.command.execfn<{ chooser: hs.chooser }>
   exec = function (cmd, ctx, params)
+    local isDark = desktop.darkMode()
+
+    ctx.chooser = ichooser.create({
+      placeholder   = 'Search KittySupreme commands',
+      choices       = getChoices(),
+      onSelect      = onItemChosen,
+      onInvalid     = onInvalidChosen,
+      onRightClick  = onRightClick,
+      searchSubtext = true,
+    })
+    
+
+    ctx.chooser:bgDark(isDark)
+
     -- not necessary to call refresh unless chooser's options have changed
     ctx.chooser:refreshChoicesCallback()
+    
     ctx.chooser:show()
   end,
 }

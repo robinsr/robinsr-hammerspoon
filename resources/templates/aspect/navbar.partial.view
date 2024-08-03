@@ -1,11 +1,31 @@
+{%- set cog_icon_src = { point: 0x1008CB } -%}
+
+{%- set cog_icon = html('image', { href: encoded_img(source=cog_icon_src, width=24, color='#ffffff'), width: "24", height: "24" }) -%}
+
+{%- set menu_icon = html('path', { 'stroke-linecap': "round", 'stroke-linejoin': "round", 'stroke-width': "2", 'd': "M4 6h16M4 12h16M4 18h16" }) -%}
+
 <div class="navbar bg-base-100">
   <div class="flex-none">
-    <button class="btn btn-square btn-ghost">{{ mSVG(content=menu_icon) }}</button>
+    {{ mButton(
+        content=mSVG(content=menu_icon, classnames=['h-5 w-5']),
+        classnames=['btn', 'btn-square', 'btn-ghost']
+    ) }}
   </div>
   <div class="flex-1">
     <p>{{ title|default('There is no title for this page...') }}</p>
   </div>
   <div class="flex-none">
-    <button class="btn btn-square btn-ghost">{{ mSVG(content=cog_icon) }}</button>
+    {{ mButton(
+        content=mSVG(content=cog_icon, classnames=['h-5 w-5']),
+        classnames=['btn', 'btn-square', 'btn-ghost']
+    ) }}
+    {{ mButton(
+        classnames=['btn', 'btn-square', 'btn-ghost'],
+        content=mSVG(vbw=40, vbh=40, classnames=['h-5 w-5'], content=html('path', {
+         'stroke-linecap': "round",
+         'stroke-linejoin': "round",
+         'stroke-width': "4", 'd': "M 10,10 L 30,30 M 30,10 L 10,30"
+         })))
+     }}
   </div>
 </div>

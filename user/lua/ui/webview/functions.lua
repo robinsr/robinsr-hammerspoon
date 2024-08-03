@@ -99,11 +99,12 @@ end
 -- }
 
 
-macro_func('macros.view' ,'SVG', { 'content:string' })
-macro_func('macros.view' ,'KBD', { 'keys:string', 'scale:number' })
-macro_func('macros.view' ,'Card', { 'title:string', 'classnames:table', 'content:string' })
-macro_func('macros.view' ,'Collapse', { 'title:string', 'classnames:table', 'content:string' })
-macro_func('macros.view' ,'Button', { 'color:string', 'size:string', 'content:string', 'attrs:any' })
+macro_func('macros.view' ,'SVG',       { 'content:string', 'vbw:number', 'vbh:number', 'classnames:table' })
+macro_func('macros.view' ,'KBD',       { 'keys:string', 'classnames:table', 'scale:number' })
+macro_func('macros.view' ,'Keycap',    { 'keys:string', 'classnames:table', 'scale:number' })
+macro_func('macros.view' ,'Card',      { 'title:string', 'classnames:table', 'content:string' })
+macro_func('macros.view' ,'Collapse',  { 'title:string', 'classnames:table', 'content:string' })
+macro_func('macros.view' ,'Button',    { 'color:string', 'classnames:table', 'size:string', 'content:string', 'attrs:any' })
 macro_func('macros.view' ,'DataImage', { 'name:string', 'width:number', 'height:number' })
 
 
@@ -114,7 +115,7 @@ add_func('htmlattrs', {'args:table'}, function(__, args)
     output:writef('%s="%s"', k, tostring(v))
   end
 
-  return output:value():_replace(strings.char.newline, ' ')
+  return strings(output:value()):replace(utf8.char(0x000A), ' ')
 end)
 
 
@@ -157,17 +158,19 @@ add_func('get_ctx', {}, {
 add_func('encoded_img', {'source:table','width:number','height:number','color:string'}, function(_, args)
   local color = desk.darkMode() and colors.white or colors.black
 
+  local size = { w = args.width, h = args.height }
+
   if args.source.path then
     local filepath = paths.expand(args.source.path)
-    return images.from_path(filepath, args.width, args.height):encodeAsURLString()
+    return images.fromPath(filepath, size):encodeAsURLString()
   end
 
   if args.source.name then
-    return images.from_icon(args.source.name, args.width, color):encodeAsURLString()
+    return images.fromIcon(args.source.name, args.width, color):encodeAsURLString()
   end
 
   if args.source.point then
-    return images.from_codepoint(args.source.point, args.width, color):encodeAsURLString()
+    return images.fromGlyph(args.source.point, args.width, color):encodeAsURLString()
   end
 
   return ''

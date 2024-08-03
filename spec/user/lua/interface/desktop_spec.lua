@@ -14,7 +14,7 @@ local list = require('user.lua.lib.list')
 
 insulate("user.lua.interface.desktop", function()
 
-  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "inspect")
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "off")
   
   local noop = spy.new(function() end)
 
@@ -46,7 +46,7 @@ insulate("user.lua.interface.desktop", function()
 
       local jsonpath = plpath.join(plpath.currentdir(), 'spec/fixtures/menuitems.json')
       local jsonfile = plfile.read(jsonpath)
-      tutil.dump(jsonpath)
+      -- tutil.dump(jsonpath)
       local menuitems = dkjson.decode(jsonfile)
 
       local app = {

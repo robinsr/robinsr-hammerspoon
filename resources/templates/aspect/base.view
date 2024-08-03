@@ -1,7 +1,3 @@
-{%- set cog_icon_src = { point: 0x1008CB } -%}
-{%- set cog_icon = html('image', { href: encoded_img(source=cog_icon_src, width=24, color='#ffffff'), width: "24", height: "24" }) -%}
-{%- set menu_icon = html('path', { 'stroke-linecap': "round", 'stroke-linejoin': "round", 'stroke-width': "2", 'd': "M4 6h16M4 12h16M4 18h16" }) -%}
-
 <!doctype html>
 <html lang="en" data-theme="dark">
   <head>
@@ -24,7 +20,8 @@
     {% endblock -%}
   </head>
   <body>
-    <div class="mx-auto flex h-screen w-[95vw] flex-col">
+    <div class="mx-auto flex h-screen w-[95vw] flex-col relative">
+
       {% block page_header %}
         {# navbar content goes here... #}
       {% endblock %}
@@ -45,8 +42,6 @@
     {% block page_script %}
       <script type="text/javascript">
         const onLoad = function () {
-          
-
           window.ksPostMessage = (data) => {
             if (typeof data != "string") {
               data = JSON.stringify(data);
@@ -69,6 +64,12 @@
               ksPostMessage({ action: "close" });
             }
           });
+
+          const closebtn = document.querySelector('#close-window')
+
+          if (closebtn) {
+            closebtn.addEventListener('click', () => ksPostMessage({ action: "close" }))
+          }
 
           ksPostMessage({ action: 'print', data: "Hello from webview" });
 

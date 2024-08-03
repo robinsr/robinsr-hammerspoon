@@ -1,3 +1,4 @@
+local inspect = require 'inspect'
 local assert = require 'luassert'
 local pretty = require 'pl.pretty'
 local plstr = require 'pl.stringx'
@@ -32,7 +33,7 @@ end
 --
 ---@return table<string,string>
 function testutil.ttable()
-  local keys = string.split('foo bar baz quz quuz', ' ')
+  local keys = { 'foo', 'bar', 'baz', 'quz', 'quuz' }
   local tbl = {}
 
   for i,v in ipairs(keys) do
@@ -206,7 +207,7 @@ function testutil.hs_mock(spy)
     image = {
       imageFromPath = hs_spy_returns(spy_hs_image)
     },
-    inspect = hs_noop,
+    inspect = inspect,
     logger = {
       new = spy.new(function()
         return {

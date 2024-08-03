@@ -79,9 +79,11 @@ YabaiCmds.cmds = {
     icon = "@/resources/images/yabai-logo.png",
     title = "Show info for focused window",
     exec = function()
+      local ok, info = pcall(yabai.getWindow, '')
+
       local vm = {
         title = 'Yabai - active window',
-        data = yabai.getWindow(''),
+        data = ok and info or { err = info },
       }
 
       webview.file('json.view', vm, vm.title)
@@ -91,10 +93,15 @@ YabaiCmds.cmds = {
     id = 'yabai.info.space',
     icon = "@/resources/images/yabai-logo.png",
     title = "Show info current space",
-    exec = function()
+    exec = function(cmd, ctx)
       local spaceinfo = yabai:getSpace('mouse')
       
-      spaceinfo.windows = lists(spaceinfo.windows):map(yabai.getWindow):values()
+      spaceinfo.windows = lists(spaceinfo.windows)
+        :map(function(win)
+          local ok, info = pcall(yabai.getWindow, win)
+          return ok and info or { id = win, err = info }
+        end)
+        :values()
 
       local vm = {
         title = 'Yabai - current space',

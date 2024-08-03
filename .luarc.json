@@ -8,5 +8,6 @@
     "./Spoons",
     "/opt/homebrew/share/lua/5.4",
     "/opt/homebrew/share/lua/5.4/addons",
-  ]
+  ],
+    "workspace.checkThirdParty": "Disable"
 }

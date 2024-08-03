@@ -81,7 +81,7 @@ server:get('uri:/icon-editor', function(req, res)
   res:setView('icon-editor.view')
   res:updateModel('title', ('Icon editor - %s'):format('New icon'))
   res:updateModel('image_data', {})
-  res:updateModel('image_uri', images.from_path('@/resources/images/yabai-logo.png', 500, 500):encodeAsURLString())
+  res:updateModel('image_uri', images.fromPath('@/resources/images/yabai-logo.png', images.sizes.md):encodeAsURLString())
 end)
 
 server:get('uri:/icon-editor/{+filepath}', function(req, res)
@@ -89,7 +89,7 @@ server:get('uri:/icon-editor/{+filepath}', function(req, res)
 
   local filepath = paths.expand('@/resources/images/'..req.params.filepath)
   local image_data = json.read(filepath)
-  local image = images.from_data(image_data):encodeAsURLString()
+  local image = images.fromData(image_data):encodeAsURLString()
 
 
   res:updateModel('title', ('Icon editor - %s'):format(req.params.filepath))
@@ -102,7 +102,7 @@ server:post('uri:/icon-editor/{+filepath}{&save}', function(req, res)
 
   log.f('image_data received: %s', image_data)
 
-  local img = images.from_data(image_data)
+  local img = images.fromData(image_data)
 
   res:response(200, img:encodeAsURLString(), mime['.txt'])
 end)

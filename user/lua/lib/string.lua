@@ -1,42 +1,61 @@
-local regex      = require 'rex_pcre'
-local lustache   = require 'lustache'
 local plstring   = require 'pl.stringx'
 local plstrio    = require 'pl.stringio'
-local pretty     = require 'pl.pretty'
-local pldir      = require 'pl.dir'
-local plpath     = require 'pl.path'
 local plseq      = require 'pl.seq'
-local plutils    = require 'pl.utils'
-local pltypes    = require 'pl.types'
+local func       = require 'user.lua.lib.func'
+local params     = require 'user.lua.lib.params'
 local types      = require 'user.lua.lib.typecheck'
-local lists      = require 'user.lua.lib.list'
 
-
---
--- DO NOT extend Lua's native `string`. Breakage includes:
---  - Aspect templates
---
--- string.replace = strings.replace
--- string.startswith = strings.startswith
--- string.endswith = strings.endswith
-
-local function assert_string(str, num)
-  if not types.isString(str) then
-    error('Need string, arg #'..tostring(num or 1))
-  end
-end
-
+local isNil = types.isNil
+local notNil = types.notNil
+local isString = types.is.strng
+local notString = types.is_not.strng
 
 local CHAR = {
   newline = utf8.char(0x000A),
 }
 
 
+---@class String : string
+---@operator call:String
+local strings = {
+  char = CHAR
+}
 
----@class String
-local strings = {}
+local strings_meta = debug.getmetatable('')
 
-strings.char = CHAR
+strings_meta.__index = function(str, key)
+  if string[key] ~= nil then
+    return string[key]
+  end
+
+  if strings[key] ~= nil then
+    return strings[key]
+  end
+
+  return nil
+end
+
+strings_meta.__call = function(str, val, repl)
+  return strings.new(val, repl)
+end
+
+
+--
+-- Returns a string from any input type; Defaults to empty string
+--
+---@param str? any
+---@param repl? any
+---@return String
+function strings.new(str, repl)
+  local value = str
+
+  if isNil(str) or notString(str) or str == '' then
+    value = tostring(repl or '')
+  end
+
+  return debug.setmetatable(value, strings_meta) --[[@as String]]
+end
+
 
 --
 -- Trims whitespace from a string
@@ -46,8 +65,6 @@ strings.char = CHAR
 function strings.trim(str)
   return plstring.strip(str)
 end
-
-
 
 
 --
@@ -60,24 +77,6 @@ function strings.truncate(str, len)
   return plstring.shorten(str, len)
 end
 
-
---
--- Guaranteed string returned
---
----@param str string|nil
----@param replace string
----@return string
-function strings.ifEmpty(str, replace)
-  if (types.isNil(str) or not types.isString(str)) then
-    return tostring(replace or '')
-  end
-
-  if (str == '') then
-    return tostring(replace)
-  end
-
-  return str --[[@as string]]
-end
 
 
 function strings.contains(str, sub)
@@ -102,16 +101,6 @@ end
 function strings.fmt(msg, ...)
   return string.format(msg, table.unpack{...})
 end
-
---
--- Gonna try something here
---
--- -@param ... any Format string variables
--- -@return string
--- function string:fmt(...)
---   local msg = self --[[@as string]]
---   return string.format(msg, table.unpack{...})
--- end
 
 
 --
@@ -140,7 +129,8 @@ end
 ---@param tmplstr string
 ---@param vars? table Fallback table of template variables
 function strings.tmpl(tmplstr, vars)
-  assert_string(tmplstr)
+  params.assert.string(tmplstr)
+
   vars = vars or {}
 
   local repl_pat = '((%s*)%{([%-%+]?)([%.%w]+)([%-%+]?)%}(%s*))'
@@ -166,7 +156,7 @@ function strings.tmpl(tmplstr, vars)
 
       local repl = ''
 
-      if pltypes.is_callable(tabl) then
+      if types.isCallable(tabl) then
         repl = tabl(var) or ''
       else
         repl = searchtable(tabl, var) or searchtable(vars, var) or ''
@@ -328,28 +318,32 @@ function strings.linewriter()
   local next = ''
 
   function LineWriter:add(line)
-    assert_string(line)
+    params.assert.string(line)
+
     output:write(next..line)
     next = CHAR.newline
     return self
   end
 
   function LineWriter:addf(pat, ...)
-    assert_string(pat)
+    params.assert.string(pat)
+
     output:writef((next..pat):format(table.unpack({...})))
     next = CHAR.newline
     return self
   end
 
   function LineWriter:write(part)
-    assert_string(part)
+    params.assert.string(part)
+
     output:write(next..part)
     next = ''
     return self
   end
 
   function LineWriter:writef(pat, ...)
-    assert_string(pat)
+    params.assert.string(pat)
+
     output:writef((next..pat):format(table.unpack({...})))
     next = ''
     return self
@@ -368,30 +362,4 @@ function strings.linewriter()
 end
 
 
-
-string._replace = strings.replace
-string._startswith = strings.startswith
-string._endswith = strings.endswith
-string._trim = strings.trim
-string._truncate = strings.truncate
-string._ifEmpty = strings.ifEmpty
-string._contains = strings.contains
-string._startswith = strings.startswith
-string._endswith = strings.endswith
-string._fmt = strings.fmt
-string._title = strings.title
-string._titlefmt = strings.titlefmt
-string._tmpl = strings.tmpl
-string._fmt = strings.fmt
-string._fmt = strings.fmt
-string._join = strings.join
-string._split = strings.split
-string._fmt = strings.fmt
-string._padStart = strings.padStart
-string._padEnd = strings.padEnd
-string._padMid = strings.padMid
-string._replace = strings.replace
-string._expand = strings.expand
-
-
-return strings
+return setmetatable({}, strings_meta) --[[@as String]]

@@ -11,6 +11,7 @@ insulate("user.lua.model.command", function()
   _G.hs = tutil.hs_mock(spy)
 
   package.loaded['user.lua.interface.alert'] = {}
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "inspect")
 
   local Command = require("user.lua.model.command")
 

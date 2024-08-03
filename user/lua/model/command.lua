@@ -1,3 +1,4 @@
+-- local pretty = require 'pl.pretty'
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
 local func    = require 'user.lua.lib.func'
@@ -35,6 +36,7 @@ local log = logr.new('Command', 'info')
 ---@field key?     string|ks.keys.keycode   - (optional) key for the hotkey binding
 ---@field menukey? string|ks.keys.keycode   - (optional) keycode for use in the KS menubar menu
 ---@field url?     string                   - (optional) hammerspoon url to bind to
+---@field events?  string                   - (optional) hammerspoon url to bind to
 
 
 ---@class ks.command.context
@@ -95,7 +97,7 @@ local Command = {}
 function Command:new(config)
 
   ---@class ks.command
-  local this = config or {}
+  local this = self ~= Command and self or config or {}
 
   validate(valid.id.type(this.id), 'id missing from %q', hs.inspect(this))
   validate(valid.id.match(this.id), 'invalid id pattern %q', this.id)
@@ -105,12 +107,12 @@ function Command:new(config)
   this.context = nil
 
   local contextok, context = pcall(function()
-    if types.isFunc(config.setup) then
-      return config.setup(config)
+    if types.isFunc(this.setup) then
+      return this.setup(this)
     end
 
-    if types.isTable(config.setup) then
-      return config.setup
+    if types.isTable(this.setup) then
+      return this.setup
     end
 
     return {}
@@ -119,7 +121,7 @@ function Command:new(config)
   if contextok then
     this.context = context
   else
-    log.trace(context, "command setup error [%s]", config.id)
+    log.trace(context, "command setup error [%s]", this.id)
   end
 
   if types.notNil(this.key) and types.notNil(this.mods) then
@@ -265,35 +267,10 @@ end
 ---@return hs.image
 function Command:getMenuIcon(size)
   size = size or 12
-
+  
   log.df("icon type %s for command %s", type(self.icon), self.id)
 
-  local icon = self.icon
-
-  if types.isNil(icon) then
-    return images.from_icon('info', size)
-  end
-
-  if type(icon) == "string" then
-    if symbols.has_codepoint(icon) then
-      return images.from_icon(icon, size)
-    end
-
-    if paths.exists(icon) then
-      return images.from_path(icon, size, size)
-    end
-  end
-
-  if type(icon) == 'userdata' then
-    ---@cast icon hs.image
-    return images.resize(icon, hs.geometry.size(size, size))
-  end
-
-  if type(icon) == 'table' then
-    return images.resize(images.from_data(icon), hs.geometry.size(size, size))
-  end
-
-  return images.from_icon('info', size)
+  return images.from(self.icon, { w=size, h=size })
 end
 
 

@@ -1,13 +1,13 @@
 local desktop = require 'user.lua.interface.desktop'
+local events  = require 'user.lua.interface.events'
+local func    = require 'user.lua.lib.func'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local icons   = require 'user.lua.ui.icons'
 local images  = require 'user.lua.ui.image'
 
-local log = require('user.lua.util.logger').new('path', 'info')
-
-local keydown = hs.eventtap.event.types.keyDown
+local log = require('user.lua.util.logger').new('Alert', 'info')
 
 
 ---@class HS.AlertStyle
@@ -101,6 +101,31 @@ end
 --
 local prev_alert = nil
 
+local isEscKey = function(code)
+  return code == hs.keycodes.map.escape
+end
+
+
+---@type hs.eventtap
+local escape_press = events.newKeyDownTap(function(evt)
+  if events.isKey(evt, 'escape') and prev_alert ~= nil then
+    Alert.closeAll()
+
+    return events.blockNext
+  end
+
+  return events.allowNext
+end)
+
+
+
+function Alert.closeAll()
+  if prev_alert ~= nil then
+    hs.alert.closeSpecific(prev_alert, 0)
+    prev_alert = nil
+  end
+end
+
 
 --
 -- Shows the configured alert
@@ -118,25 +143,16 @@ function Alert.show(self, timing)
   log.df("Alert Config: %s", hs.inspect({ text, icon, style, screen:name(), seconds }))
 
   if types.notNil(self.config.icon) then
-    prev_alert = hs.alert.showWithImage(text, icon, style, screen, seconds)
+    prev_alert = hs.alert.showWithImage(text, icon, style, screen, 'manualclose')
   else
-    prev_alert = hs.alert.show(text, style, screen, seconds)
+    prev_alert = hs.alert.show(text, style, screen, 'manualclose')
   end
 
-  local escape_press = nil
-
-  escape_press = hs.eventtap.new({ keydown }, function(evt)
-    ---@cast evt hs.eventtap.event
-    ---@cast escape_press hs.eventtap
-
-    if evt:getKeyCode() == hs.keycodes.map.escape then
-      hs.alert.closeSpecific(prev_alert, 0)
-      escape_press:stop()
-      return true
-    end
-
-    return false
-  end):start()
+  func.delay(seconds, Alert.closeAll)
+  
+  if not escape_press:isEnabled() then
+    escape_press:start()
+  end
 end
 
 
@@ -150,7 +166,7 @@ Alert.cmds = {
     mods = 'peace',
     key = 'J',
     setup = {
-      img = images.from_path("@/resources/images/icons8-esc-100.png", 50, 50),
+      img = images.fromPath("@/resources/images/icons8-esc-100.png", { w=50, h=50 }),
     },
     exec = function(cmd, ctx, params)
       Alert:new("Use the escape key")

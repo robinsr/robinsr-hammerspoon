@@ -1,34 +1,34 @@
 {% extends "base.view" %}
 
+{% block head_tags %}
+  {{ html('link', { rel: "stylesheet", href: "https://unpkg.com/keyboard-css@1.2.4/dist/css/main.min.css" }) }}
+{% endblock %}
+
+{% block page_header %}
+  <div class="flex flext-row w-full justify-end">
+    <div class="">
+      {{ mButton(
+          attrs={id: 'close-window'},
+          classnames=['btn', 'btn-square', 'btn-ghost'],
+          content=mSVG(vbw=40, vbh=40, classnames=['h-5 w-5'], content=html('path', {
+           'stroke-linecap': "round",
+           'stroke-linejoin': "round",
+           'stroke-width': "4",
+           'd': "M 10,10 L 30,30 M 30,10 L 10,30"
+           })))
+       }}
+    </div>
+  </div>
+{% endblock %}
+
 {% block page_content %}
 
-  {% set card_content %}
-    <div class="columns-xs">
-      {% for name, keys in mods %}
-        <div class="flex flex-row items-center justify-between space-x-2">
-          <div class="flex-none">
-            <strong>
-              <em>{{- count -}} ❝{{- name -}}❞</em>
-            </strong>
-          </div>
-          <div>
-            {% for key in keys %}
-              {{ mKBD(keys=symbols[key], scale=90) }}
-            {% endfor %}
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% endset %}
-
-  {{ mCollapse('Mods', content=card_content) }}
-
-  <hr class="my-4" />
 
   <section class="columns-md">
     {% for group_name, cmds in groups %}
 
       {% set card_content %}
+
         <div class="flex flex-col space-y-2">
           {% for cmd in cmds %}
             {% if cmd.hotkey %}
@@ -46,13 +46,9 @@
                   <p class="grow">{{- cmd.title -}}</p>
                   <div class="flex-none">
                     {%- for key in cmd.hotkey.mods -%}
-                      {{ mKBD(symbols[key]) }}
+                      {{ mKeycap(key, ['btn-dark']) }}
                     {%- endfor -%}
-                    {%- if symbols[cmd.hotkey.key] -%}
-                      {{ mKBD(symbols[cmd.hotkey.key]) }}
-                    {%- else -%}
-                      {{ mKBD(cmd.hotkey.key) }}
-                    {%- endif %}
+                    {{ mKeycap(cmd.hotkey.key, ['btn-info']) }}
                   </div>
                 </div>
               </div>
@@ -69,6 +65,29 @@
       }}
     {% endfor %}
   </section>
+
+  <hr class="my-4" />
+
+  {% set card_content %}
+    <div class="columns-xs">
+      {% for name, keys in mods %}
+        <div class="flex flex-row items-center justify-between space-x-2">
+          <div class="flex-none">
+            <strong>
+              <em>{{- count -}} ❝{{- name -}}❞</em>
+            </strong>
+          </div>
+          <div>
+            {% for key in keys %}
+              {{ mKeycap(key, ['btn-dark']) }}
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endset %}
+
+  {{ mCollapse('Mods', content=card_content) }}
 
   <hr class="py-4" />
 {% endblock %}

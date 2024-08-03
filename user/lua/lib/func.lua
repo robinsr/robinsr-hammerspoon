@@ -43,11 +43,22 @@ end
 --
 -- Delays the execution of function fn by msec
 --
----@param msec integer delay in MS
+---@param sec integer delay in seconds
 ---@param fn function function to run after delay
----@returns nil
-function func.delay(msec, fn)
-  hs.timer.doAfter(msec, fn)
+---@returns hs.timer
+function func.delay(sec, fn)
+  return hs.timer.doAfter(sec, fn)
+end
+
+
+--
+-- Repeatedly calls a function, with a fixed time delay between each call
+--
+---@param sec integer delay in seconds
+---@param fn function function to run after delay
+---@returns hs.timer
+function func.interval(sec, fn)
+  return hs.timer.doEvery(sec, fn)
 end
 
 

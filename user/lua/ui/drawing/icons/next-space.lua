@@ -52,7 +52,7 @@ local window_bar = tables.merge({},
 )
 
 
-local arrow_img = images.from_path('@/resources/images/arrow-right-100x100.template.png')
+local arrow_img = images.fromPath('@/resources/images/arrow-right-100x100.template.png', { w=100, h=100 })
 
 local arrow_object = tables.merge({}, 
   window_frame, 

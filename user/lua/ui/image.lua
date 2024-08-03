@@ -2,8 +2,9 @@ local sh      = require 'user.lua.adapters.shell'
 local paths   = require 'user.lua.lib.path'
 local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
-local symbols = require 'user.lua.ui.symbols'
+local types   = require 'user.lua.lib.typecheck'
 local colors  = require 'user.lua.ui.color'
+local symbols = require 'user.lua.ui.symbols'
 local logr    = require 'user.lua.util.logger' 
 
 
@@ -46,34 +47,101 @@ local log = logr.new('ui-image', 'info')
 -- -@field toASCII               fun(width, height): hs.image
 
 
+-- Returns dimensions where width and height equal `size`
+---@param size integer
+---@return Dimensions
+local function square(size)
+  return { w = size, h = size }
+end
+
+
+-- Returns the smaller of width or height
+---@param d Dimensions
+---@return number
+local function minDimension(d)
+  return math.min(d.w, d.h)
+end
+
 
 ---@class ks.images
 local imgm = {}
 
 
+---@enum ks.images.sizes
+imgm.sizes = {
+  sm = square(100),
+  md = square(500),
+  lg = square(1000),
+  menubar = square(12),
+  chooser = square(256),
+  alert = square(72),
+}
+
+
+imgm.square = square
+
+
+--
+-- Ensures some image is returned for any input
+--
+---@param input string|number|table|hs.image
+---@param size? Dimensions
+---@return hs.image
+function imgm.from(input, size)
+  size = size or { w=100, h=100 }
+
+  local minSize = minDimension(size)
+  local result = imgm.fromIcon('info', minSize)
+
+  if type(input) == "number" then
+    return imgm.fromGlyph(input, minSize)
+  end
+
+  if type(input) == "string" then
+    if symbols.has_codepoint(input) then
+      return imgm.fromIcon(input, minSize)
+    end
+
+    if paths.exists(input) then
+      return imgm.fromPath(input, size)
+    end
+  end
+
+  if type(input) == 'userdata' then
+    ---@cast input hs.image
+    return imgm.resize(input, size)
+  end
+
+  if type(input) == 'table' then
+    return imgm.resize(imgm.fromData(input), size)
+  end
+
+  return result
+end
+
+
+
 --
 -- Creates a hs.image from path, width, and height (defaults to 100x100)
 --
----@param path string
----@param width? integer
----@param height? integer
+---@param path  string
+---@param size? Dimensions
 ---@return hs.image
-function imgm.from_path(path, width, height)
+function imgm.fromPath(path, size)
   params.assert.string(path, 1)
-  
-  width = width or 100
-  height = height or 100
+
+  size = size or imgm.sizes.sm
   
   local expath = paths.expand(path)
   local isTmpl = paths.matches(path, '%.template%.')
 
   if not paths.exists(expath) then
-    return imgm.from_icon('not_found', math.min(width, height), colors.gray)
+    return imgm.fromIcon('not_found', minDimension(size), colors.gray)
   end
 
   local image = hs.image.imageFromPath(expath) --[[@as hs.image]]
   
-  image = imgm.resize(image, { w = width, h = height })
+  image = imgm.resize(image, size)
   iamge = image:template(isTmpl)
   
   return image
@@ -87,7 +155,7 @@ end
 ---@param size?  integer  - Optional size, defaults to 12; used as both width and height
 ---@param color? HS.Color - Optional color, defaults to black
 ---@return hs.image
-function imgm.from_icon(icon, size, color)
+function imgm.fromIcon(icon, size, color)
   params.assert.number(symbols.get_codepoint('questionmark.app.dashed'), 999)
 
   params.assert.string(icon, 1)
@@ -102,7 +170,7 @@ function imgm.from_icon(icon, size, color)
     codepoint = symbols.get_codepoint('questionmark.app.dashed')
   end
 
-  local icon = imgm.from_codepoint(codepoint, size, color)
+  local icon = imgm.fromGlyph(codepoint, size, color)
     
   if icon == nil then
     error('Could not create icon image for '..codepoint)
@@ -122,11 +190,11 @@ end
 -- `codepoint` can be either a string that is a valid key in the Symbols.all table,
 -- or a unicode codepoint hex number corresponding to a SF Symbol
 --
----@param codepoint integer|string  - Codepoint number or key in symbols table
----@param size?     integer         - Defaults to 12
----@param color?    HS.Color        - Defaults to black
+---@param codepoint integer    - Codepoint number or key in symbols table
+---@param size?     integer    - Defaults to 12
+---@param color?    HS.Color   - Defaults to black
 ---@return hs.image
-function imgm.from_codepoint(codepoint, size, color)
+function imgm.fromGlyph(codepoint, size, color)
   params.assert.number(codepoint)
   size = params.default(size, 12)
 
@@ -157,7 +225,7 @@ end
 -- WIP!
 --
 ---@param image_data table
-function imgm.from_data(image_data)
+function imgm.fromData(image_data)
   local canvas_dimensions = { 
     w = image_data.frame.w,
     h = image_data.frame.h,
@@ -188,16 +256,12 @@ end
 -- Add ability to resize image
 --
 ---@param image hs.image
----@param dimensions hs.geometry
+---@param size Dimensions
 ---@return hs.image
-function imgm.resize(image, dimensions)
-
-  local height = dimensions.h
-  local width = dimensions.w
-
+function imgm.resize(image, size)
   log.df("Dimensions [%s]: %s", image:name(), hs.inspect(image:size()))
 
-  local resized = image:size({ w = width, h = height }) --[[@as hs.image]]
+  local resized = image:size({ w = size.w, h = size.h }) --[[@as hs.image]]
 
   return resized
 end
@@ -219,7 +283,7 @@ function imgm.invert(image)
   local result = sh.result(cmd)
 
   if result.code == 0 then
-    return imgm.from_path(outpath)
+    return imgm.fromPath(outpath)
   end
 
   error(result.output)

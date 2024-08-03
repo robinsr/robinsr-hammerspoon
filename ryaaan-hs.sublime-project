@@ -11,6 +11,7 @@
     },
     { "path": "/Users/ryan/dotfiles/config/skhd" },
     { "path": "/Users/ryan/dotfiles/config/yabai" },
+    { "path": "/Users/ryan/dotfiles/config/sketchybar" },
   ],
   "build_systems": [{
     "name": "Generate Docs",

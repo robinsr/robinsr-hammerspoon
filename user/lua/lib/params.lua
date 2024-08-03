@@ -6,109 +6,131 @@ local types  = require "user.lua.lib.typecheck"
 local url_matcher = regex.new("^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\\\/=]*)$", 'i')
 
 
+---@epos ks.param.err_msg
+local errs = {
+  TYPE  = 'Parameter #%d is not a %s, rather a %s',
+  NIL   = 'Parameter #%d is required to be non-nil',
+  MATCH = 'Parameter #%d is not a %s: %s'
+}
+
 local Params = {}
 
 Params.assert = {}
 
 
 --
--- Check a function parameter against the isTable typecheck function
+-- Throws invalid parameter error if `val` is nil
 --
----@param arg any
----@param num? integer Parameter position
-function Params.assert.notNil(arg, num)
-  if types.isNil(arg) then
-    error(('Parameter #%d is required to be non-nil'):format(num or 1), 2)
+---@param val any
+---@param pos? integer Parameter position
+function Params.assert.notNil(val, pos)
+  if types.isNil(val) then
+    error(errs.NIL:format(pos or 1), 2)
   end
 end
 
 
 --
--- Check a function parameter against the isTable typecheck function
+-- Throws invalid parameter error if `val` is not of type "table"
 --
 ---@param tabl any
----@param num? integer Parameter position
-function Params.assert.tabl(tabl, num)
+---@param pos? integer Parameter position
+function Params.assert.tabl(tabl, pos)
   if (not types.isTable(tabl)) then
-    error(('Parameter #%d is not a table, rather a %s'):format(num or 1, type(tabl)), 2)
+    error(errs.TYPE:format(pos or 1, 'table', type(tabl)), 2)
   end
 end
 
 
 --
--- Check a function parameter against the isTable typecheck function
+-- Throws invalid parameter error if `val` is not of type "string"
 --
----@param arg any
----@param num? integer Parameter position
-function Params.assert.string(arg, num)
-  if (not types.isString(arg)) then
-    error(('Parameter #%d is not a string, rather a %s'):format(num or 1, type(arg)), 2)
+---@param val any
+---@param pos? integer Parameter position
+function Params.assert.string(val, pos)
+  if (not types.isString(val)) then
+    error(errs.TYPE:format(pos or 1, 'string', type(val)), 2)
   end
 end
 
 
 --
--- Asserts that `checkpath` is a valid filesystem path
+-- Throws invalid parameter error if `val` is not of type "number"
 --
----@param checkpath any
----@param num? integer Parameter position
-function Params.assert.path(checkpath, num)
-  if (not types.isString(checkpath)) then
-    error(('Parameter #%d is not a string, rather a %s'):format(num or 1, type(checkpath)), 2)
+---@param val any
+---@param pos? integer Parameter position
+function Params.assert.number(val, pos)
+  if (not types.isNum(val)) then
+    error(errs.TYPE:format(pos or 1, 'number', type(val)), 2)
+  end
+end
+
+
+--
+-- Throws invalid parameter error if `val` is not of type "function"
+--
+---@param val any
+---@param pos? integer Parameter position
+function Params.assert.func(val, pos)
+  if (not types.isFunc(val)) then
+    error(errs.TYPE:format(pos or 1, 'function', type(val)), 2)
+  end
+end
+
+
+--
+-- Asserts that `val` is a valid filesystem path
+--
+---@param val any
+---@param pos? integer Parameter position
+function Params.assert.path(val, pos)
+  if (not types.isString(val)) then
+    error(errs.TYPE:format(pos or 1, type(val)), 2)
   end
 
-  local isDir = plpath.isdir(checkpath)
-  local isFile = plpath.isfile(checkpath)
+  local isDir = plpath.isdir(val)
+  local isFile = plpath.isfile(val)
 
   if not isDir and not isFile then
-    error(("Parameter #%d is not a file or directory: %s"):format(num or 1, checkpath), 2)
+    error(errs.MATCH:format(pos or 1, 'file or directory', val), 2)
   end
 end
 
 
 --
+-- Asserts that `checkurl` is a valid URL
 --
---
----@param checkurl any
----@param num? integer Parameter position
-function Params.assert.url(checkurl, num)
-  if (not types.isString(checkurl)) then
-    error(('Parameter #%d is not a URL string, rather a %s'):format(num or 1, type(checkurl)), 2)
+---@param val  any
+---@param pos? integer Parameter position
+function Params.assert.url(val, pos)
+  if (not types.isString(val)) then
+    error(errs.TYPE:format(pos or 1, 'string', type(val)), 2)
   end
   
-  local match, err = url_matcher:match(checkurl)
+  local match, err = url_matcher:match(val)
 
   if err ~= nil then
     error(err)
   end
 
   if match == nil then
-    error(('Parameter #%d is not a valid URL string; input [%s]'):format(num or 1, checkurl), 2)
+    error(errs.MATCH:format(pos or 1, 'URL', val), 2)
   end
 end
 
 
 --
--- Check a function parameter against the isTable typecheck function
+-- -- Throws invalid parameter error if `val` does not validate with `typefn`
 --
----@param arg any
----@param num? integer Parameter position
-function Params.assert.number(arg, num)
-  if (not types.isNum(arg)) then
-    error(('Parameter #%d is not a number, rather a %s'):format(num or 1, type(arg)), 2)
-  end
-end
-
-
---
--- Check a function parameter against any typecheck function
---
----@param typefn TypeCheckFn
----@param obj any
----@param num? integer Parameter position
-function Params.assert.any(typefn, obj, num)
-  if (not types[typefn](obj)) then
-    error(('Parameter #%d failed check "%s". found type %s'):format(num or 1, typefn), 2)
+---@param typefn  TypeCheckFn   - function to invoke with checked value
+---@param val     any           - value to check
+---@param pos?    integer       - (optional) Parameter position
+---@param name    string        - (otpional) Print name of expected type
+function Params.assert.any(typefn, val, pos, name)
+  Params.assert.func(typefn, 999)
+  
+  if (not typefn(val)) then
+    error(errs.TYPE:format(pos or 1, name or 'unknown', type(val)), 2)
   end
 end
 
@@ -170,8 +192,8 @@ end
 -- function Params.sub(fn, ...)
 --   local statics = {...}
 --   return function(...)
---     local rest_args = select(#statics)
---     fn(table.unpack(statics), table.unpack(rest_args))
+--     local rest_vals = select(#statics)
+--     fn(table.unpack(statics), table.unpack(rest_vals))
 --   end
 -- end
 

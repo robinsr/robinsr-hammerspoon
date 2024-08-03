@@ -5,8 +5,6 @@ local types   = require 'user.lua.lib.typecheck'
 
 local theme = require 'user.lua.ui.mariana'
 
--- local log = require('user.lua.util.logger').new('ui-color', 'info')
-
 
 ---@class HS.RGBColor
 ---@field red number
@@ -116,7 +114,7 @@ end
 function colors.system(color)
   local systemColors = hs.drawing.color.colorsFor("System")
   ---@cast systemColors -nil
-  return params.default(systemColors[color], colors.black)
+  return systemColors[color] or colors.black
 end
 
 
@@ -139,10 +137,6 @@ function colors.ensure_color(input)
 
   return colors.black
 end
-
-
----@deprecated
-colors.do_color = colors.ensure_color
 
 
 colors.disabled = colors.system("disabledControlTextColor")

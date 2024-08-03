@@ -4,6 +4,7 @@ local types  = require 'user.lua.lib.typecheck'
 local color  = require 'user.lua.ui.color'
 
 local sf_symbol_map = {
+  ["square.3.layers.3d.top.filled"] = 0x100BF1,
   ["filemenu.and.selection"] = 0x100C62,
   ["questionmark.app.dashed"] = 0x100FEA,
   ["doc.on.doc"] = 0x100241,

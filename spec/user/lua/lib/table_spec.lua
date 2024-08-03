@@ -1,5 +1,5 @@
 ---@diagnostic disable: redundant-parameter
-local testutil = require 'spec.util'
+local tutil = require 'spec.util'
 
 
 local function indexOf(arr, item)
@@ -13,7 +13,10 @@ local function indexOf(arr, item)
 end 
 
 
-describe('user.lua.lib.table', function()
+insulate('user.lua.lib.table', function()
+
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "inspect")
+
   local Tabl = require('user.lua.lib.table')
 
   describe("Table.keys", function()
@@ -28,8 +31,8 @@ describe('user.lua.lib.table', function()
     local verify_keys = function(keylist)
       assert.is_not.Nil(keylist)
       assert.are.same(2, #keylist)
-      assert.is.True(indexOf(keylist, 'foo') > 0, 'Could not find item `foo` in ' .. testutil.pretty(keylist))
-      assert.is.True(indexOf(keylist, 'baz') > 0, 'Could not find item `baz` in ' .. testutil.pretty(keylist))
+      assert.is.True(indexOf(keylist, 'foo') > 0, 'Could not find item `foo` in ' .. tutil.pretty(keylist))
+      assert.is.True(indexOf(keylist, 'baz') > 0, 'Could not find item `baz` in ' .. tutil.pretty(keylist))
     end
 
     describe('(as function)', function()
@@ -96,12 +99,12 @@ describe('user.lua.lib.table', function()
   describe("Table.entries", function()
     it("should return an iterator of entires in table", function()
       
-      local tabl = Tabl(testutil.ttable())
+      local tabl = Tabl(tutil.ttable())
 
       local eachfn = spy.new(function() end)
 
       for k,v in tabl:entries() do
-        eachfn(testutil.msgf("{%s=%q}",k,v))
+        eachfn(tutil.msgf("{%s=%q}",k,v))
       end
 
       assert.spy(eachfn).called(5)

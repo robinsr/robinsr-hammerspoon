@@ -34,9 +34,9 @@ local log = require('user.lua.util.logger').new('menubar', 'info')
 
 
 local service_state_icons = {
-  onStateImage = image.from_icon('circle.fill', 12, colors.green),
-  offStateImage = image.from_icon('circle.fill', 12, colors.red),
-  mixedStateImage = image.from_icon('circle.fill', 12, colors.lightgrey),
+  onStateImage = image.fromIcon('circle.fill', 12, colors.green),
+  offStateImage = image.fromIcon('circle.fill', 12, colors.red),
+  mixedStateImage = image.fromIcon('circle.fill', 12, colors.lightgrey),
 }
 
 local EVT_FILTER = '!*.(evt|event|events).*'
@@ -54,7 +54,7 @@ local function text_item(text, ...)
 
   return {
     title = (text):format(table.unpack(fmt_string_args)),
-    image = image.from_icon('info'),
+    image = image.fromIcon('info'),
     disabled = true,
   }
 end
@@ -69,7 +69,7 @@ function submenu_item(title, items, icon)
   return {
     title = title,
     menu = items,
-    image = image.from_icon(icon or 'term'),
+    image = image.fromIcon(icon or 'term'),
   }
 end
 
@@ -223,7 +223,7 @@ function MenuBar.install()
   ksmbar:setMenu(getItems)
   ksmbar:setTitle('KS')
   ksmbar:imagePosition(1)
-  ksmbar:setIcon(image.from_icon('kitty'))
+  ksmbar:setIcon(image.fromIcon('kitty'))
 
   KittySupreme.menubar = ksmbar
 end

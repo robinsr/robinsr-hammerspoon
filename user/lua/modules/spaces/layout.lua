@@ -36,7 +36,7 @@ mod.cmds = {
     exec  = spaces.createMessageFn('window --toggle zoom-fullscreen', 'Maximize active window'),
   },
   {
-    id    = 'spaces.space.cycle',
+    id    = 'spaces.layout.cycle',
     title = "Cycle current space layout (bsp, float, stack)",
     icon  = "tag",
     mods  = keys.preset.peace,

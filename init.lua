@@ -1,5 +1,6 @@
 _G.PkgName = 'ryan-hs'
 _G.UpTime = os.time()
+_G.asJSON = require('user.lua.util.json').encode
 
 _G.clear = function() 
   hs.console.clearConsole()
@@ -45,7 +46,7 @@ console.configureHSConsole()
 console.setDarkMode(desk.darkMode())
 
 local KState  = require('user.lua.model.state'):new()
-KittySupreme = KState.store
+KittySupreme = KState
 
 local CmdList = require('user.lua.model.commands')
 
@@ -86,7 +87,6 @@ local loadcmds = KittySupreme.commands
   end)
 
 log.inspect('inLoad command results:', loadcmds, logger.d3)
-
 
 
 log.i('Init complete')

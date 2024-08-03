@@ -45,6 +45,9 @@
 ---@generic C: any - Type items will be classified by
 ---@alias ClassifierFn<T,C> fun(item: T, index?: int): C
 
+---@generic T: any - Type of items supplied
+---@alias Supplier<T> fun(): T
+
 
 ---@generic I: any Input type
 ---@generic O: any Output type
@@ -57,6 +60,8 @@
 
 
 ---@alias Coord { x: num, y: num }
+
+---@alias Dimensions { w: num, h: num }
 
 
 return {}

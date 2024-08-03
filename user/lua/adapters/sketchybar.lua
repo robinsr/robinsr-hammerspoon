@@ -1,14 +1,45 @@
 local shell       = require 'user.lua.adapters.shell'
 local BrewService = require 'user.lua.adapters.base.brew-service'
+local channels    = require 'user.lua.lib.channels'
+local lists       = require 'user.lua.lib.list' 
 local params      = require 'user.lua.lib.params'
 local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
 local tables      = require 'user.lua.lib.table'
 local types       = require 'user.lua.lib.typecheck'
+local icons       = require 'user.lua.ui.icons'
 local symbols     = require 'user.lua.ui.symbols'
 local logr        = require 'user.lua.util.logger'
+local unpk        = table.unpack
+local pk          = table.pack
 
-local log = logr.new('SketchyBar', 'debug')
+local log = logr.new('SketchyBar', 'info')
+
+
+local LAYOUT_ICONS = tables(icons.layout)
+
+local SH_QUOTE = '""'
+
+local function getLayoutIcon(layout)
+  if (LAYOUT_ICONS:has(layout)) then
+    return symbols.toText(LAYOUT_ICONS:get(layout))
+  else
+    return symbols.toText(LAYOUT_ICONS:get('cols'))
+  end
+end
+
+local function getSpaceId(index)
+  return strings('space.%d'):fmt(index)
+end
+
+local function getSpaceIcon(layoutType, windowCount)
+  return strings('%s %d'):fmt(getLayoutIcon(layoutType), windowCount or 0)
+end
+
+local function getSpaceLabel(label, index)
+  return strings.new(label, index)
+end
+
 
 
 ---@class SketchyBar: ks.service.brew
@@ -26,6 +57,10 @@ function SketchyBar:new()
   local this = self == SketchyBar and {} or self
   
   BrewService.new(this, 'sketchybar')
+
+  channels.subscribe('ext:click:sketchybar', function(channel, data)
+    log.f("Event '%s' triggered! %s", channel, hs.inspect(data))
+  end)
 
   return proto.setProtoOf(this, SketchyBar, { locked = true })
 end
@@ -45,6 +80,32 @@ function SketchyBar:reload()
   return shell.result({ 'sketchybar', '--reload' }).code
 end
 
+
+--
+-- Updates a sketchybar component by calling 'sketchtbar --set <args>'
+--
+---@param ... (string|string[])
+---@return ShellResult
+function SketchyBar.set(...)
+  local args = lists({...})
+    :map(function(arg)
+      if types.isTable(arg) then
+        return shell.kv(arg[1], arg[2], SH_QUOTE)
+      end
+      
+      return arg
+    end)
+    :values()
+
+    log.df("SketchyBar Set: %s", hs.inspect({ 'sketchybar', '--set', unpk(args) }))
+
+  return shell.result({ 'sketchybar', '--set', unpk(args) })
+end
+
+
+--
+-- Triggers some event in sketchybar by calling 'sketchtbar --trigger <args>'
+--
 ---@param event string The event name
 ---@param ... (string|number|nil) Command parameter variables
 function SketchyBar:trigger(event, ...)
@@ -60,7 +121,8 @@ end
 
 function SketchyBar:setFrontApp(app)
   params.assert.string(app)
-  shell.result({ 'sketchybar', '--set', 'front_app', shell.kv('label', app, '""') })
+
+  return self.set('front_app', { 'label', app })
 end
 
 --
@@ -73,49 +135,46 @@ function SketchyBar:setSpaceLabel(space, label)
   params.assert.number(space, 1)
   params.assert.string(label, 2)
 
-  local space_arg = ('space.%d'):format(space)
-  local icon_arg = shell.kv('icon', strings.ifEmpty(label, tostring(space)))
+  local bar_params = {
+    { 'label', getSpaceLabel(label, space) }
+  }
 
-  return shell.result({ 'sketchybar', '--set', space_arg, icon_arg }).output
+  return self.set(getSpaceId(space), unpk(bar_params)).output
 end
 
 
-function SketchyBar:setSpaceIcon(space, text)
-end
+--
+-- Creates and applies a new icon to a sketchybar space component
+--
+---@param space number space's index
+---@param layout string
+---@param windows integer
+---@return string
+function SketchyBar:setSpaceIcon(space, layout, windows)
+  params.assert.number(space, 1)
+  params.assert.string(layout, 2)
+  params.assert.number(windows, 3)
 
+  local bar_params = {
+    { 'icon', getSpaceIcon(layout, windows) },
+  }
 
-local layout_icons = tables{
-  float = "macwindow.on.rectangle",
-  stack = "rectangle.stack",
-  bsp   = "rectangle.split.2x2.fill",
-  cols  = "rectangle.split.3x1.fill",
-}
-
-
----@param space Yabai.Space
-function SketchyBar:onSpaceEnvChange(space)
-  params.assert.tabl(space)
-
-  local count, sym, label, icon
-
-  count = #space.windows or 0
-
-  if (layout_icons:has(space.type)) then
-    sym = symbols.toText(layout_icons:get(space.type))
-  else
-    sym = symbols.toText(layout_icons:get('cols'))
-  end
-
-  local space_arg = ('space.%d'):format(space.index)
-  local icon_arg  = shell.kv('icon', strings.ifEmpty(space.label, tostring(space.index)), '""')
-  local label_arg = shell.kv('label', ('%s %d').format(sym, count), '""')
-
-  return shell.result({ 'sketchybar', '--set', space_arg, label_arg, icon_arg })
+  return self.set(getSpaceId(space), unpk(bar_params)).output
 end
 
 
 
 SketchyBar.cmds = {
+  {
+    id = 'sketch.service.start',
+    title = 'Start SketchyBar',
+    icon = 'info',
+    exec = function()
+      if KittySupreme.services.sketchybar ~= nil then
+        KittySupreme.services.sketchybar:start()
+      end
+    end,
+  },
   {
     id = 'sketch.service.restart',
     title = 'Restart SketchyBar',

@@ -1,72 +1,71 @@
+local pltypes = require 'pl.types'
+
 ---@alias TypeCheckFn fun(item: any): boolean
 
 
 -- A very explicit null check for my sanity
----@param i any|nil Possibly a nil value
----@return boolean true when param nil
+---@type TypeCheckFn
 local function isNil(i)
   if (type(i) == 'nil') then return true else return false end
 end
 
 -- Another very explicit null check for my sanity
----@param i any|nil Possibly a nil value
----@return boolean true when param nil
+---@type TypeCheckFn
 local function notNil(i)
   if (type(i) ~= 'nil') then return true else return false end
 end
 
 -- Type-check is string
----@param i any|nil Possibly a nil value
----@return boolean true when param is a string
+---@type TypeCheckFn
 local function isString(i)
   if (type(i) == 'string') then return true else return false end
 end
 
 -- Type-check is number
----@param i any|nil Possibly a nil value
----@return boolean true when param is a string
+---@type TypeCheckFn
 local function isNum(i)
   if (type(i) == 'number') then return true else return false end
 end
 
 -- Type-check is table
----@param i any|nil Possibly a nil value
----@return boolean true when param is a table
+---@type TypeCheckFn
 local function isTable(i)
   if (type(i) == 'table') then return true else return false end
 end
 
 -- Type-check is function
----@param i any|nil Possibly a nil value
----@return boolean true when param is a table
+---@type TypeCheckFn
 local function isFunc(i)
   if (type(i) == 'function') then return true else return false end
 end
 
 -- Type-check is boolean true
----@param i any|nil Possibly a nil value
----@return boolean true when param is boolean true
+---@type TypeCheckFn
 local function isTrue(i)
   if (type(i) == 'boolean' and i == true) then return true else return false end
 end
 
 -- Type-check is boolean false
----@param i any|nil Possibly a nil value
----@return boolean true when param is boolean false
+---@type TypeCheckFn
 local function isFalse(i)
   if (type(i) == 'boolean' and i == false) then return true else return false end
 end
 
 -- Type-check is empty sttring
----@param i any|nil Possibly a nil value
----@return boolean true when param is boolean false
+---@type TypeCheckFn
 local function isEmpty(i)
   if (i == '') then return true else return false end
 end
 
+-- Type-check is valuable is callable (function)
+---@type TypeCheckFn
+local function isCallable(i)
+  return pltypes.is_callable(i)
+end
+
+
 -- Type-check a "truthy" value
----@param i any|nil Possibly a nil value
----@return boolean true when `i` is "truthy"
+---@type TypeCheckFn
 local function truthy(i)
   if i then
     return true
@@ -105,6 +104,7 @@ local tc = {
   isTrue = isTrue,
   isFalse = isFalse,
   isEmpty = isEmpty,
+  isCallable = isCallable,
   invert = invert,
   both = both,
   first_not_second = first_not_second,
@@ -140,7 +140,7 @@ tc.no = {
 
 -- Checks if a string represents a true value (only "true" == true) (whitespace permitted)
 ---@param str any|nil Possibly a nil value
----@return boolean true when param is "true"
+---@return boolean
 function tc.tobool(str)
   if tostring(str):match("^%s*true%s*$") then
     return true

@@ -11,15 +11,18 @@ local fmt = tutil.fmt
 insulate("adapters.shell", function()
 
   _G.hs = tutil.hs_mock(spy)
+  
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "inspect")
+
+  local strings = require('user.lua.lib.string')
+  local shell = require('user.lua.adapters.shell')
 
   describe("Parsing test", function()
 
     local test_cmd = 'yabai -m rule --add app="^Alfred.*$" manage=off'
 
     pending("parses args", function()
-      local split = require('user.lua.lib.string').split
-
-      local flags, params = plapp.parse_args(split(test_cmd), {
+      local flags, params = plapp.parse_args(strings.split(test_cmd), {
         'foo', 'bar'
       }, {
         message = "m",
@@ -46,7 +49,6 @@ insulate("adapters.shell", function()
   end)
 
   describe("Shell", function()
-    local shell = require('user.lua.adapters.shell')
 
     describe("key/value formatter", function()
       it("(1) should format a basic cli k/v format", function()

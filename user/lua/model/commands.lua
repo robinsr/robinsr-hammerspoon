@@ -34,6 +34,13 @@ function CommandList:new(commands)
 end
 
 
+---@param id string  - ID of a command
+---@return ks.command|nil
+function CommandList:find(id)
+  return lists(self.items or {}):first(function(cmd) return cmd.id == id end)
+end
+
+
 --
 -- 
 --
@@ -95,8 +102,6 @@ end
 function CommandList:initialize()
   self.items = lists(self:scanForConfigs())
     :map(Command.new)
-    -- :map(func.bind(Command.new, Command))
-    -- :map(function(cmd) return Command:new(cmd) end)
     :values()
 
   return self

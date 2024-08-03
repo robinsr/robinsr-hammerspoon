@@ -55,7 +55,9 @@ function ProxyLogger:new(log_name, level)
   local l = function(this_level, level_prefix, styles)
     return function(...)
       if (_log:getLogLevel() >= this_level) then
-        console.print(level_prefix..name_prefix..table.concat({...}), styles)
+        local statements = lists({...}):map(function(arg) return tostring(arg) end):join(' ')
+
+        console.print(level_prefix .. name_prefix .. statements, styles)
       end
     end
   end
@@ -83,8 +85,8 @@ function ProxyLogger:new(log_name, level)
     local msg = string.format(pattern, table.unpack({...}))
     local trace = debug.traceback(err, 2)
 
-    console.print("%{red}[trace] "..msg)
-    console.print("%{red}"..trace)
+    console.print("[trace] "..msg, { color = colors.red })
+    console.print(trace, { color = colors.red })
   end
 
 
@@ -93,28 +95,28 @@ function ProxyLogger:new(log_name, level)
     if (log:getLogLevel() < levels.debug) then
       return
     end
+    local inspect_conf = { depth = 1 }
 
-    local args = lists.pack(...)
+    local args = {...}
     local lastarg = args[#args]
+    local depth = types.isTable(lastarg) and lastarg.depth
+    local metas = types.isTable(lastarg) and lastarg.metatables
 
-    -- Prevents unintentionally bogging down HS with huge objects
-    -- Add { depth = N } as last argument to override
-    if (is.tabl(lastarg) and notNil(lastarg.depth)) then
-      args:pop()
-    else
-      lastarg = { depth = 1 }
+    if depth ~= nil or metas ~= nil then
+      -- The last parameter to log.inspect can be a config object for inspect/hs.inspect
+      -- If so, use that, otherwise us reasonable defaults
+      inspect_conf = lastarg
+      -- Remove the config parameter the other, printable parameters
+      table.remove(args, #args)
     end
 
-    local bits = args:map(function(bit)
-      if is.strng(bit) then
-        return bit
-      else
-        return inspect(bit, lastarg)
-      end
-    end)
+    local post_inspect = lists(args)
+      :map(function(bit)
+        return types.isString(bit) and bit or inspect(bit, inspect_conf)
+      end)
+      :join(' ')
 
-    console.print(DEBUG_WARNING)
-    console.print(table.concat(bits:values()))
+      log.d(post_inspect)
   end
 
   log.logIf = function(level, fn)

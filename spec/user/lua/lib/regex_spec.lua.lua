@@ -9,6 +9,8 @@ local dump = tutil.dump
 
 insulate("user.lua.lib.regex", function()
 
+  package.loaded[tutil.logger_mod] = tutil.mock_logger(spy, "inspect")
+
   local regex = require('user.lua.lib.regex')
 
   describe("Regex.uri (RFC 6570)", function()
