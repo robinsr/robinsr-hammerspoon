@@ -22,8 +22,6 @@ print(string.rep('-', 40))
 print(string.rep('-', 15), time.fmt(), string.rep('-', 15))
 print(string.rep('-', 40))
 
-require('hs.ipc')
-
 local lists  = require 'user.lua.lib.list'
 local regex  = require 'user.lua.lib.regex'
 local tabl   = require 'user.lua.lib.table'
@@ -33,11 +31,7 @@ local log = logger.new('user:init', 'debug')
 
 log.i("Starting...")
 
-hs.ipc.cliInstall('/opt/homebrew')
-hs.ipc.localPort('testtest', function(d)
-  log.f('ipc message received: %s', tostring(d))
-  return ("Echo '%s'"):format(tostring(d))
-end)
+local channels = require 'user.lua.lib.channels'
 
 local console = require 'user.lua.interface.console'
 local desk    = require 'user.lua.interface.desktop'
@@ -88,6 +82,7 @@ local loadcmds = KittySupreme.commands
 
 log.inspect('inLoad command results:', loadcmds, logger.d3)
 
+require('hs.ipc')
 
 log.i('Init complete')
 

@@ -58,10 +58,13 @@
 ---@generic R: any Type list is reduced to
 ---@alias ReducerFn fun(memo: R, item: T, index: int): R
 
+---@class Coord
+---@field x number
+---@field y number
 
----@alias Coord { x: num, y: num }
-
----@alias Dimensions { w: num, h: num }
+---@class Dimensions
+---@field w number
+---@field h number
 
 
 return {}

@@ -12,12 +12,16 @@ function hsshim.geometry.size(width, height)
   return hs.geometry.size(width, height) --[[@as hs.geometry]]
 end
 
+function hsshim.geometry.new(...)
+  return hs.geometry.new(...) --[[@as hs.geometry]]
+end
+
 function hsshim.geometry.rect( ... )
-  -- body
+  return hs.geometry.rect(...) --[[@as hs.geometry]]
 end
 
 function hsshim.geometry.point( ... )
-  -- body
+  return hs.geometry.point(...) --[[@as hs.geometry]]
 end
 
 hsshim.urlevent = {}

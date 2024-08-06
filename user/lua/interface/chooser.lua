@@ -5,7 +5,7 @@ local images = require 'user.lua.ui.image'
 local text   = require 'user.lua.ui.text'
 local logr   = require 'user.lua.util.logger' 
 
-local log = logr.new('IChooser', 'debug')
+local log = logr.new('IChooser', 'info')
 
 
 

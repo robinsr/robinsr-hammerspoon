@@ -4,7 +4,7 @@ local tables = require 'user.lua.lib.table'
 local types  = require 'user.lua.lib.typecheck'
 local logr   = require 'user.lua.util.logger'
 
-local log = logr.new('watchable', 'debug')
+local log = logr.new('watchable', 'info')
 
 ---@generic T : any
 ---@alias hs.watch.update<T> { watcher: string, path: string, key: string, prev: T, value: T }
@@ -17,7 +17,7 @@ local log = logr.new('watchable', 'debug')
 ---@field [string] any
 
 
----@class hs.watch
+---@class ks.watch
 local Watch = {}
 
 --
@@ -40,13 +40,14 @@ function Watch.create(path, ext, init)
   return watchable
 end
 
+Watch.listen = {}
 
 --
 -- Returns a watchable object for the watched object at `path`
 --
 ---@param path  string   - path of object
 ---@return HS.Watchable
-function Watch.watch(path)
+function Watch.listen.all(path)
   params.assert.string(path, 1)
 
   return hs.watchable.watch(path, '*') --[[@as HS.Watchable]]
@@ -59,7 +60,7 @@ end
 ---@param path  string   - path of object
 ---@param key   string   - key of value within the watched table
 ---@return HS.Watchable
-function Watch.watchKey(path, key)
+function Watch.listen.key(path, key)
   params.assert.string(path, 1)
   params.assert.string(key, 2)
 
@@ -72,7 +73,7 @@ end
 --
 ---@param path  string             - path of object
 ---@param fn    hs.watch.callback  - function to call on changes
-function Watch.onChange(path, fn)
+function Watch.listen.onPathChange(path, fn)
   params.assert.string(path, 1)
   params.assert.func(fn, 2)
 
@@ -80,7 +81,7 @@ function Watch.onChange(path, fn)
     pcall(fn, { watcher = watcher, path = path, key = key, prev = old, value = new })
   end
 
-  hs.watchable.watch(path, '*', callback) --[[@as HS.Watchable]]
+  hs.watchable.watch(path, callback) --[[@as HS.Watchable]]
 end
 
 
@@ -90,7 +91,7 @@ end
 ---@param path  string             - path of object
 ---@param key   string             - (optional) key of item in watchable object
 ---@param fn    hs.watch.callback  - function to call on changes
-function Watch.onKeyChanged(path, key, fn)
+function Watch.listen.onKeyChange(path, key, fn)
   params.assert.string(path, 1)
   params.assert.string(key, 2)
   params.assert.func(fn, 3)
@@ -102,55 +103,4 @@ function Watch.onKeyChanged(path, key, fn)
   hs.watchable.watch(path, key, callback) --[[@as HS.Watchable]]
 end
 
-return {
-  module = "Watchable Test",
-  cmds = {
-    {
-      id = "kstest.evt.onLoad",
-      exec = function()
-        -- Works! Most of the time
-        local watchme = Watch.create('target', true, {
-          whois = 'intial val'
-        })
-
-        ---@type hs.watch.callback<number>
-        local onUpdate = function(update)
-          log.df('Watcher update fired: %s', hs.inspect(update))
-          log.df('%s.%s Updated from [%q] to [%q]', update.path, update.key, update.prev, update.value)
-        end
-
-        Watch.onKeyChanged('target', 'whois', onUpdate)
-
-        Watch.onChange('target', onUpdate)
-
-        local watcher = Watch.watch('target')
-
-        -- local updaterFnA = func.interval(7, function()
-        --   watchme["whois"] = 'Apples!'
-        -- end)
-
-        -- local updaterFnB = func.interval(3, function()
-        --   watcher:change('whois', 'Bananas!')
-        -- end)
-
-        -- local checkerFnA = func.interval(2, function()
-        --   log.df('Watchable value (watchABLE side): %s', watchme['whois'])
-        -- end)
-
-        -- local checkerFnB = func.interval(2, function()
-        --   log.df('Watchable value (watchER side): %s', watcher:value('whois'))
-        -- end)
-
-
-        -- func.delay(22, function()
-        --   updaterFnA:stop()
-        --   updaterFnB:stop()
-        --   checkerFnA:stop()
-        --   checkerFnB:stop()
-        -- end)
-      end
-    } 
-  }
-}
-
-
+return Watch

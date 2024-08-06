@@ -100,8 +100,7 @@ Keys.symbols = tables{
 }
 
 
----@type Table | table<string, string>
-Keys.cardinal = tables{
+Keys.cardinal = {
   north = 'w',
   south = 's',
   east = 'd',

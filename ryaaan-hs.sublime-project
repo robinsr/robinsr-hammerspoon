@@ -16,15 +16,23 @@
   "build_systems": [{
     "name": "Generate Docs",
     "shell_cmd": "lua-language-server --doc $project_path/user/lua/lib --doc_out_path $project_path/docs"
+  },{
+    "name": "Lua Check",
+    "shell_cmd": "llscheck --configpath $project_path/.luarc.json --checklevel Warning"
+  }, {
+    "name": "Test Emitter",
+    "shell_cmd": "hs -c \"fire('ks:spaces:renamed', { index = 1, label = 'cli' })\""
   }],
   "settings": {
     "tab_size": 2,
     "rulers": [88],
     "LSP": {
       "LSP-lua": {
+        "enabled": true,
         "settings": {
-          "Lua.workspace.checkThirdParty": false,
+          "Lua.workspace.checkThirdParty": "Disable",
           "Lua.runtime.version": "Lua 5.4",
+          "Lua.workspace.useGitIgnore": true,
           "Lua.diagnostics.globals": [
             "luasublimeproject",
             "lfs",
@@ -32,13 +40,13 @@
             "KittySupreme"
           ],
           "Lua.workspace.library": [
+            "Spoons",
             "${3rd}/lfs/library",
-            "./Spoons",
+            "${3rd}/luassert/library",
             "/opt/homebrew/share/lua/5.4",
             "/opt/homebrew/share/lua/5.4/addons"
-          ]
-        },
-        "enabled": true
+          ],
+        }
       },
       "LSP-tailwindcss": {
         "enabled": true,

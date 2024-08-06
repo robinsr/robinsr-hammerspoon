@@ -1,5 +1,8 @@
-local pk = table.pack
-local unpk = table.unpack
+local pk     = table.pack
+local unpk   = table.unpack
+local types  = require 'user.lua.lib.typecheck'
+local isNum  = types.isNum
+local isTabl = types.isTable
 
 
 ---@class lib.function
@@ -54,11 +57,20 @@ end
 --
 -- Repeatedly calls a function, with a fixed time delay between each call
 --
----@param sec integer delay in seconds
----@param fn function function to run after delay
+---@param sec int|[int, int]  delay in seconds, or range of seconds
+---@param fn  function   function to run after delay
 ---@returns hs.timer
 function func.interval(sec, fn)
-  return hs.timer.doEvery(sec, fn)
+  if isNum(sec) then
+    return hs.timer.doEvery(sec, fn)
+  end
+
+  if isTabl(sec) and isNum(sec[1]) and isNum(sec[2]) then
+    local secs = math.random(sec[1], sec[2])
+    return hs.timer.doEvery(secs, fn)
+  end
+
+  error('Parameter #1 required to be int or [int, int]')
 end
 
 

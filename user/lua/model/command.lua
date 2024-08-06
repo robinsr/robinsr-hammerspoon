@@ -54,15 +54,18 @@ local log = logr.new('Command', 'info')
 ---|'no-alert'     Disables the default alert generated when commands hotkey is invoked
 
 
----@alias ks.command.execfn<T> fun(cmd: ks.command, ctx: T|ks.command.context, params: table): string|ks.command.err|nil
+---@class ks.command.result
+---@field ok? string
+---@field err? string
+
+
+---@alias ks.command.execfn<T> fun(cmd: ks.command, ctx: T|ks.command.context, params: table): string|ks.command.result|nil
 
 ---@alias ks.command.setupfn<T> fun(cmd: ks.command): T
 
 ---@alias ks.command.verifyfn fun(cmd: ks.command, ctx: ks.command.context, params: table): boolean
 
 ---@alias ks.command.trgger 'load'|'hotkey'|'menu'|'url'|'chooser'|'other'
-
----@alias ks.command.err { err: string }
 
 
 
@@ -161,7 +164,7 @@ function Command:invoke(trigger, params)
   end
 
   local ok, result = xpcall(function()
-    return self.exec(self, tables.merge(ctx, self.context), params or {}) --[[@as string]]
+    return self.exec(self, tables.merge(ctx, self.context), params or {})
   end, debug.traceback)
 
   if not ok then
@@ -174,18 +177,19 @@ function Command:invoke(trigger, params)
   end
 
   if result.err ~= nil then
-    return alert:new("Command failed (%s): %s", self.id, result.err)
+    return alert:new("Err: %s", result.err)
                 :style({ textColor = colors.red })
                 :show()
   end
 
-  -- todo: command callback alert logic moved up somewhere
-  if (result == 'default') then
-    alert:fmt('%s: %s', self.hotkey:getLabel('keys'), self.title):show()
+  -- Preferably return `hs.command.result`, eg { ok = 'It Worked!' }
+  if result.ok and types.isString(result.ok) then
+    alert:new(result.ok):icon(self:getMenuIcon(16)):show()
     return
   end
 
-  if (result ~= '') then
+  -- Returning a string is (currently) a non-error, eg same as { ok = <string> }
+  if types.isString(result) and result ~= '' then
     alert:new(result):icon(self:getMenuIcon(16)):show()
   end
 end

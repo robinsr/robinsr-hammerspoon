@@ -2,11 +2,13 @@ local Option = require 'user.lua.lib.optional'
 local keys   = require 'user.lua.model.keys'
 local spaces = require 'user.lua.modules.spaces'
 
-local yabai  = KittySupreme.services.yabai
+local yabai  = KittySupreme:getService('Yabai')
 
 local mod = {}
 
 mod.module = "Arrange Windows"
+
+local JUMP_DISTANCE = "80"
 
 
 ---@type ks.command.config[]
@@ -155,6 +157,43 @@ mod.cmds = {
     flags = { 'no-chooser', 'no-alert' },
     exec  = spaces.createMessageFn('window --warp west', 'Warp to window left'),
   },
+  {
+    id    = 'windows.move.up',
+    title = 'Move window up',
+    mods  = keys.preset.peace,
+    key   = keys.cardinal.north,
+    flags = { 'no-chooser', 'no-alert' },
+    -- UP yabai -m window --move rel:0:-30
+    exec  = spaces.createMessageFn('window --move rel:0:-'..JUMP_DISTANCE),
+  },
+  {
+    id    = 'windows.move.down',
+    title = 'Move window down',
+    mods  = keys.preset.peace,
+    key   = keys.cardinal.south,
+    flags = { 'no-chooser', 'no-alert' },
+    -- DOWN yabai -m window --move rel:0:30
+    exec  = spaces.createMessageFn('window --move rel:0:'..JUMP_DISTANCE),
+  },
+  {
+    id    = 'windows.move.left',
+    title = 'Move window left',
+    mods  = keys.preset.peace,
+    key   = keys.cardinal.west,
+    flags = { 'no-chooser', 'no-alert' },
+    -- LEFT yabai -m window --move rel:-30:0
+    exec  = spaces.createMessageFn('window --move rel:-'..JUMP_DISTANCE..':0'),
+  },
+  {
+    id    = 'windows.move.right',
+    title = 'Move window right',
+    mods  = keys.preset.peace,
+    key   = keys.cardinal.east,
+    flags = { 'no-chooser', 'no-alert' },
+    -- RIGHT yabai -m window --move rel:30:0
+    exec  = spaces.createMessageFn('window --move rel:'..JUMP_DISTANCE..':0'),
+  },
+
 }
 
 

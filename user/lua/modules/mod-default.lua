@@ -72,15 +72,6 @@ defmod.cmds = {
       return cmd.hotkey:getLabel('full')
     end,
   },
-  {
-    id    = "ks.test.cmd_failed",
-    title = "Tests that command execution failures surface as expected",
-    icon  = "kitty",
-    key   = keys.TICK,
-    mods  = keys.preset.btms,
-    flags = { 'no-alert' },
-    exec  = func.ident({ err = 'doodoo' }),
-  }
 }
 
 return defmod

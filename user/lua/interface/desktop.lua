@@ -9,7 +9,7 @@ local tables  = require 'user.lua.lib.table'
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
-local log = logr.new('Desktop', 'debug')
+local log = logr.new('Desktop', 'info')
 
 ---@class ks.desktop.app
 ---@field name string
@@ -36,7 +36,7 @@ local query_dark_mode = fns.cooldown(10, function()
   )
 
   if not ok then
-    error('Error executing osascript (js):' .. darkModeState)
+    error('Error executing osascript (js):')
   end
 
   return types.tobool(darkModeState) --[[@as boolean]]

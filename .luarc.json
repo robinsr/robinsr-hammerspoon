@@ -1,13 +1,26 @@
 {
-  "Lua.workspace.checkThirdParty": false,
-  "Lua.runtime.version": "Lua 5.4",
-  "Lua.diagnostics.globals": ["luarcjson", "lfs", "hs", "KittySupreme", "it", "describe"],
-  "Lua.diagnostics.disable": ["unused-local", "unused-function", "lowercase-global"],
-  "Lua.workspace.library": [
-    "${3rd}/lfs/library",
-    "./Spoons",
-    "/opt/homebrew/share/lua/5.4",
-    "/opt/homebrew/share/lua/5.4/addons",
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.checkThirdParty": "Disable",
+  "runtime.version": "Lua 5.4",
+  "diagnostics.globals": [
+    "luarcjson",
+    "lfs",
+    "hs",
+    "KittySupreme",
+    "it",
+    "describe"
   ],
-    "workspace.checkThirdParty": "Disable"
+  "diagnostics.disable": [
+    "unused-local",
+    "unused-function",
+    "lowercase-global"
+  ],
+  "workspace.library": [
+    "${3rd}/lfs/library",
+    "${3rd}/luassert/library",
+    "Spoons"
+  ],
+  "workspace.ignoreDir": [
+    "Spoons"
+  ]
 }

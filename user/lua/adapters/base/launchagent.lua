@@ -16,10 +16,10 @@ local UID
 
 function LaunchAgent.getUID()
   if (UID == nil) then
-    local uid = shell.run({ 'id', '-u' })
+    local uid = shell.result({ 'id', '-u' })
 
-    if uid then
-      UID = uid
+    if uid:ok() then
+      UID = uid.output
     end
   end
 
@@ -39,7 +39,13 @@ function LaunchAgent.list()
     fieldnames = { 'pid', 'exit', 'label' }
   }
 
-  local services, err = data.read(io.popen('launchctl list'), dataconfig)
+  local list = io.popen('launchctl list')
+
+  if list == nil then
+    return error('Could not open "launchctl list"')
+  end
+
+  local services, err = data.read(list, dataconfig)
 
   if err ~= nil then error(err) end
 
@@ -101,12 +107,11 @@ end
 
 
 function LaunchAgent:restart()
-  local stdout, result = shell.run({ 'launchctl', 'kickstart', '-kp', self.service_target })
+  local result = shell.result({ 'launchctl', 'kickstart', '-kp', self.service_target })
 
-  if (result.status == 0) then
+  if result:ok() then
 
-    ---@cast stdout string
-    local pid = stdout:match("(%d+)")
+    local pid = result.output:match("(%d+)")
 
     log.df("Restarted service [%s] (pid: %s)", self.name, pid)
 

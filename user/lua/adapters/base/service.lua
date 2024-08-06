@@ -15,6 +15,13 @@ local STATUS = {
 ---@class ks.service
 ---@field name string
 ---@field pid integer
+---@field start fun(self: ks.service): nil
+---@field stop fun(self: ks.service): nil
+---@field restart fun(self: ks.service): nil
+---@field status fun(self: ks.service): ServiceStatus
+
+
+---@class ks.service
 local Service = {}
 
 Service.STATUS = STATUS

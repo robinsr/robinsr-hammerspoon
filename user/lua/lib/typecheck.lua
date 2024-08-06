@@ -74,62 +74,107 @@ local function truthy(i)
   end
 end
 
+
+---@param fn TypeCheckFn
+---@return TypeCheckFn
 local function invert(fn)
   return function(arg)
-    return (not fn(arg))
+    return not fn(arg)
   end
 end
 
+
+---@param fnA TypeCheckFn
+---@param fnB TypeCheckFn
+---@return TypeCheckFn
 local function both(fnA, fnB)
-return function(arg)
-    return fnA(arg) == true and fnB(arg) == true
+  return function(arg)
+    return fnA(arg) and fnB(arg)
   end
 end
 
-local function first_not_second(fnA, fnB)
+---@param fnA TypeCheckFn
+---@param fnB TypeCheckFn
+---@return TypeCheckFn
+local function either(fnA, fnB)
   return function(arg)
-    return fnA(arg) == true and fnB(arg) == false
+    return fnA(arg) or fnB(arg)
+  end
+end
+
+---@param ... TypeCheckFn
+---@return TypeCheckFn
+local function any(...)
+  local checkall = {...}
+
+  return function(arg)
+    for _, fn in ipairs(checkall) do
+      if fn(arg) == true then
+        return true
+      end
+    end
+
+    return false
+  end
+end
+
+---@param fnA TypeCheckFn
+---@param ... TypeCheckFn
+---@return TypeCheckFn
+local function only(fnA, ...)
+  local checkall = {...}
+
+  return function(arg)
+    for _, fn in ipairs(checkall) do
+      if fn(arg) == true then
+        return false
+      end
+    end
+
+    return fnA(arg) == true
   end
 end
 
 
 ---@class KS.Types
 local tc = {
-  isNil = isNil,
-  notNil = notNil,
-  isString = isString,
-  isNum = isNum,
-  isTable = isTable,
-  isFunc = isFunc,
-  isTrue = isTrue,
-  isFalse = isFalse,
-  isEmpty = isEmpty,
-  isCallable = isCallable,
-  invert = invert,
-  both = both,
-  first_not_second = first_not_second,
+  isNil       = isNil,
+  notNil      = notNil,
+  isString    = isString,
+  isNum       = isNum,
+  isTable     = isTable,
+  isFunc      = isFunc,
+  isTrue      = isTrue,
+  isFalse     = isFalse,
+  isEmpty     = isEmpty,
+  isCallable  = isCallable,
+  invert      = invert,
+  both        = both,
+  either      = either,
+  any         = any,
+  only        = only,
 }
 
 
 tc.is = {
-  Nil = isNil,
-  True = isTrue,
-  False = isFalse,
-  strng = isString,
-  func = isFunc,
-  tabl = isTable,
-  empty = both(isString, isEmpty),
-  truthy = truthy,
+  Nil     = isNil,
+  True    = isTrue,
+  False   = isFalse,
+  strng   = isString,
+  func    = isFunc,
+  tabl    = isTable,
+  empty   = both(isString, isEmpty),
+  truthy  = truthy,
 }
 
 tc.is_not = {
-  Nil = invert(isNil),
-  True = invert(isTrue),
-  False = invert(isFalse),
-  strng = invert(isString),
-  func = invert(isFunc),
-  tabl = invert(isTable),
-  empty = first_not_second(isString, isEmpty),
+  Nil     = invert(isNil),
+  True    = invert(isTrue),
+  False   = invert(isFalse),
+  strng   = invert(isString),
+  func    = invert(isFunc),
+  tabl    = invert(isTable),
+  empty   = only(isString, isEmpty),
 }
 
 tc.no = {

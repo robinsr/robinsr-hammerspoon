@@ -1,3 +1,4 @@
+local inspect = require 'inspect'
 local shell       = require 'user.lua.adapters.shell'
 local BrewService = require 'user.lua.adapters.base.brew-service'
 local channels    = require 'user.lua.lib.channels'
@@ -29,7 +30,7 @@ local function getLayoutIcon(layout)
 end
 
 local function getSpaceId(index)
-  return strings('space.%d'):fmt(index)
+  return strings('space.%s'):fmt(tostring(index))
 end
 
 local function getSpaceIcon(layoutType, windowCount)
@@ -42,7 +43,7 @@ end
 
 
 
----@class SketchyBar: ks.service.brew
+---@class SketchyBar : ks.brewservice
 local SketchyBar = {}
 
 
@@ -58,11 +59,16 @@ function SketchyBar:new()
   
   BrewService.new(this, 'sketchybar')
 
-  channels.subscribe('ext:click:sketchybar', function(channel, data)
-    log.f("Event '%s' triggered! %s", channel, hs.inspect(data))
+  channels.subscribe('ext:click:sketchybar', function(data)
+    log.df("'ext:click:sketchybar' triggered! %s", inspect(data))
   end)
 
-  return proto.setProtoOf(this, SketchyBar, { locked = true })
+  channels.subscribe('ks:space:rename', function(data)
+    log.df("'ks.spaces.renamed' triggered! %s", inspect(data))
+    self:setSpaceLabel(data.space, data.label)
+  end)
+
+  return proto.setProtoOf(this, SketchyBar)
 end
 
 
@@ -72,7 +78,7 @@ end
 
 
 function SketchyBar:restart()
-  return shell.result({ 'sketchybar', '--reload' }).code
+  return shell.result({ 'sketchybar', '--restart' }).code
 end
 
 
@@ -132,8 +138,10 @@ end
 ---@param label? string label's value (defaults to index value)
 ---@return string
 function SketchyBar:setSpaceLabel(space, label)
-  params.assert.number(space, 1)
-  params.assert.string(label, 2)
+  log.f("Setting label for space [%s] to [ %s ]", tostring(space), label)
+  
+  -- params.assert.number(space, 1)
+  -- params.assert.string(label, 2)
 
   local bar_params = {
     { 'label', getSpaceLabel(label, space) }
@@ -165,6 +173,16 @@ end
 
 
 SketchyBar.cmds = {
+  {
+    id = 'sketch.service.stop',
+    title = 'Stop SketchyBar',
+    icon = 'info',
+    exec = function()
+      if KittySupreme.services.sketchybar ~= nil then
+        KittySupreme.services.sketchybar:stop()
+      end
+    end,
+  },
   {
     id = 'sketch.service.start',
     title = 'Start SketchyBar',

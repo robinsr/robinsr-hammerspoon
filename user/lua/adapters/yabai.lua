@@ -1,10 +1,9 @@
--- local apps        = require 'hs.application'
--- local win         = require 'hs.window'
--- local winf        = require 'hs.window.filter'
 local LaunchAgent = require 'user.lua.adapters.base.launchagent'
 local desktop     = require 'user.lua.interface.desktop'
+local watch       = require 'user.lua.interface.watchable'
 local sh          = require 'user.lua.adapters.shell'
 local system      = require 'user.lua.interface.system'
+local chan        = require 'user.lua.lib.channels'
 local lists       = require 'user.lua.lib.list'
 local Option      = require 'user.lua.lib.optional'
 local paths       = require 'user.lua.lib.path'
@@ -15,31 +14,22 @@ local strings     = require 'user.lua.lib.string'
 local types       = require 'user.lua.lib.typecheck'
 local tables      = require 'user.lua.lib.table'
 local logr        = require 'user.lua.util.logger'
-local stringio = require('pl.stringio')
+local unpk        = table.unpack
+local pk          = table.pack
 
 
-local qt = sh.quote
-
-local log = logr.new('Yabai', 'debug')
+local log = logr.new('Yabai', 'info')
 
 
---- TODO - where should custom yabai config live?
 
----@alias YabaiRulePartial {} | Yabai.Rule 
-
----@type YabaiRulePartial[]
-local my_yabai_rules = {
-  { app = 'Glance', manage = 'off' }
-}
-
-
----@class Yabai.Config.Writer
----@field asCliArgs string[]
----@field asConfig type
+local function assertWindowId(id, pos)
+  if not types.either(types.isNum, types.isString)(id) then
+    error(params.errs.CUSTOM:format('window ID', pos, type(id)))
+  end
+end
 
 
 ---@class Yabai: LaunchAgent
----@field syswatcher hs.caffeinate.watcher
 local Yabai = {}
 
 
@@ -49,41 +39,135 @@ local Yabai = {}
 ---@return Yabai
 function Yabai:new()
   local this = self == Yabai and {} or self
-  
-  LaunchAgent.new(this, 'yabai', 'com.koekeishiya.yabai')
 
-  local watcher = system.onEvent(function(evt) this:onEnvChange(evt) end)
+  LaunchAgent.new(this, 'yabai', 'com.koekeishiya.yabai')
 
   local config_path = paths.expand("~/.config/yabai/")
   local config_watcher = hs.pathwatcher.new(config_path, function() this:restart() end):start()
 
-  system.registerGlobal('yabaiconfig', function(args)
-    return 'yabai -m config focus_follows_mouse autoraise'
+
+  chan.subscribe('ks:space:rename', function(data)
+    self:setSpaceLabel(data.space, data.label)
   end)
 
-  
+  watch.listen.onPathChange('root.screenCount', function(update)
+    ---@cast update hs.watch.update<integer>
+    log.df('onPathChange screenCount: %s', update.value)
+
+    local pad, gap = '2','2'
+
+    if update.value > 1 then
+      pad, gap = '10', '12'
+    
+    elseif KittySupreme:getService('borders').running then
+      pad, gap = '4','8'
+    end
+
+    self:setConfig({
+      top_padding = pad, bottom_padding = pad, left_padding = pad, right_padding = pad, window_gap = gap,
+    })
+  end)
+
+
+  chan.subscribe('ks:sketchybar:start', function()
+    self:setConfig({ external_bar = 'all:0:40' })
+  end)
+
+  chan.subscribe('ks:sketchybar:stop', function()
+    self:setConfig( { external_bar = 'all:0:0' })
+  end)
+
+
   return proto.setProtoOf(this, Yabai)
 end
 
 
+--
+--
 function Yabai:start()
-  return sh.result({ 'yabai', '--start-service' }).code
+  local result = sh.result({ 'yabai', '--start-service' })
+
+  if result:ok() then
+    chan.publish('ks:yabai:start', {})
+  end
+
+  return result.code
 end
 
+
+--
+--
 function Yabai:stop()
-  return sh.result({ 'yabai', '--stop-service' }).code
+  local result = sh.result({ 'yabai', '--stop-service' })
+
+  if result:ok() then
+    chan.publish('ks:yabai:stop', {})
+  end
+
+  return result.code
 end
 
+
+--
+--
 function Yabai:restart()
   return sh.result({ 'yabai', '--restart-service' }).code
 end
 
+--
+--
+--
+---@param props { [string]: string|number }
+function Yabai:setConfig(props)
 
----@param evt HS.SystemEvent
-function Yabai:onEnvChange(evt)
-  -- lists(tables.vals(hs.caffeinate.watcher)):filter(types.isNum)
-  -- if (evt == system.sysevents[evt]) then
-  -- end
+  local qts = {
+    number = '   ',
+    string = ' ""'
+  }
+
+  local args = lists(tables.list(props)):map(function(prop)
+    return sh.kv(prop[1], prop[2], qts[type(prop[2])])
+  end)
+
+  local result = sh.result({ 'yabai','-m','config', unpk(args)})
+
+  if not result:ok() then
+    error(('Failed to set config %s to value %s'):format(props, args:join(' ')))
+  end
+end
+
+
+
+local action = 'action="hs -c \\"fire(\'%s\', { %s })\\" "'
+
+---@param label string
+---@param event string
+---@param vars { [string]: string }
+function Yabai:addSignal(label, event, vars)
+  params.assert.string(label, 1)
+  params.assert.string(event, 2)
+
+  vars = vars or {}
+
+
+  local string_vars = lists(tables.list(vars))
+    :map(function(v)
+      return ("%s = '\\$%s'"):format(v[1], v[2])
+    end)
+    :join(', ')
+
+
+  local args = lists({
+    'yabai', '-m', 'signal', '--add',
+    sh.kv('event', event),
+    sh.kv('label', label),
+    action:format(label, string_vars)
+  }):join(' ')
+
+  log.f("add signal args: %s", args)
+
+  sh.run(args)
+
 end
 
 
@@ -98,31 +182,12 @@ end
 
 
 --
--- TODO - WIP
---
-function Yabai.suggest()
-
-  local screens = lists(desktop.screens())
-
-  local has_external   = screens:any(function(screen) return screen:frame().w > 2000 end)
-  local has_laptop     = screens:any(function(screen) return screen:frame().w < 2000 end)
-  local borders_active = LaunchAgent.query('homebrew.mxcl.borders') ~= nil
-
-  
-  if has_external then
-    return { layout = 'bsp' }
-  end
-
-end
-
-
---
 -- Gets yabai rules
 --
 ---@return Yabai.Rule[]
 function Yabai:getRules()
   local result = sh.result('yabai -m rule --list')
-  
+
   if not result:ok() then
     error(result:error_msg())
   end
@@ -140,7 +205,7 @@ function Yabai:addRule(rule)
 
   args:push(sh.kv('app', regex.topattern(rule.app), '""'))
   args:push(sh.kv('manage', rule.manage))
-  
+
   local add_reuslt = sh.result(args:values())
 
   log.f('yabai add rule: [%s]', args:join(' '))
@@ -160,46 +225,38 @@ end
 
 
 --
----@param propname string
----@param propval string
-function Yabai:setConfig(propname, propval)
-  local result = sh.result({ 'yabai','-m','config', propname, qt(propval) })
-
-  if not result:ok() then
-    error(('Failed to set config %s to value %s'):format(propname, propval))
-  end
-end
-
-
---
 -- Shifts windows around on a grid
 --
----@param windowId  string|number     - Window ID, index or other window selector
----@param start     Coord             - Grid coornidates to position window to (the top-left)
----@param span      Coord             - number of grid units the window will span
----@param gridrows? number            - (Optional) number of grid rows; defaults 1
----@param gridcols? number            - (Optional) number of grid columns; default 3
-function Yabai.setGrid(windowId, start, span, gridrows, gridcols)
+-- `--grid <rows>:<cols>:<start-x>:<start-y>:<width>:<height>`
+--
+---@param windowId string|number   Window ID, index or other window selector
+---@param grid     Dimensions      Dimensions defining the grid's columns (w) and rows (h)
+---@param span     Dimensions      Dimensions defining the number of grid units the window will span
+---@param start    Coord           Coordinates within the grid that define the window's top-left start position
+function Yabai.setGrid(windowId, grid, span, start)
+  assertWindowId(windowId, 1)
 
-  local window = Yabai.getWindow(windowId)
+  local getWindow = sh.result({ 'yabai', '-m', 'query', '--windows', '--window', windowId })
 
-  if window == nil then
-    error('Cannot get Yabai window: ' .. tostring(windowId))
+  if getWindow:ok() then
+    local window = getWindow:json() --[[@as Yabai.Window]]
+
+    if not window['is-floating'] then
+      -- return 'Cannot reposition non-floating windows'
+    end
+
+    local space = Yabai:getSpace(window.space)
+
+    local gridargs = { grid.h, grid.w, start.x, start.y, span.w, span.h }
+
+    local yargs = { 'yabai', '-m', 'window', window.id, '--grid', strings.join(gridargs, ':') }
+
+    log.f('Yabai#setGrid: %s', sh.join(yargs))
+
+    sh.result(yargs)
+  else
+    return 'Cannot reposition unmanaged windows'
   end
-
-  local space = Yabai:getSpace(window.space)
-
-  if (space.type ~= 'float') then
-    Yabai:setLayout(space.id, 'float')
-  end
-
-  local gridargs = { gridrows or 1, gridcols or 3, start.x, start.y, span.x, span.y }
-
-  local yargs = { 'yabai', '-m', 'window', windowId, '--grid', strings.join(gridargs, ':') }
-
-  log.f('Yabai#setGrid: %s', sh.join(yargs))
-
-  sh.result(yargs)
 end
 
 
@@ -218,6 +275,20 @@ function Yabai.getWindow(selector)
   else
     error(result:error_msg())
   end
+end
+
+
+--
+-- Returns the yabai window object for a windowId
+--
+---@param selector? Yabai.Selector.Window
+---@return boolean
+function Yabai.isManaged(selector)
+  if selector == nil then
+    return false
+  end
+
+  return sh.result({ 'yabai', '-m', 'query', '--windows', '--window', selector }):ok()
 end
 
 
@@ -292,7 +363,7 @@ function Yabai:floatActiveWindow(windowId)
       local label = strings.fmt('hsfloat-%s', title:gsub("%s", ""):lower())
 
       log.f('Active window: "%s" "%s" "%s";', id, title)
-      log.f('Created label: "%s"', label) 
+      log.f('Created label: "%s"', label)
   end)
 end
 
@@ -309,7 +380,7 @@ function Yabai:getSpace(selector)
   if (space ~= nil and space.code == 0) then
     return space:json() --[[@as Yabai.Space]]
   end
-  
+
   error(strings.fmt('Error getting yabai space [%s] - %s', selector, hs.inspect(space)))
 end
 
@@ -337,9 +408,9 @@ end
 ---@return string
 function Yabai:getLayout(selector)
   selector = selector or 'mouse'
-  
+
   local result = sh.result({ 'yabai', '-m', 'config', '--space', selector, 'layout' })
-  
+
   if (result:ok()) then
     log.f("Current yabai layout: [%s]", result.output)
     return result.output
@@ -356,9 +427,9 @@ end
 ---@param layout string
 function Yabai:setLayout(selector, layout)
   selector = selector or 'mouse'
-  
+
   log.f("Setting layout for space [%q] to [%s]", selector, layout)
-  
+
   local result = sh.result({ 'yabai', '-m', 'space', selector, '--layout', layout })
 
   if not result:ok() then

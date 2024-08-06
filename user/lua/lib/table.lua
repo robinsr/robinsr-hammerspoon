@@ -61,17 +61,17 @@ end
 -- Returns the table as a list of key/value tuples
 --
 ---@param tabl table
----@return any[] list of keys
+---@return List : [ any, any ]
 function Table.list(tabl)
   params.assert.tabl(tabl)
 
-  local tups = {}
+  local tuples = {}
 
   for key, val in pairs(tabl) do
-    table.insert(tups, { key, val })
+    table.insert(tuples, { key, val })
   end
 
-  return tups
+  return tuples
 end
 
 
@@ -247,7 +247,7 @@ end
 --
 ---@param tabl table Table to pick values from
 ---@param keys string[] List of keys to pick from table
----@return table
+---@return ... any
 function Table.extract(tabl, keys)
   local picked = {}
 

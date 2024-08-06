@@ -8,15 +8,17 @@ local url_matcher = regex.new("^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{
 
 ---@epos ks.param.err_msg
 local errs = {
-  TYPE  = 'Parameter #%d is not a %s, rather a %s',
-  NIL   = 'Parameter #%d is required to be non-nil',
-  MATCH = 'Parameter #%d is not a %s: %s'
+  TYPE   = 'Parameter #%d is not a %s, rather a %s',
+  NIL    = 'Parameter #%d is required to be non-nil',
+  MATCH  = 'Parameter #%d is not a %s: %s',
+  CUSTOM = 'Invalid %s - parameter #%d is not a string or number, rather a %s'
 }
 
 local Params = {}
 
-Params.assert = {}
+Params.errs = errs
 
+Params.assert = {}
 
 --
 -- Throws invalid parameter error if `val` is nil

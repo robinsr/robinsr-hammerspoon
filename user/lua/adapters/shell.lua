@@ -69,7 +69,17 @@ end
 ---@class KS.Shell
 local Shell = {}
 
--- Shell.JSON = { json = true }
+
+---@enum ks.shell.char
+Shell.char = {
+  none  = '',
+  space = ' ',
+  quote = "'",
+  dbl   = '"',
+  eql   = "=",
+}
+
+
 
 
 ---@class KS.Shell.RunOpts
@@ -305,17 +315,21 @@ end
 local DBL_QUOTE = '"'
 
 
+---@alias ks.shell.format [ ks.shell.char, ks.shell.char, ks.shell.char ]
+
 --
 -- Creates a K=V/K="V" shell argument pair
 --
 ---@param key string Parameter key
 ---@param val any Parameter value
 ---@param chars? string character pair to wrap values
+-- -@param chars? ks.shell.format
 ---@return string
 function Shell.kv(key, val, chars)
   params.assert.string(key)
   
   val = val or ''
+  -- chars = chars or { Shell.char.none, Shell.char.none, Shell.char.eql }
 
   local q_open = ''
   local q_close = ''
