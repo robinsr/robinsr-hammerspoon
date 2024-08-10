@@ -22,17 +22,25 @@ When using in a block, import them in the block itself, eg:
 
 
 {%- macro Button(color='primary', classnames={}, size='sm', attrs={}, content='') -%}
+
+  <div style="display: none !important;">
+    <div class="text-gray-50 rounded-md shadow-md hover:shadow-xl"></div>
+  </div>
+
+  {% set basecss = 'shadow-md hover:shadow-xl' %}
+
   {% set variants = {
-    'btn-primary'  : 'bg-indigo-600 font-medium text-white hover:bg-indigo-700 rounded px-3 py-1.5 text-sm',
-    'btn-secondary': 'btn btn-secondary',
-    'btn-success'  : 'btn btn-success',
-    'btn-danger'   : 'btn btn-danger',
-    'btn-info'     : 'btn btn-info',
-    'btn-light'    : 'btn btn-light',
-    'btn-dark'     : 'btn btn-dark'
+    'btn-primary'  : 'text-gray-50 rounded-md btn btn-sm btn-primary',
+    'btn-secondary': 'text-gray-50 rounded-md btn btn-sm btn-secondary',
+    'btn-success'  : 'btn btn-sm btn-success',
+    'btn-danger'   : 'btn btn-sm btn-danger',
+    'btn-info'     : 'btn btn-sm btn-info',
+    'btn-light'    : 'btn btn-sm btn-light',
+    'btn-dark'     : 'btn btn-sm btn-dark',
+    'btn-circle'   : 'btn btn-sm btn-circle'
   } %}
 
-  <button class="{{ classnames|join(' ')|replace(variants) }}" {{ htmlattrs(attrs) }} >
+  <button class="{{ basecss }} {{ classnames|join(' ')|replace(variants) }}" {{ htmlattrs(attrs) }} >
     {{ content ? content : children }}
   </button>
 {%- endmacro -%}

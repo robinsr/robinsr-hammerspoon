@@ -10,7 +10,8 @@ local Option   = require 'user.lua.lib.optional'
 local params   = require 'user.lua.lib.params'
 local strings  = require 'user.lua.lib.string'
 local types    = require 'user.lua.lib.typecheck'
-local icons    = require 'user.lua.ui.icons'
+local colors   = require 'user.lua.ui.color'
+local image    = require 'user.lua.ui.image'
 local logr     = require 'user.lua.util.logger'
 local hss      = require 'user.lua.util.hs-objects'
 
@@ -20,11 +21,83 @@ local log = logr.new('ModSpaces', 'info')
 
 local Spaces = {}
 
+
+-- Returns either `"hs"` or `"yabai"` indicating that the space is maanged by 
+-- one or the other and commands to the other program will not work or error out
+---@param spaceId int
+---@return 'hs'|'yabai'
+local function getSpaceManager(spaceId)
+  params.assert.number(spaceId)
+
+  local spaceIndex = desktop.getIndexOfSpace(spaceId)
+  
+  local ok, result = pcall(function()
+    local yabai = KittySupreme:getService('Yabai')
+
+    if yabai ~= nil and yabai then
+      return yabai:getLayout(spaceIndex)
+    else
+      return 'no-yabai'
+    end
+  end)
+
+  if ok and lists({"bsp","stack"}):includes(result) then
+    return 'yabai'
+  end
+
+  return 'hs'
+end
+
+
+-- Ensures the current space is managed by yabai (space.type ~= 'bsp'|'stack')
+---@type ks.command.verifyfn
+local function verifyYabaiSpace(cmd, ctx)
+  return getSpaceManager(ctx.activeSpace) == 'yabai'
+end
+
+
+-- Ensures the current space is managed by yabai (space.type ~= 'bsp'|'stack')
+---@type ks.command.verifyfn
+local function verifyHammerSpace(cmd, ctx)
+  return getSpaceManager(ctx.activeSpace) == 'hs'
+end
+
+
+-- Ensures there is an active window
+---@type ks.command.verifyfn
+local function verifyActiveWindow(cmd, ctx)
+  return ctx.activeWindow ~= nil
+end
+
+
 ---@type ks.command.flag[]
-Spaces.NO_ALERT = { 'no-alert' }
+Spaces.NO_ALERT = { 'no-alert', 'no-chooser' }
 
 ---@type ks.command.verifyfn[]
-Spaces.HAS_ACTIVE = { Spaces.verifyActiveWindow }
+Spaces.HAS_ACTIVE = { verifyActiveWindow }
+
+---@type ks.command.verifyfn[]
+Spaces.YABAI_MANAGED_SPACE = { verifyYabaiSpace }
+
+---@type ks.command.verifyfn[]
+Spaces.YABAI_MANAGED_WINDOW = { verifyActiveWindow, verifyYabaiSpace }
+
+---@type ks.command.verifyfn[]
+Spaces.HS_MANAGED_SPACE = { verifyHammerSpace }
+
+---@type ks.command.verifyfn[]
+Spaces.HS_MANAGED_WINDOW = { verifyActiveWindow, verifyHammerSpace }
+
+
+Spaces.RESIZE_SPEED = 0.4
+
+Spaces.INBOUNDS = {
+  YES = true,
+  NO = false,
+}
+
+
+
 
 ---
 -- Gets text input via a HS TextInput and applies the resulting
@@ -86,9 +159,9 @@ function Spaces.onSpaceChange(cmd, ctx, params)
 
   local text, timing, icon = table.unpack(disp)
 
-  icon = icons.static:get(icon)
-
-  return alert:new(text):icon(icon):show(timing)
+  return alert:new(text)
+    :icon(image.fromIcon(icon, 72, colors.black))
+    :show(timing)
 end
 
 
@@ -117,16 +190,6 @@ function Spaces.cycleLayout(cmd, ctx)
   sbar:setSpaceIcon(index, nextlayout, #space.windows)
 
   return ("Changed layout to %s"):format(nextlayout)
-end
-
-
----@type ks.command.verifyfn
-function Spaces.verifyActiveWindow(cmd, ctx)
-  local active = desktop.activeWindow()
-  
-  log.df("hasActiveWindow verfier running (%s): %q", cmd.id, active and active:title() or false)
-  
-  return types.notNil(active)
 end
 
 
@@ -180,6 +243,15 @@ end
 ---@param span  Dimensions   Number of grid units the window will span
 ---@param start Coord        Start position  of window (the top-left)
 function Spaces.createGridFn(grid, span, start)
+  local window_units = {
+    x = start.x / grid.w,
+    y = start.y / grid.h,
+    w = span.w / grid.w,
+    h = span.h / grid.h,
+  }
+
+  local ensure_bounds = true
+  local move_timing = 0.2
 
   ---@type ks.command.execfn
   return function(cmd, ctx)
@@ -188,48 +260,19 @@ function Spaces.createGridFn(grid, span, start)
         ---@cast win hs.window
 
         local ok, result = pcall(function()
-          local sbar = KittySupreme:getService('SketchyBar').running
-          
           local screen = desktop.getScreen('active')
-          local frame = screen:frame()
-
-          local default_xscale = 0.98 
-          local default_yscale = 0.98
-          local sbar_height = 40
-          local sbar_yscale = ((frame.h-sbar_height)/frame.h) * 0.98
-
-          local screen_scale = { 
-            x = default_xscale,
-            y = sbar and sbar_yscale or default_yscale
-          }
-
-          local screen_offset = {
-            x = 0, y = sbar and -sbar_height/2 or 0
-          }
-
-
-          local area = frame:copy()
-            :move(screen_offset)
-            :scale(screen_scale)
-          
-          local window_units = {
-            x = start.x / grid.w,
-            y = start.y / grid.h,
-            w = span.w / grid.w,
-            h = span.h / grid.h,
-          }
-
+          local area = desktop.getAvailableSpace('active')
           local pos = hs.geometry.new(window_units):fromUnitRect(area) --[[@as hs.geometry]]
 
           log.df("Screen frame: %s", inspect(area.table))
           log.df("window frame: %s", inspect(pos.table))
 
-          win:move(pos, screen, true, 0.2)
+          win:move(pos, screen, ensure_bounds, move_timing)
 
           return cmd.title
         end)
 
-        return { [ok and 'ok' or 'err'] = result }
+        return ok and { ok = result } or { err = result }
       end)
       :orElse({ err = 'No active window' })
   end
@@ -237,28 +280,30 @@ end
 
 
 
+---@param scaleFn ExchangeFn<Dimensions, Coord> string
+---@return ks.command.execfn
+function Spaces.createScaleFn(scaleFn)
+  ---@type ks.command.execfn
+  return function(cmd, ctx)
+    return Option:ofNil(ctx.activeWindow):map(function(win)
+      ---@cast win hs.window
+      local scrn = desktop.getScreen('active')
+      local area = desktop.getAvailableSpace('active')
+      local pct = win:frame():toUnitRect(area) --[[@as Dimensions]]
+
+      local size = win:frame():copy():scale(scaleFn(pct)):intersect(area)
+
+      win:move(size, scrn, Spaces.INBOUNDS.YES, Spaces.RESIZE_SPEED)
+
+      return { ok = cmd.hotkey:getLabel('full') }
+    end)
+    :orElse('No active window')
+  end
+end
+
+
 ---@type ks.command.config[]
-Spaces.cmds = {
---   {
---     id = 'spaces.evt.onSpaceChange',
---     exec = Spaces.onSpaceChange,
---     url = "spaces.changed",
---   },
---   {
---     id = 'spaces.evt.onSpaceCreated',
---     exec = Spaces.onSpaceCreated,
---     url = "spaces.created",
---   },
---   {
---     id = 'spaces.evt.onSpaceDestroyed',
---     exec = Spaces.onSpaceDestroyed,
---     url = "spaces.destroyed",
---   },
---   {
---     id = 'spaces.evt.onDisplayChange',
---     exec = function() end,
---     url = "display.changed",
---   },
-}
+Spaces.cmds = {}
+
 
 return Spaces

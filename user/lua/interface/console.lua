@@ -1,6 +1,6 @@
 local putil  = require 'pl.utils'
 local tables = require 'user.lua.lib.table'
-local colors = require 'user.lua.ui.mariana'
+local colors = require 'user.lua.ui.theme.mariana'
 
 ---@type HS.TextStyles
 local console_text_styles = {
@@ -35,7 +35,7 @@ end
 --
 ---@param is_dark_mode? boolean
 function Console.setDarkMode(is_dark_mode)
-  local print_color = putil.choose(is_dark_mode, colors.chateau, colors.bunker)
+  local print_color = putil.choose(is_dark_mode, colors.white, colors.black)
   hs.console.consolePrintColor(print_color)
   hs.console.darkMode(is_dark_mode)
   hs.preferencesDarkMode(is_dark_mode)
@@ -72,7 +72,7 @@ function _G.console.log(...)
   local args = table.pack(...)
   local msg = #args > 1 and hs.inspect(args) or hs.inspect(args[1])
 
-  Console.print(msg, { color = colors.yorange })
+  Console.print(msg, { color = colors.blue })
 end
 
 

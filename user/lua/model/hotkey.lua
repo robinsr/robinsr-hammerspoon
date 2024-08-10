@@ -7,7 +7,6 @@ local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local valua   = require 'user.lua.lib.valua'
 local keys    = require 'user.lua.model.keys'
-local icons   = require 'user.lua.ui.icons'
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 

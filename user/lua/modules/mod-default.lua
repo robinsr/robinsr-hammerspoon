@@ -1,5 +1,6 @@
 local console = require 'user.lua.interface.console'
 local desk    = require 'user.lua.interface.desktop'
+local chan    = require 'user.lua.lib.channels'
 local func    = require 'user.lua.lib.func'
 local Option  = require 'user.lua.lib.optional' 
 local paths   = require 'user.lua.lib.path'
@@ -24,7 +25,7 @@ defmod.cmds = {
 
       local image_watcher = rdir:new(paths.expand('@/resources/images/')):watch()
 
-      KittySupreme.services.sketchybar:setFrontApp('Hammerspoon Loaded!')
+      chan.publish('ks:frontapp:changed', { name = 'Hammerspoon Loaded!' })
     end,
   },
   {
@@ -57,7 +58,7 @@ defmod.cmds = {
     flags = { 'no-alert' },
     exec  = function(cmd)
       func.delay(0.75, hs.reload)
-      return cmd.hotkey:getLabel('full')
+      return { ok = cmd.hotkey:getLabel('full') }
     end,
   },
   {
@@ -69,7 +70,7 @@ defmod.cmds = {
     flags = { 'no-alert' },
     exec  = function(cmd)
       func.delay(0.75, hs.relaunch)
-      return cmd.hotkey:getLabel('full')
+      return { ok = cmd.hotkey:getLabel('full') }
     end,
   },
 }

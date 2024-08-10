@@ -9,16 +9,16 @@ local tables  = require 'user.lua.lib.table'
 local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
-local log = logr.new('Desktop', 'info')
+local log = logr.new('Desktop', 'debug')
 
----@class ks.desktop.app
+---@class ks.app
 ---@field name string
 ---@field path string
 ---@field title string
 ---@field bundle_id string
 
 
----@class ks.desktop.window
+---@class ks.window
 ---@field app string
 ---@field id string
 ---@field role string
@@ -26,6 +26,35 @@ local log = logr.new('Desktop', 'info')
 ---@field title string
 
 
+---@class ks.window.constraints
+---@field maxp    Dimensions
+---@field maxu    Dimensions
+---@field minp?   Dimensions
+---@field minu?   Dimensions
+
+
+---@alias ks.screen.selector ks.screen.type | number
+
+
+---@alias ks.screen.type
+---| 'main'     Screen containing the currently focused window / foremost app (the app receiving text input)
+---| 'active'   Alias for the 'main' screen
+---| 'mouse'    The screen containing the pointer
+---| 'primary'  The primary screen contains the menubar and dock
+
+
+---@alias hs.screen.pos table<hs.screen, Coord>
+
+
+---@type { [ks.screen.type]: fun(): hs.screen }
+local selectors = {
+  main    = hs.screen.mainScreen,
+  mouse   = hs.mouse.getCurrentScreen,
+  active  = hs.screen.mainScreen,
+  primary = hs.screen.primaryScreen,
+}
+
+local SBAR_HEIGHT = 40
 
 
 local query_dark_mode = fns.cooldown(10, function()
@@ -44,41 +73,8 @@ end)
 
 
 
-
 ---@class ks.desktop
 local desktop = {}
-
-
----@alias ks.desktop.selectscreen
----| 'main'     Screen containing the currently focused window / foremost app (the app receiving text input)
----| 'active'   Alias for the 'main' screen
----| 'mouse'    The screen containing the pointer
----| 'primary'  The primary screen contains the menubar and dock
-
----@type { [ks.desktop.selectscreen]: fun(): hs.screen }
-local selectors = {
-  main    = hs.screen.mainScreen,
-  mouse   = hs.mouse.getCurrentScreen,
-  active  = hs.screen.mainScreen,
-  primary = hs.screen.primaryScreen,
-}
-
---
--- Gets the relevant hs.screen object from HS
---
----@param sel ks.desktop.selectscreen
----@return hs.screen
-function desktop.getScreen(sel)
-  ---@type hs.screen
-  local default = hs.screen.allScreens()[1] 
-
-  if (types.isString(sel) and tables.has(selectors, sel)) then
-    return selectors[sel]() or default
-  else
-    error(strings.fmt("Invalid screen selector [%q]", sel), 2)
-  end
-end
-
 
 
 --
@@ -87,6 +83,104 @@ end
 ---@return hs.screen[]
 function desktop.screens()
   return hs.screen.allScreens() --[[@as hs.screen[] ]]
+end
+
+
+--
+-- Gets the relevant hs.screen object from HS
+--
+---@param sel ks.screen.selector
+---@return hs.screen
+function desktop.getScreen(sel)
+  ---@type hs.screen
+  local default = hs.screen.allScreens()[1]
+
+  if type(sel) == 'string' and tables.has(selectors, sel) then
+    return selectors[sel]() or default
+  end
+
+  if type(sel) == 'number' then
+    return hs.screen.allScreens()[sel]
+  end
+
+  error(strings.fmt("Invalid screen selector [%q]", sel), 2)
+end
+
+
+--
+-- Returns a `hs.geometry` object representing the space on the active screen that
+-- windows can be moved within. Accounts for Sketchybar and preference for window
+-- padding
+--
+---@param sel ks.screen.selector
+---@return hs.geometry
+function desktop.getAvailableSpace(sel)
+  local sbar = KittySupreme:getService('SketchyBar')
+  local screen = desktop.getScreen(sel):frame():copy()
+
+  ---@type ks.window.constraints
+  local consts = {
+    maxp = { w = screen.w, h = screen.h },
+    maxu = { w = 0.98, h = 0.98 },
+  }
+
+  local scale = { x = 0.98, y = 0.98 }
+  local offset = { x = 0, y = 0 }
+
+  if sbar.running then
+    screen.h = screen.h - SBAR_HEIGHT
+    offset.y = -SBAR_HEIGHT
+  end
+
+  return screen:copy():scale(scale)
+    -- :move(offset)
+    -- :scale(scale)
+end
+
+
+---@type ks.window.constraints
+local reasonable = {
+  maxp = { w = 1680, h = 1200 },
+  maxu = { w = 0.88, h = 0.92 },
+}
+
+
+--
+-- Returns a `hs.geometry` object representing a portion of space on the specified
+-- screen considered a "reasonable" size for a window (not too big, not too small).
+-- If supplied with constraints, will clip the size to within reasonable
+--
+---@param sel     ks.screen.selector
+---@param prefs?  ks.window.constraints
+---@return hs.geometry
+function desktop.getReasonableSpace(sel, prefs)
+  prefs = tables.merge({}, reasonable, prefs or {}) --[[@as ks.window.constraints]]
+  
+  local scale = { x = prefs.maxu.w, y = prefs.maxu.h }
+  
+  local sbar = KittySupreme:getService('SketchyBar')
+  local screen = desktop.getScreen(sel):frame():copy()
+
+  if sbar.running then
+    screen.center.y = screen.center.y - SBAR_HEIGHT/2
+  end
+
+  local max_pixels = hs.geometry.new({
+    w = prefs.maxp.w,
+    h = prefs.maxp.h,
+    x = screen.center.x - prefs.maxp.w/2,
+    y = screen.center.y - prefs.maxp.h/2,
+  })
+
+  local max_unit = screen:copy():scale(scale)
+
+  log.d('max_pixels = ', hs.inspect(max_pixels.table))
+  log.d('max_unit = ', hs.inspect(max_unit.table))
+
+
+  return max_unit:intersect(max_pixels)
+
+  -- return max_frame:inside(max_cent) and max_frame or max_cent
 end
 
 
@@ -120,7 +214,7 @@ end
 
 --
 -- Returns the space ID for the currently focused space. The focused space is
--- the currently active space on the currently active screen (i.e. that the 
+-- the currently active space on the currently active screen (i.e. that the
 -- user is working on)
 --
 ---@return integer
@@ -129,22 +223,58 @@ function desktop.activeSpace()
 end
 
 
--- --
--- -- Gets the spaceId's for the selected screen (defaults to active screen)
--- --
--- ---@param screen? ks.desktop.selectscreen
--- ---@return integer[]
--- function desktop.screenSpaces(screen)
---   screen = screen or 'active'
+--
+-- According to the HS docs:
+--   "Returns the 'main' screen, i.e. the one containing the currently focused window"
+--
+function desktop.activeScreen()
+  hs.screen.mainScreen()
+end
 
---   local screen_ids, err = hs.spaces.spacesForScreen(desktop.getScreen(screen))
 
---   if err ~= nil then
---     error(err)
---   end
+--
+-- Returns a table of int IDs of the spaces for the specified screen in their current order.
+--
+---@param sel ks.screen.selector
+---@return Array<integer>
+function desktop.spacesForScreen(sel)
+  return hs.spaces.spacesForScreen(desktop.getScreen(sel)) --[[@as Array<integer>]]
+end
 
---   return screen_ids --[[@as integer[] ]]
--- end
+
+
+--
+--
+--
+---@return hs.screen.pos
+function desktop.screenPositions()
+  return hs.screen.screenPositions() --[[@as hs.screen.pos]]
+end
+
+
+--
+-- Returns a integer index for the space specified with `spaceId` relative to other
+-- spaces on the same screen. Defaults to "main" screen (see `desktop.activeScreen`)
+--
+-- (This is helpful in translating between Yabai's mission-control-index-based screen
+-- selectors and Hammerspoon's use of space ID numbers)
+--
+---@param spaceId int
+---@return int
+function desktop.getIndexOfSpace(spaceId)
+  params.assert.number(spaceId, 1)
+
+  local screen_pos = tables.invert(desktop.screenPositions())
+
+  local all_spaces = lists(tables.keys(screen_pos))
+    :sort(function(a, b) return a.x > b.x end)
+    :map(function(coord) return hs.spaces.spacesForScreen(screen_pos[coord]) end)
+    :flatten()
+
+  log.d('All spaces:', hs.inspect(all_spaces:values()))
+  
+  return lists(all_spaces):indexOf(spaceId)
+end
 
 
 --
@@ -152,7 +282,7 @@ end
 --
 ---@param app         hs.application
 ---@param noWindows?  boolean
----@return            ks.desktop.app
+---@return            ks.app
 function desktop.appInfo(app, noWindows)
   noWindows = noWindows or false
 
@@ -169,7 +299,7 @@ function desktop.appInfo(app, noWindows)
       return w and desktop.windowInfo(w, true)
     end):values()
   end
-  
+
   return appInfo
 end
 
@@ -179,7 +309,7 @@ end
 --
 ---@param window   hs.window
 ---@param noApp?   boolean
----@return         ks.desktop.window
+---@return         ks.window
 function desktop.windowInfo(window, noApp)
   noApp = noApp or false
 
@@ -258,7 +388,7 @@ end
 --
 function desktop.getMenuItems(app)
   local rawitems = app:getMenuItems()
-  
+
   json.write('~/Desktop/menuitems.json', rawitems)
 
   ---@param memo table
@@ -274,9 +404,9 @@ function desktop.getMenuItems(app)
 
     return memo
   end
-  
+
   -- log.inspect(rawitems, logr.d3)
-  
+
 
   local menuitems = lists(rawitems)
     :map(function(mi)
@@ -285,12 +415,12 @@ function desktop.getMenuItems(app)
     :map(function(mi)
       local parent = mi.title
       local childs = lists(mi.children):reduce({}, reducer)
-    
+
       return lists(childs)
         :filter(function(item)
           return item.title ~= ""
         end)
-        :map(function(item) 
+        :map(function(item)
           item.children = nil
           item.hasChildren = nil
           item.hasHotkey = nil
@@ -303,7 +433,7 @@ function desktop.getMenuItems(app)
     :values()
 
   log.inspect(menuitems)
-  
+
   return menuitems
 end
 

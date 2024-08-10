@@ -5,6 +5,8 @@ local tables = require 'user.lua.lib.table'
 
 ---@alias ks.keys.modkey 'shift'|'alt'|'ctrl'|'cmd'
 
+---@alias ks.keys.modspressed table<ks.keys.modkey, boolean>
+
 ---@alias ks.keys.modcombo 'hyper'|'meh'|'btms'|'peace'|'claw'|'lil'|'shift'|'alt'|'ctrl'|'cmd'
 
 ---@alias ks.keys.modifiers ks.keys.modcombo | ks.keys.modkey[]
@@ -122,13 +124,10 @@ Keys.preset = {
   alt    = {         "alt"                 },
   ctrl   = { "ctrl"                        },
 
-  -- Command+ combos
-  ctcmd  = { "ctrl",                 "cmd" },
-  altcmd = {         "alt",          "cmd" },
-  scmd   = {                "shift", "cmd" },
-
-  -- Others
-  option_shift = { "alt", "shift" },
+  -- Shift-and combos
+  shift_ctrl = { "shift", "ctrl" },
+  shift_alt  = { "shift", "alt" },
+  shift_cmd  = { "shift", "cmd" },
 }
 
 

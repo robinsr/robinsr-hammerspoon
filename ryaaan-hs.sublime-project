@@ -23,6 +23,7 @@
     "name": "Test Emitter",
     "shell_cmd": "hs -c \"fire('ks:spaces:renamed', { index = 1, label = 'cli' })\""
   }],
+  "image_file_patterns": ["*.png"],
   "settings": {
     "tab_size": 2,
     "rulers": [88],

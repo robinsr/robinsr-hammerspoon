@@ -24,7 +24,13 @@ local log = require('user.lua.util.logger').new('events', 'debug')
 ---|'otherMouseDragged'
 
 
----@alias ks.events.callback fun(evt: hs.eventtap.event): nil
+---@alias ks.events.callback fun(evt: hs.eventtap.event): ks.events.next
+
+---@alias ks.events.next
+---|'allow'   - Allow the event to continue propagating
+---|'block'   - Block the event from further propagation (callback handled event)
+---|'finish'  - Block the event from further propagation and disable/delete the event tap
+---|'cancel'  = Allow the event to continue propagating and disable/delete the event tap
 
 
 ---@class ks.events
@@ -51,7 +57,31 @@ end
 ---@param callback ks.events.callback
 ---@return hs.eventtap
 function events.newKeyDownTap(callback)
-  return hs.eventtap.new({ events.types.keyDown }, callback) --[[@as hs.eventtap]]
+  ---@type hs.eventtap
+  local tap
+
+  local interceptFn = function(evt)
+    local next = callback(evt)
+
+    if next == 'allow' then
+      return events.allowNext
+
+    elseif next == 'block' then
+      return events.blockNext
+
+    elseif next == 'finish' then
+      tap:stop()
+      return events.blockNext
+
+    elseif next == 'cancel' then
+      tap:stop()
+      return events.allowNext
+    end
+  end
+
+  tap = hs.eventtap.new({ events.types.keyDown }, interceptFn) --[[@as hs.eventtap]]
+  
+  return tap
 end
 
 

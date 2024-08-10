@@ -1,4 +1,3 @@
--- local pretty = require 'pl.pretty'
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
 local func    = require 'user.lua.lib.func'
@@ -19,7 +18,7 @@ local symbols = require 'user.lua.ui.symbols'
 local hs      = require 'user.lua.util.hs-objects'
 local logr    = require 'user.lua.util.logger'
 
-local log = logr.new('Command', 'info')
+local log = logr.new('Command', 'debug')
 
 
 ---@class ks.command.config
@@ -44,6 +43,7 @@ local log = logr.new('Command', 'info')
 ---@field activeApp      hs.application|nil  - Currently active app
 ---@field activeWindow   hs.window|nil       - Currently active window
 ---@field activeSpace    integer             - Currently active space ID
+---@field activeScreen   hs.screen           - Screen containing the currently focused window
 
 
 ---@alias ks.command.flag
@@ -59,13 +59,53 @@ local log = logr.new('Command', 'info')
 ---@field err? string
 
 
----@alias ks.command.execfn<T> fun(cmd: ks.command, ctx: T|ks.command.context, params: table): string|ks.command.result|nil
+---@alias ks.command.execfn fun(cmd: ks.command, ctx: table|ks.command.context, params: table): string|ks.command.result|nil
 
 ---@alias ks.command.setupfn<T> fun(cmd: ks.command): T
 
 ---@alias ks.command.verifyfn fun(cmd: ks.command, ctx: ks.command.context, params: table): boolean
 
 ---@alias ks.command.trgger 'load'|'hotkey'|'menu'|'url'|'chooser'|'other'
+
+
+-- Returns the active app, window, space, and screen. Memoized with 1 second cooldown
+-- to not spam HS too much for the same data
+---@return ks.command.context
+local getCurentContext = func.cooldown(1, function() 
+  local context = {
+    activeApp = desktop.activeApp(),
+    activeWindow = desktop.activeWindow(),
+    activeSpace = desktop.activeSpace(),
+    activeScreen = desktop.getScreen('active'),
+  }
+
+  log.logIf('debug', function()
+
+    log.d('getCurentContext; activeApp:',
+        context.activeApp and context.activeApp:name() or 'none')
+    log.d('getCurentContext; activeWindow:',
+        context.activeWindow and context.activeWindow:title() or 'none')
+    
+    log.d('getCurentContext; activeSpace:', context.activeSpace)
+
+    log.d('getCurentContext; activeScreen:', context.activeScreen)
+
+    -- Just curious if it is ever the case that the 'active' screen
+    -- is not the same as the active window, for some reason
+
+    local _ids = {
+      win = context.activeWindow:screen():id(),
+      active = context.activeScreen:id(),
+    }
+
+    if _ids.win ~= _ids.active then
+      log.w("Active window's screen ID does not match 'active' screen ID!", hs.inspect(_ids))
+    end
+  end)
+
+
+  return context
+end)
 
 
 
@@ -131,6 +171,8 @@ function Command:new(config)
     this.hotkey = Hotkey:new(this.mods, this.key)
   end
 
+  log.df('Command:new - %s', hs.inspect(this))
+
   return proto.setProtoOf(this, Command) --[[@as ks.command]]
 end
 
@@ -147,12 +189,7 @@ function Command:invoke(trigger, params)
   end
 
   ---@type ks.command.context
-  local ctx = {
-    trigger = trigger,
-    activeApp = desktop.activeApp(),
-    activeWindow = desktop.activeWindow(),
-    activeSpace = desktop.activeSpace(),
-  }
+  local ctx = tables.merge({ trigger = trigger }, getCurentContext())
 
   local verified = lists(self.verify or {}):every(function(verifier)
     return verifier(self, tables.merge(ctx, self.context), params or {})
@@ -168,30 +205,37 @@ function Command:invoke(trigger, params)
   end, debug.traceback)
 
   if not ok then
-    log.ef("command invoke error [%s]\n%s", self.id, result)
-    return
+    log.ef("Command [%s] exec error: %q", self.id, result)
+    
+    return alert:new("Err: %s", strings.truncate(tostring(result), 160))
+                :style({ textColor = colors.red })
+                :show()
   end
 
   if types.isNil(result) then
+    log.df('Command [%s] exec returned null', self.id)
     return
   end
 
-  if result.err ~= nil then
+  if result and result.err ~= nil then
     return alert:new("Err: %s", result.err)
                 :style({ textColor = colors.red })
                 :show()
   end
 
   -- Preferably return `hs.command.result`, eg { ok = 'It Worked!' }
-  if result.ok and types.isString(result.ok) then
+  if result and result.ok and types.isString(result.ok) then
     alert:new(result.ok):icon(self:getMenuIcon(16)):show()
     return
   end
 
   -- Returning a string is (currently) a non-error, eg same as { ok = <string> }
   if types.isString(result) and result ~= '' then
+    ---@cast result string
     alert:new(result):icon(self:getMenuIcon(16)):show()
   end
+
+  log.df('Command [%s] exec returned weird: %q', self.id, result)
 end
 
 
@@ -241,7 +285,7 @@ end
 --
 -- Returns a table that can be used in Hammerspoon menus
 --
----@return HS.MenubarItem
+---@return hs.menu.item
 function Command:asMenuItem()
   local title = self.title or self.id
 
@@ -250,7 +294,7 @@ function Command:asMenuItem()
     :map(function(label) return ('  - (%s)'):format(label) end)
     :orElse('')
 
-  ---@type HS.MenubarItem
+  ---@type hs.menu.item
   local menuitem = {
     title = text.textAndHint(title, subtext),
     shortcut = self.menukey,
@@ -355,9 +399,8 @@ end
 -- Returns a error object for the given error message
 --
 ---@param message string
----@return ks.command.err
 function Command:fail(message)
-  error({ message = ('Command [%s] failed to execute - %s'):format(self.id, message) })
+  error({ err = ('Command [%s] failed to execute - %s'):format(self.id, message) })
 end
 
 

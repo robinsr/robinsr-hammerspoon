@@ -16,9 +16,11 @@
     "lowercase-global"
   ],
   "workspace.library": [
+    "Spoons",
     "${3rd}/lfs/library",
     "${3rd}/luassert/library",
-    "Spoons"
+    "/opt/homebrew/share/lua/5.4",
+    "/opt/homebrew/share/lua/5.4/addons"
   ],
   "workspace.ignoreDir": [
     "Spoons"

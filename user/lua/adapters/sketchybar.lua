@@ -8,7 +8,6 @@ local proto       = require 'user.lua.lib.proto'
 local strings     = require 'user.lua.lib.string'
 local tables      = require 'user.lua.lib.table'
 local types       = require 'user.lua.lib.typecheck'
-local icons       = require 'user.lua.ui.icons'
 local symbols     = require 'user.lua.ui.symbols'
 local logr        = require 'user.lua.util.logger'
 local unpk        = table.unpack
@@ -16,16 +15,14 @@ local pk          = table.pack
 
 local log = logr.new('SketchyBar', 'info')
 
-
-local LAYOUT_ICONS = tables(icons.layout)
-
 local SH_QUOTE = '""'
 
+
 local function getLayoutIcon(layout)
-  if (LAYOUT_ICONS:has(layout)) then
-    return symbols.toText(LAYOUT_ICONS:get(layout))
+  if (symbols.has_codepoint(layout)) then
+    return symbols.toText(layout)
   else
-    return symbols.toText(LAYOUT_ICONS:get('cols'))
+    return symbols.toText('cols')
   end
 end
 
@@ -68,6 +65,10 @@ function SketchyBar:new()
     self:setSpaceLabel(data.space, data.label)
   end)
 
+  channels.subscribe('ks:frontapp:changed', function(data)
+    self:setFrontApp(data.name)
+  end)
+
   return proto.setProtoOf(this, SketchyBar)
 end
 
@@ -103,7 +104,7 @@ function SketchyBar.set(...)
     end)
     :values()
 
-    log.df("SketchyBar Set: %s", hs.inspect({ 'sketchybar', '--set', unpk(args) }))
+    log.f("SketchyBar Set: %s", hs.inspect({ 'sketchybar', '--set', unpk(args) }))
 
   return shell.result({ 'sketchybar', '--set', unpk(args) })
 end
@@ -138,10 +139,11 @@ end
 ---@param label? string label's value (defaults to index value)
 ---@return string
 function SketchyBar:setSpaceLabel(space, label)
-  log.f("Setting label for space [%s] to [ %s ]", tostring(space), label)
+  params.assert.notNil(space, 1)
+  params.assert.string(label, 2)
   
-  -- params.assert.number(space, 1)
-  -- params.assert.string(label, 2)
+  log.f("Setting label for space [%q] to [%s]", space, label)
+  
 
   local bar_params = {
     { 'label', getSpaceLabel(label, space) }
@@ -162,6 +164,8 @@ function SketchyBar:setSpaceIcon(space, layout, windows)
   params.assert.number(space, 1)
   params.assert.string(layout, 2)
   params.assert.number(windows, 3)
+
+  log.f("Setting icon for space [%q] to { layout=%s, windows=%q }", space, layout, windows)
 
   local bar_params = {
     { 'icon', getSpaceIcon(layout, windows) },

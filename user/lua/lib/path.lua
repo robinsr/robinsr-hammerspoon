@@ -20,7 +20,7 @@ end
 
 
 --
---
+-- Returns "file" from the path "/some/path/file.ext"
 --
 ---@param path string
 ---@param suffix? string
@@ -34,7 +34,7 @@ end
 
 
 --
---
+-- Returns ".ext" from the path "/some/path/file.ext"
 --
 ---@param path string
 ---@return string
@@ -44,7 +44,7 @@ end
 
 
 --
---
+-- Returns "/some/path" from the path "/some/path/file.ext"
 --
 ---@param path string
 ---@return string

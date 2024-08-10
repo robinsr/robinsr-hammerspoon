@@ -1,4 +1,4 @@
-
+local base = require 'user.lua.ui.theme.colorbase'
 
 ---@type Dict<HS.RGBColor>
 local mariana = {}
@@ -37,7 +37,6 @@ mariana.mahogany = {
   blue  = 0.3106,
   alpha = 1.0,
 }
-
 
 mariana.stiletto = {
   red   = 0.6375,
@@ -138,4 +137,23 @@ mariana.strikemaster = {
 }
 
 
-return mariana
+---@type ks.theme
+local theme = {
+  name       = 'Mariana',
+  blue       = mariana.danube,
+  darkblue   = mariana.pickled_bluewood,
+  darkgrey   = mariana.outerspace,
+  gray       = mariana.chateau,
+  green      = mariana.deyork,
+  lightgrey  = mariana.chateau,
+  orange     = mariana.persimmon,
+  red        = mariana.carnation,
+  teal       = mariana.pelorous,
+  violet     = mariana.viola,
+  yellow     = mariana.yorange,
+  black      = base.black,
+  white      = base.white,
+  disabled   = base.disabled,
+}
+
+return theme

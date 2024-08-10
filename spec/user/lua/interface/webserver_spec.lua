@@ -35,5 +35,4 @@ insulate("user.lua.interface.webserver", function()
       assert.is.True(true, "this should be true")
     end)
   end)
-
 end)

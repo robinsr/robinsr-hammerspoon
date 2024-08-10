@@ -1,4 +1,5 @@
 local inspect = require 'inspect'
+local promise = require 'promise'
 local params  = require 'user.lua.lib.params'
 local types   = require 'user.lua.lib.typecheck'
 local logr    = require 'user.lua.util.logger'
@@ -50,9 +51,8 @@ end
 ---@generic T
 ---@param self { value: T, present: boolean }
 ---@param val T|nil
----@param msg? string customized error msg
 ---@return Optional
-function Optional:ofNil(val, msg)
+function Optional:ofNil(val)
   log.df('Optional:OfNil - type(%s) val(%s)', type(val), inspect(val))
   
   ---@class Optional<T>
@@ -62,6 +62,14 @@ function Optional:ofNil(val, msg)
   }
 
   return setmetatable(this, OptionalMeta)
+end
+
+
+--
+--
+--
+function Optional:ofPromise(promise)
+
 end
 
 
@@ -213,6 +221,20 @@ function Optional:filter(predicate)
   
   return Optional:ofNil(nil)
 end
+
+
+
+---@class PromiseOptional
+local PromiseOptional = {}
+
+local PoMeta = {
+  __index = PromiseOptional
+}
+
+function PromiseOptional:new()
+
+end
+
 
 
 return setmetatable({}, OptionalMeta) --[[@as Optional]]

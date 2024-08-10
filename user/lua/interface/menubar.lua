@@ -8,26 +8,28 @@ local tables  = require 'user.lua.lib.table'
 local time    = require 'user.lua.lib.time'
 local types   = require 'user.lua.lib.typecheck'
 local colors  = require 'user.lua.ui.color'
-local icons   = require 'user.lua.ui.icons'
 local image   = require 'user.lua.ui.image'
 local text    = require 'user.lua.ui.text'
 local symbols = require 'user.lua.ui.symbols'
 
 
----@class HS.MenubarItem
----@field title               string
----@field fn?                 fun(mods: table, thisItem: HS.MenubarItem)
----@field checked?            boolean
----@field state?              'on'|'off'|'mixed'
----@field disabled?           boolean
----@field menu?               HS.MenubarItem[] 
+---@class hs.menu.item
+---@field title               hs.anytext
+---@field fn?                 hs.menu.callback
+---@field menu?               hs.menu.item[] 
 ---@field image?              hs.image
+---@field checked?            boolean
+---@field disabled?           boolean
 ---@field tooltip?            string
 ---@field shortcut?           string
 ---@field indent?             integer
+---@field state?              'on'|'off'|'mixed'
 ---@field onStateImage?       hs.image
 ---@field offStateImage?      hs.image
 ---@field mixedStateImage?    hs.image
+
+
+---@alias hs.menu.callback fun(mods: table, item: hs.menu.item): nil
 
 
 local log = require('user.lua.util.logger').new('menubar', 'info')
@@ -47,7 +49,7 @@ local EVT_FILTER = '!*.(evt|event|events).*'
 --
 ---@param text string
 ---@param ... any Optional format string variables
----@return HS.MenubarItem
+---@return hs.menu.item
 local function text_item(text, ...)
   local fmt_string_args = {...}
   local text = text or ("%q"):rep(#fmt_string_args, " - ")
@@ -62,14 +64,14 @@ end
 
 --
 ---@param title string
----@param items HS.MenubarItem[]
 ---@param icon? string
----@return HS.MenubarItem
-function submenu_item(title, items, icon)
+---@param items hs.menu.item[]
+---@return hs.menu.item
+function submenu_item(title, icon, items)
   return {
     title = title,
-    menu = items,
     image = image.fromIcon(icon or 'term'),
+    menu = items,
   }
 end
 
@@ -79,10 +81,10 @@ end
 --
 ---@param sections string[]
 ---@param cmds ks.command[]
----@return HS.MenubarItem[]
-local function menu_section(sections, cmds)
+---@return hs.menu.item[]
+local function submenu_items(sections, cmds)
 
-  ---@type HS.MenubarItem[]
+  ---@type hs.menu.item[]
   return lists(sections):map(function(section)
 
     local section_glob = regex.globs({ section, EVT_FILTER })
@@ -116,7 +118,7 @@ end
 ---@param target table
 ---@param fn string
 ---@param target_name? string
----@return HS.MenubarItem
+---@return hs.menu.item
 local service_fn_menuitem = function(target, fn, target_name)
 
   target_name = target_name or target['name'] or 'Unknown'
@@ -145,14 +147,14 @@ end
 -- Returns a submenu with another submenu for each service in `KittySupreme.services` table
 --
 ---@param services table[]
----@return HS.MenubarItem
+---@return hs.menu.item
 local function create_service_submenu(services)
   return lists(services):map(function(service)
     local state, text = serviceMenuProps(service)
 
     local subitems = lists({})
 
-    local servicecmds = menu_section({ service.name .. '.*' }, KittySupreme.commands:values())
+    local servicecmds = submenu_items({ service.name .. '.*' }, KittySupreme.commands:values())
 
     if (#servicecmds > 0) then
       subitems:concat(servicecmds)
@@ -164,11 +166,12 @@ local function create_service_submenu(services)
     subitems:push(service_fn_menuitem(service, "restart"))
 
 
-    ---@type HS.MenubarItem
+    --[[@as hs.menu.item]]
     return tables.merge({}, service_state_icons, {
       title = strings.fmt("%s %s", service.name, text),
       state = state,
       menu = subitems.items,
+
     })
   end):values()
 end
@@ -184,17 +187,30 @@ function MenuBar.primary_items()
   local commands = KittySupreme.commands:values()
   local services = tables.vals(KittySupreme.services)
 
-  local service_menu = submenu_item("Services", create_service_submenu(services), 'term')
-
 
   local menuitems = lists({})
     :push(text_item("KittySupreme - uptime: %s", time.fmt_ago(_G.UpTime)))
+    
     :push(text_item("-"))
-    :concat(menu_section({ "spaces.space.*", "apps.*" }, commands))
+    
+    :concat(submenu_items({ "spaces.space.*", "apps.*" }, commands))
+    
     :push(text_item("-"))
-    :push(service_menu)
+    
+    :push(submenu_item(
+      "Services", 'term', create_service_submenu(services)
+    ))
+    
     :push(text_item("-"))
-    :concat(menu_section({ "ks.commands.*" }, commands))
+    
+    :push(submenu_item(
+      "User", 'user', submenu_items({ "user.*" }, commands)
+    ))
+    :push(text_item("-"))
+
+    :push(submenu_item(
+      "KS Commands", "kitty", submenu_items({ "ks.commands.*" }, commands)
+    ))
 
   log.inspect('KittySupreme menu items:', menuitems, { depth = 3 })
 

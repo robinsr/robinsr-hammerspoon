@@ -1,4 +1,5 @@
 local sh     = require 'user.lua.adapters.shell'
+local fs     = require 'user.lua.lib.fs'
 local lists  = require 'user.lua.lib.list'
 local tables = require 'user.lua.lib.table'
 local paths  = require 'user.lua.lib.path'
@@ -96,6 +97,14 @@ function rdir:ensure_files()
     if paths.exists(res.path) then
       skipped:push(res.path)
     else
+      local dir = paths.dirname(res.path)
+
+      if not paths.exists(dir) then
+        log.f("Creating directory [%s]", dir)
+
+        fs.mkdir(dir)
+      end
+
       log.df("Fetching file '%s' from URL: %s", res.path, res.src)
       
       local fetch_result = sh.result({ "curl", res.src, "-o", res.path })

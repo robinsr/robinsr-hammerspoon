@@ -6,7 +6,6 @@ local appls   = require 'user.lua.model.application'
 local hotkey  = require 'user.lua.model.hotkey'
 local keys    = require 'user.lua.model.keys'
 local webview = require 'user.lua.ui.webview.webview'
-local icons   = require 'user.lua.ui.icons'
 local logr    = require 'user.lua.util.logger'
 local json    = require 'user.lua.util.json'
 
@@ -34,8 +33,8 @@ local showKsHotkeys = function(cmd)
     }
   }
 
-  -- webview.file('json.view', jsonmodel, title)
-  webview.file('cheatsheet.view', model, title)
+  -- webview.mainWindow(('json.view', jsonmodel)
+  webview.mainWindow('cheatsheet.view', model)
 end
 
 
@@ -68,7 +67,7 @@ local showAppsHotkeys = function(cmd, ctx)
       }
     }
 
-    webview.file('json.view', vm, title)
+    webview.mainWindow('json.view', vm)
 
     return title
   end)

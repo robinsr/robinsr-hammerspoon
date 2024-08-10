@@ -126,8 +126,12 @@ function List:len()
 end
 
 
+--
+-- Returns the item `T` at index position `num`
+--
+---@generic T
 ---@param num integer
----@return string
+---@return T
 function List:at(num)
   local len = #self.items
   local index = (num-1)%len+1
@@ -243,6 +247,23 @@ function List:map(fn)
 
   for i, v in ipairs(self.items) do
     table.insert(mapped, i, fn(v, i))
+  end
+
+  return create({}, mapped)
+end
+
+
+--
+-- Maps items in a list to a property `prop` of each item
+--
+---@generic T 
+---@param prop string
+---@return List : T[]
+function List:mapProp(prop)
+  local mapped = {}
+
+  for i, v in ipairs(self.items) do
+    table.insert(mapped, i, v[prop])
   end
 
   return create({}, mapped)
@@ -375,6 +396,24 @@ function List:flatten()
   end
 
   return create({}, flatd)
+end
+
+
+--
+-- Sorts the list by default `table.sort` method or by invoking optional compare
+-- function `comp`
+--
+-- If comp is given, then it must be a function that receives two list elements and
+-- returns true when the first element must come *before* the second in the final order
+--
+---@generic T
+---@param comp? CompareFn<T>
+---@return List
+function List:sort(comp)
+  local sorted = table.pack(table.unpack(self.items))
+  table.sort(sorted, comp)
+
+  return create({}, sorted)
 end
 
 

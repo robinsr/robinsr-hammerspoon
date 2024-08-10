@@ -20,8 +20,8 @@
     {% endblock -%}
   </head>
   <body>
-    <div class="mx-auto flex h-screen w-[95vw] flex-col relative">
-
+    <div class="container mx-auto h-screen w-[95vw] flex flex-col relative">
+{#   #}
       {% block page_header %}
         {# navbar content goes here... #}
       {% endblock %}
@@ -41,6 +41,9 @@
 
     {% block page_script %}
       <script type="text/javascript">
+        const getElem = (sel) => document.querySelectorAll(sel);
+        const getElems = (sel) => [...document.querySelectorAll(sel)];
+
         const onLoad = function () {
           window.ksPostMessage = (data) => {
             if (typeof data != "string") {
@@ -55,26 +58,22 @@
           };
 
           window.addEventListener("keyup", (evt) => {
-            evt.preventDefault();
-            evt.stopPropagation();
-
-            ksPostMessage(evt);
-
             if (evt.key == "Escape") {
+              evt.preventDefault();
+              evt.stopPropagation();
+
               ksPostMessage({ action: "close" });
             }
           });
 
-          const closebtn = document.querySelector('#close-window')
-
-          if (closebtn) {
-            closebtn.addEventListener('click', () => ksPostMessage({ action: "close" }))
-          }
+          getElems("[data-action='close-window']").forEach(el => {
+            el.addEventListener('click', () => ksPostMessage({ action: "close" }))
+          })
 
           ksPostMessage({ action: 'print', data: "Hello from webview" });
 
           setTimeout(() => {
-            document.querySelector("#js-ok").textContent = "👍";
+            getElem("#js-ok").textContent = "👍";
           }, 1000);
         };
 

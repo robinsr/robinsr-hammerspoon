@@ -137,6 +137,43 @@ function Regex.regex_match(pattern, str)
 end
 
 
+---@class ks.matcher.pcre
+---@operator call:fun(str: string): int, int, table
+---@field pattern string
+---@field compiled table
+---@field info table
+
+
+--
+-- Returns a single GlobThing (compiled PCRE regex and metadata) for a pattern
+--
+---@param pattern string
+---@param flags?  string
+---@return ks.matcher.pcre
+function Regex.pcre(pattern, flags)
+  params.assert.string(pattern)
+  
+  local pcre_pattern = Regex.to_pcre_regex(pattern)
+  local pcre_regex = rexpcre.new(pattern, flags or 'i')
+
+  ---@type ks.matcher.pcre
+  local reg = {
+    pattern = pcre_pattern,
+    compiled = pcre_regex,
+    info = pcre_regex:fullinfo(),
+  }
+
+  -- -@overload fun(str: string): int, int, table
+  local obj = setmetatable(reg, {
+    __call = function(reg, str)
+      return reg.compiled:exec(str)
+    end
+  })
+
+  return obj
+end
+
+
 --
 -- Implements an URI Template (RFC 6570 - level 3) matching engine with capture.
 -- 

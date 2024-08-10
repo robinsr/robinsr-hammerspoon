@@ -10,8 +10,22 @@
 {% endblock %}
 
 {% block page_header %}
-  <div class="container mx-auto">
-    <h1 class="text-xg text-indigo-500">{{ title }}</h1>
+  <div class="flex flext-row w-full justify-between">
+    <div class="title">
+      <p>{{ title }}</p>
+    </div>
+    <div class="">
+      {{ mButton(
+          attrs={'data-action': 'close-window'},
+          classnames=['btn', 'btn-square', 'btn-ghost'],
+          content=mSVG(vbw=40, vbh=40, classnames=['h-5 w-5'], content=html('path', {
+           'stroke-linecap': "round",
+           'stroke-linejoin': "round",
+           'stroke-width': "4",
+           'd': "M 10,10 L 30,30 M 30,10 L 10,30"
+           })))
+       }}
+    </div>
   </div>
 {% endblock %}
 

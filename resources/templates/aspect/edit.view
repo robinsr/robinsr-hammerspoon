@@ -1,18 +1,66 @@
 {% extends "base.view" %}
-{% set title = "Editor" %}
+
 
 {% block head_tags %}
   {{- parent() -}}
 {% endblock %}
 
-{% block page_content %}
-  <main class="container-fluid">
-    <textarea class="form-textarea h-[80vh]">
-      {{- data|json_encode() -}}
-    </textarea
-    >
-  </main>
+
+
+{% block page_header %}
+  <div class="container mx-auto my-4">
+    <div class="flex flex-row w-full justify-between">
+      <div class="title">
+        <p class="text-lg">{{ title|e }}</p>
+      </div>
+      <div class="">
+        {{ mButton(
+            attrs={'data-action': 'close-window'},
+            classnames=['btn-circle', 'btn-outline'],
+            content=mSVG(vbw=40, vbh=40, classnames=['h-5 w-5'], content=html('path', {
+             'stroke-linecap': "round",
+             'stroke-linejoin': "round",
+             'stroke-width': "4",
+             'd': "M 10,10 L 30,30 M 30,10 L 10,30"
+             })))
+         }}
+      </div>
+    </div>
+  </div>
 {% endblock %}
+
+
+
+{% block page_content %}
+
+  {% set deffilename = "[client name] (2024-08-06) <tagA,tagB,tagC,tagD,tagE,tagF> title - 5138643 - 23071433.jpeg" %}
+  {% set defedit = "tagA\ntagB\ntagC\ntagD\ntagE\ntagF"  %}
+
+  <div class="h-full flex flex-col justify-between gap-4">
+
+    <div class="filename">
+      <p class="text-xs font-mono font-thin text-neutral-content">
+        {{ filename|default(deffilename)|truncate(80, '...')|e }}
+      </p>
+    </div>
+
+    <div class="grow form-control mb-4">
+      <textarea class="textarea textarea-primary w-full h-full max-h-[70vh]">
+        {{- editable|default(defedit)|e -}}
+      </textarea>
+    </div>
+
+    <div class="mb-4">
+      <div class="flex flex-row justify-end gap-5">
+        {{ mButton(attrs={'data-action': 'close-window'}, classnames=['btn-secondary'], content='Cancel') }}
+        {{ mButton(attrs={'data-action': 'close-window'}, classnames=['btn-primary'], content='Done') }}
+      </div>
+    </div>
+
+  </div>
+{% endblock %}
+
+
 
 {% block page_end %}
   <script>

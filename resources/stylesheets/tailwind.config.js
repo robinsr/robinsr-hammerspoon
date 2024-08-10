@@ -59,7 +59,11 @@ module.exports = {
     themes: [
       {
         light: {
-          ...require("daisyui/src/theming/themes")["garden"],
+          ...require("daisyui/src/theming/themes")["corporate"],
+          "--rounded-box": "0",
+        },
+        dark: {
+          ...require("daisyui/src/theming/themes")["business"],
           "--rounded-box": "0",
         },
       },

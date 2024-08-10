@@ -4,6 +4,10 @@ local plmap   = require 'pl.Map'
 local types   = require 'user.lua.lib.typecheck'
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
+local pk      = table.pack
+local unpk    = table.unpack
+local insert    = table.insert
+
 
 
 ---@class Table
@@ -28,6 +32,18 @@ end
 
 TablMeta.__call = function(tabl, init) return create(tabl, init) end
 
+
+--
+-- Constructs a new `Table` instance composed of the combined 
+-- key-values of all table parameters
+--
+---@param ... table Tables to merge
+---@return Table
+function Table.from(...)
+  return create({}, Table.merge(unpk({...})))
+end
+
+
 --
 -- Returns a list keys found in `tabl`
 --
@@ -36,10 +52,12 @@ TablMeta.__call = function(tabl, init) return create(tabl, init) end
 function Table.keys(tabl)
   params.assert.tabl(tabl)
 
+  ---@type Array<int>
+
   local keys = {}
 
   for key, _ in pairs(tabl) do
-    table.insert(keys, key)
+    insert(keys, key)
   end
 
   return keys
@@ -68,7 +86,7 @@ function Table.list(tabl)
   local tuples = {}
 
   for key, val in pairs(tabl) do
-    table.insert(tuples, { key, val })
+    insert(tuples, { key, val })
   end
 
   return tuples
@@ -86,7 +104,7 @@ function Table.values(tabl)
   local vals = {}
 
   for _, val in pairs(tabl) do
-    table.insert(vals, val)
+    insert(vals, val)
   end
 
   return vals
@@ -102,7 +120,7 @@ Table.vals = Table.values
 ---@param ... table[] Tables to merge
 ---@return table The merged table
 function Table.merge(...)
-  local tables = table.pack(...)
+  local tables = pk(...)
   params.assert.tabl(tables)
 
   local merged = {}
@@ -130,8 +148,7 @@ end
 ---@param ... table[] Lists to concatenate
 ---@returns table 
 function Table.concat(...)
-  local tables = table.pack(...)
-  params.assert.tabl(tables)
+  local tables = pk(...)
 
   local merged = {}
 
@@ -139,7 +156,7 @@ function Table.concat(...)
     params.assert.tabl(tabl, i)
     
     for k, v in pairs(tabl) do
-      table.insert(merged, v)
+      insert(merged, v)
     end
   end
 
@@ -217,7 +234,7 @@ end
 function Table.haspath(tabl, path, nilMsg)
   params.assert.tabl(tabl, 1)
 
-  local val = Table.get(tabl, table.unpack(strings.split(path, '.')))
+  local val = Table.get(tabl, unpk(strings.split(path, '.')))
 
   if (types.notNil(val)) then
     return true
@@ -252,10 +269,10 @@ function Table.extract(tabl, keys)
   local picked = {}
 
   for i, key in ipairs(keys) do
-    table.insert(picked, params.default(Table.get(tabl, key), ""))
+    insert(picked, params.default(Table.get(tabl, key), ""))
   end
 
-  return table.unpack(picked)
+  return unpk(picked)
 end
 
 
@@ -291,6 +308,18 @@ function Table.isEmpty(tabl)
   end
 
   return true
+end
+
+
+--
+-- From table T, return a table that has T's values as the index 
+-- keys, and T's keys as the values
+--
+---@generic K, V
+---@param tabl table<K,V>
+---@return table<V,K>
+function Table.invert(tabl)
+  return pltable.index_map(tabl)
 end
 
 

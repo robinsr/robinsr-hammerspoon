@@ -1,10 +1,13 @@
+local desktop = require 'user.lua.interface.desktop'
+local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 
-local theme = require 'user.lua.ui.mariana'
-
+local base     = require 'user.lua.ui.theme.colorbase'
+local marTheme = require 'user.lua.ui.theme.mariana'
+local icoTheme = require 'user.lua.ui.theme.icon'
 
 ---@class HS.RGBColor
 ---@field red number
@@ -23,8 +26,8 @@ local theme = require 'user.lua.ui.mariana'
 ---@field alpha number
 
 ---@class HS.SystemColor
----@field list number
----@field name number
+---@field list string
+---@field name string
 
 ---@class HS.HexColor
 ---@field hex string
@@ -34,40 +37,81 @@ local theme = require 'user.lua.ui.mariana'
 
 ---@alias ColorList Dict<HS.Color>
 
+---@alias ks.theme.color { name?: string } | HS.Color
+
+
+---@class ks.theme
+---@field name       string
+---@field black      HS.Color
+---@field blue       HS.Color
+---@field darkblue   HS.Color
+---@field darkgrey   HS.Color
+---@field disabled   HS.Color
+---@field gray       HS.Color
+---@field green      HS.Color
+---@field lightgrey  HS.Color
+---@field orange     HS.Color
+---@field red        HS.Color
+---@field teal       HS.Color
+---@field violet     HS.Color
+---@field yellow     HS.Color
+---@field white      HS.Color
+
+
 
 local colors = {
-  lightgrey  = theme.chateau,
-  gray       = theme.outerspace,
-  darkgrey   = theme.bunker,
-  red        = theme.carnation,
-  orange     = theme.persimmon,
-  yellow     = theme.yorange,
-  green      = theme.deyork,
-  teal       = theme.pelorous,
-  blue       = theme.danube,
-  violet     = theme.viola,
+  lightgrey  = marTheme.lightgrey,
+  gray       = marTheme.gray,
+  darkgrey   = marTheme.darkgrey,
+  red        = marTheme.red,
+  orange     = marTheme.orange,
+  yellow     = marTheme.yellow,
+  green      = marTheme.green,
+  teal       = marTheme.teal,
+  blue       = marTheme.blue,
+  violet     = marTheme.violet,
 }
 
-colors.black = {
-  red   = 0.0,
-  green = 0.0,
-  blue  = 0.0,
-  alpha = 1.0,
+colors.black = base.black
+colors.white = base.white
+colors.disabled = base.disabled
+
+
+---@enum ks.colors.variants
+colors.variants = {
+  c001 = 'text-content',
+  c002 = 'bg-content',
+  c003 = 'fg',
+  c004 = 'bg',
+  c005 = 'success',
+  c006 = 'danger',
 }
 
-colors.white = {
-  red   = 1.0,
-  green = 1.0,
-  blue  = 1.0,
-  alpha = 1.0,
-}
 
-colors.transparent = {
-  red   = 1.0,
-  green = 1.0,
-  blue  = 1.0,
-  alpha = 0.0,
-}
+---@param variant ks.colors.variants
+---@return HS.Color
+function colors.get(variant)
+  local mode = desktop.darkMode() and 'dark' or 'light'
+
+  local configs = lists({
+    { 'text-content', 'dark',  base.white },
+    { 'text-content', 'light', base.black },
+    { 'success',      'dark',  icoTheme.green },
+    { 'success',      'light', icoTheme.green },
+    { 'danger',       'dark',  icoTheme.red },
+    { 'danger',       'light', icoTheme.red },
+  })
+
+  local matched = configs
+    :filter(function(conf) return conf[2] == mode end)
+    :first(function(conf) return conf[1] == variant end)
+
+  if matched then
+    return matched[3]
+  end
+
+  return colors.black
+end
 
 
 --

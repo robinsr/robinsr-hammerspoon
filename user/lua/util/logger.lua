@@ -2,7 +2,15 @@ local inspect = require 'inspect'
 local console = require 'user.lua.interface.console'
 local types   = require 'user.lua.lib.typecheck'
 local lists   = require 'user.lua.lib.list'
-local colors  = require 'user.lua.ui.color'
+local colors  = require 'user.lua.ui.theme.mariana'
+
+
+local VIOLET = { color = colors.violet }
+local RED    = { color = colors.red }
+local ORANGE = { color = colors.orange }
+local BLUE   = { color = colors.blue }
+local GREEN  = { color = colors.green }
+
 
 local is, notNil = types.is, types.notNil
 
@@ -55,7 +63,7 @@ function ProxyLogger:new(log_name, level)
   local l = function(this_level, level_prefix, styles)
     return function(...)
       if (_log:getLogLevel() >= this_level) then
-        local statements = lists({...}):map(function(arg) return tostring(arg) end):join(' ')
+        local statements = lists({...}):map(tostring):join(' ')
 
         console.print(level_prefix .. name_prefix .. statements, styles)
       end
@@ -63,23 +71,40 @@ function ProxyLogger:new(log_name, level)
   end
 
   local lf = function(this_level, level_prefix, styles)
+
+    ---@param pattern string
+    ---@param ... any
     return function(pattern, ...)
+      local logvars = {...}
+      
+      -- while #(pattern:match('(%%[sdq])') or '') < #logvars do
+      --   pattern = pattern .. ' %q'
+      -- end
+
+      local ok, formatted  = xpcall(string.format, debug.traceback, pattern, table.unpack(logvars))
+
+      if not ok then
+        console.print(('LoggerError - Error formatting pattern [%s] - %s'):format(pattern, inspect(logvars)), RED)
+        console.print(formatted, RED)
+        return
+      end
+
       if (_log:getLogLevel() >= this_level) then
-        console.print(level_prefix..name_prefix..string.format(pattern, table.unpack({...})), styles)
+        console.print(level_prefix .. name_prefix .. formatted, styles)
       end
     end
   end
 
-  log.d = l(levels.debug, "[debug] ", { color = colors.violet })
-  log.df = lf(levels.debug, "[debug] ", { color = colors.violet })
-  log.e = l(levels.error, "[ERROR] ", { color = colors.red })
-  log.ef = lf(levels.error, "[ERROR] ", { color = colors.red })
-  log.w = l(levels.warning, "[warn] ", { color = colors.orange })
-  log.wf = lf(levels.warning, "[warn] ", { color = colors.orange })
-  log.i = l(levels.info, "[info] ", { color = colors.blue })
-  log.f = lf(levels.info, "[info] ", { color = colors.blue })
-  log.v = l(levels.verbose, "[verbose] ", { color = colors.green })
-  log.vf = lf(levels.verbose, "[verbose] ", { color = colors.green })
+  log.d  = l(levels.debug,    "[debug] ",   VIOLET)
+  log.df = lf(levels.debug,   "[debug] ",   VIOLET)
+  log.e  = l(levels.error,    "[ERROR] ",   RED)
+  log.ef = lf(levels.error,   "[ERROR] ",   RED)
+  log.w  = l(levels.warning,  "[warn] ",    ORANGE)
+  log.wf = lf(levels.warning, "[warn] ",    ORANGE)
+  log.i  = l(levels.info,     "[info] ",    BLUE)
+  log.f  = lf(levels.info,    "[info] ",    BLUE)
+  log.v  = l(levels.verbose,  "[verbose] ", GREEN)
+  log.vf = lf(levels.verbose, "[verbose] ", GREEN)
 
   log.trace = function(err, pattern, ...)
     local msg = string.format(pattern, table.unpack({...}))

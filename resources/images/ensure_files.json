@@ -1,6 +1,46 @@
 {
   "files": [
     [
+      "selections/checked.template.png",
+      "https://img.icons8.com/ios/100/ok--v1.png"
+    ],
+    [
+      "selections/checked-filled.template.png",
+      "https://img.icons8.com/ios-filled/100/ok--v1.png"
+    ],
+    [
+      "selections/checked.color.png",
+      "https://img.icons8.com/ios/100/94d82d/ok--v1.png"
+    ],
+    [
+      "selections/checked-filled.color.png",
+      "https://img.icons8.com/ios-filled/100/94d82d/ok--v1.png"
+    ],
+
+
+    [
+      "selections/unchecked.template.png",
+      "https://img.icons8.com/ios/100/0-degrees.png"
+    ],
+    [
+      "selections/unchecked-filled.template.png",
+      "https://img.icons8.com/ios-filled/100/0-degrees.png"
+    ],
+    [
+      "selections/unchecked.color.png",
+      "https://img.icons8.com/ios/100/fa5352/empty-set.png"
+    ],
+    [
+      "selections/unchecked-filled.color.png",
+      "https://img.icons8.com/ios-filled/100/fa5352/empty-set.png"
+    ],
+
+
+    [
+      "macos-finder-100x100.template.png",
+      "https://img.icons8.com/ios/100/mac-logo.png"
+    ],
+    [
       "arrow-right-100x100.template.png",
       "https://img.icons8.com/ios-filled/100/arrow.png"
     ],

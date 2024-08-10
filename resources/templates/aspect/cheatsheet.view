@@ -8,7 +8,7 @@
   <div class="flex flext-row w-full justify-end">
     <div class="">
       {{ mButton(
-          attrs={id: 'close-window'},
+          attrs={'data-action': 'close-window'},
           classnames=['btn', 'btn-square', 'btn-ghost'],
           content=mSVG(vbw=40, vbh=40, classnames=['h-5 w-5'], content=html('path', {
            'stroke-linecap': "round",

@@ -41,9 +41,15 @@
 ---@generic T: any
 ---@alias boolfn<T> fun(item: T, index: int): bool
 
+
+---@generic T: any List item type
+---@alias CompareFn fun(itemA: T, itemB: T): boolean
+
+
 ---@generic T: any - Input items type
 ---@generic C: any - Type items will be classified by
 ---@alias ClassifierFn<T,C> fun(item: T, index?: int): C
+
 
 ---@generic T: any - Type of items supplied
 ---@alias Supplier<T> fun(): T
@@ -54,13 +60,23 @@
 ---@alias MappingFn<I, O> fun(item: I, index: int): O
 
 
+---@generic T
+---@alias TransformFn<T> fun(t: T): T
+
+---@generic T1
+---@generic T2
+---@alias ExchangeFn<T1,T2> fun(t: T1): T2
+
+
 ---@generic T: any List item type
 ---@generic R: any Type list is reduced to
 ---@alias ReducerFn fun(memo: R, item: T, index: int): R
 
+
 ---@class Coord
 ---@field x number
 ---@field y number
+
 
 ---@class Dimensions
 ---@field w number

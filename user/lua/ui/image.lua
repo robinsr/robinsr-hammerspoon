@@ -73,7 +73,7 @@ imgm.sizes = {
   md = square(500),
   lg = square(1000),
   menubar = square(12),
-  chooser = square(256),
+  chooser = square(360),
   alert = square(72),
 }
 
@@ -160,7 +160,7 @@ function imgm.fromIcon(icon, size, color)
 
   params.assert.string(icon, 1)
   size = params.default(size, 12)
-  color = params.default(color, colors.black)
+  color = color or colors.black
 
   local codepoint
 
@@ -198,12 +198,13 @@ function imgm.fromGlyph(codepoint, size, color)
   params.assert.number(codepoint)
   size = params.default(size, 12)
 
+  ---@type HS.TextStyles
   local text_style = {
     font = {
       size = size,
       name = 'SF Pro',
     },
-    color = colors.ensure_color(color)
+    color = color or colors.black
   }
 
   local canvas = hs.canvas.new({ x = 0, y = 0, h = 0, w = 0 }) --[[@as hs.canvas]]

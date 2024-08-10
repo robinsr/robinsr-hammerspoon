@@ -13,7 +13,7 @@ local log = loggr.new('mod-cmd-chooser', 'debug')
 
 
 --
----@return HS.Chooser.Item[]
+---@return hs.chooser.option[]
 local getChoices = function()
   local EVT_FILTER = regex.glob('!*.(evt|event|events).*')
 
@@ -115,7 +115,7 @@ local ChooserModule = {
 
     ctx.chooser = ichooser.create({
       placeholder   = 'Search KittySupreme commands',
-      choices       = getChoices(),
+      choices       = getChoices,
       onSelect      = onItemChosen,
       onInvalid     = onInvalidChosen,
       onRightClick  = onRightClick,

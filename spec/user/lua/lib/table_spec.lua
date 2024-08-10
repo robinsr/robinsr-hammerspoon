@@ -117,4 +117,27 @@ insulate('user.lua.lib.table', function()
 
     end)
   end)
+
+  describe("Table.invert", function()
+    it("should create a new table with keys and values flipepd", function()
+      
+      local orig = {
+        alpha = 'foo',
+        beta = 'bar',
+        gamma = 'baz',
+      }
+
+      local flipped = Tabl.invert(orig)
+
+      assert.are.same(orig.alpha, 'foo')
+      assert.are.same(orig.beta, 'bar')
+      assert.are.same(orig.gamma, 'baz')
+
+      assert.are.same(flipped.foo, 'alpha')
+      assert.are.same(flipped.bar, 'beta')
+      assert.are.same(flipped.baz, 'gamma')
+
+
+    end)
+  end)
 end)

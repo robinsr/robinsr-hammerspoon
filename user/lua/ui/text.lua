@@ -1,3 +1,4 @@
+local inspect = require 'inspect'
 local colors = require 'user.lua.ui.color'
 local logr   = require 'user.lua.util.logger'
 
@@ -66,6 +67,9 @@ local log = logr.new('ui-text', 'debug')
 ---@field h number   - A height value
 
 
+---@alias hs.anytext string|hs.styledtext
+
+
 
 --
 -- Utility for creating HS StyledText 
@@ -87,7 +91,8 @@ txt.styles.subText = {
 ---@type HS.TextStyles
 txt.styles.monoText = {
   font = {
-    name = 'JetBrainsMono Nerd Font Mono'
+    name = 'Menlo'
+    -- name = 'JetBrainsMono Nerd Font Mono'
   }
 }
 
@@ -95,18 +100,47 @@ txt.styles.monoText = {
 --
 -- Returns a styled text with attributes appled
 --
----@param value string|hs.styledtext
+---@param text  hs.anytext
 ---@param attrs HS.TextStyles
 ---@return hs.styledtext
-function txt.new(value, attrs)
-  return hs.styledtext.new(value, attrs) --[[@as hs.styledtext]]
+function txt.new(text, attrs)
+  if type(text) == "string" then
+    return hs.styledtext.new(text, attrs) --[[@as hs.styledtext]]
+  else
+    return text:setStyle(attrs) --[[@as hs.styledtext]]
+  end
+end
+
+
+--
+-- Returns a styled text with strikethrough style applied. Optionally pass a boolean
+-- `apply` to indicate whether to apply the strikethrough or return text as-is
+--
+---@param text  hs.anytext
+---@param apply? boolean        
+---@return hs.styledtext
+function txt.strikethrough(text, apply)
+
+  local strikeStyle = apply and 1 or 0
+
+  ---@type HS.TextStyles
+  local attrs = {
+    strikethroughStyle = strikeStyle,
+    strikethroughColor = colors.get('text-content'),
+  }
+
+  if type(text) == "string" then
+    return txt.new(text, attrs)
+  else
+    return text:setStyle({ strikethroughStyle = strikeStyle })  --[[@as hs.styledtext]]
+  end
 end
 
 
 --
 -- Returns a styledtext at the specified text size
 --
----@param value string|hs.styledtext
+---@param value     hs.anytext
 ---@param fontSize  integer
 ---@return hs.styledtext
 function txt.sized(value, fontSize)
@@ -118,12 +152,9 @@ function txt.sized(value, fontSize)
 
   if type(value) == "string" then
     return txt.new(value, style)
+  else
+    return value:setStyle(style) --[[@as hs.styledtext]]
   end
-
-  ---@cast value hs.styledtext
-  log.inspect(value:asTable())
-
-  return value:setStyle(style) --[[@as hs.styledtext]]
 end
 
 
@@ -131,8 +162,8 @@ end
 --
 -- Returns a styledText with large (24pt) main text, and small (12pt) subtext on second line
 --
----@param msg string|hs.styledtext
----@param sub string|hs.styledtext
+---@param msg hs.anytext
+---@param sub hs.anytext
 ---@return hs.styledtext
 function txt.msgWithSub(msg, sub)
   return txt.sized(msg, 24) .. txt.sized("\n\n" .. sub, 12)
@@ -142,8 +173,8 @@ end
 --
 -- Returns a styledText with a a main part and subtext faded
 --
----@param msg string|hs.styledtext
----@param sub string|hs.styledtext
+---@param msg hs.anytext
+---@param sub hs.anytext
 ---@return hs.styledtext
 function txt.textAndHint(msg, sub)
 

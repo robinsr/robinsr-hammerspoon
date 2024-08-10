@@ -3,6 +3,7 @@ local plfile   = require 'pl.file'
 local lists    = require 'user.lua.lib.list'
 local params   = require 'user.lua.lib.params'
 local strings  = require 'user.lua.lib.string'
+local types    = require 'user.lua.lib.typecheck'
 local is       = require 'user.lua.lib.typecheck'
 local logr     = require 'user.lua.util.logger'
 
@@ -38,6 +39,31 @@ function FS.writefile(filepath, contents)
   return plfile.write(filepath, contents)
 end
 
+
+--
+-- Move a file
+--
+---@param src   string
+---@param dest  string
+---@return boolean? ok -- `true` or `nil`
+---@return string? err_msg -- error message
+function FS.moveFile(src, dest)
+  params.assert.path(src, 1)
+  params.assert.string(dest, 2)
+
+  return plfile.move(src, dest)
+end
+
+
+--
+-- Creates a directory
+--
+---@param dirpath string
+function FS.mkdir(dirpath)
+  params.assert.string(dirpath, 1)
+
+  plpath.mkdir(dirpath)
+end
 
 
 --

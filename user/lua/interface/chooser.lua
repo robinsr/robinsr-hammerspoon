@@ -1,11 +1,14 @@
+local inspect = require 'inspect'
 local desk   = require 'user.lua.interface.desktop'
+local func   = require 'user.lua.lib.func'
 local tables = require 'user.lua.lib.table'
+local types  = require 'user.lua.lib.typecheck'
 local colors = require 'user.lua.ui.color'
 local images = require 'user.lua.ui.image'
 local text   = require 'user.lua.ui.text'
 local logr   = require 'user.lua.util.logger' 
 
-local log = logr.new('IChooser', 'info')
+local log = logr.new('IChooser', 'debug')
 
 
 
@@ -32,18 +35,18 @@ local log = logr.new('IChooser', 'info')
 --  * If you're using a `hs.styledtext` object for `text` or `subText` choices, make sure you
 --    specify a color, otherwise your text could appear transparent depending on the
 --    `bgDark` setting.
----@class HS.Chooser.Item
----@field text       string|hs.styledtext
----@field subText?   string|hs.styledtext
+---@class hs.chooser.option
+---@field text       hs.anytext
+---@field subText?   hs.anytext
 ---@field image?     hs.image
 ---@field valid?     bool
 ---@field [string]   string|num|bool|table
 
 
----@class ks.chooser.item.config
+---@class ks.chooser.option
 ---@field id         string
----@field text       string
----@field subText?   string
+---@field text       hs.anytext
+---@field subText?   hs.anytext
 ---@field image?     string|hs.image
 ---@field valid?     bool
 
@@ -51,72 +54,78 @@ local log = logr.new('IChooser', 'info')
 
 
 ---@class ks.chooser.config
----@field choices         Supplier<HS.Chooser.Item[]>
+---@field choices         Supplier<hs.chooser.option[]>
 ---@field placeholder     string
----@field onSelect        fun(item: HS.Chooser.Item): nil
+---@field onSelect        fun(item: hs.chooser.option): nil
 ---@field onInvalid?      fun(index: number): nil
 ---@field onRightClick?   fun(index: number): nil
+---@field onQuery?        fun(query: string): nil
 ---@field searchSubtext?  boolean
+---@field defQuery?       boolean
 
 
-local Chooser = {}
+local styles = {}
 
-
-Chooser.styles = {}
 
 ---@type HS.TextStyles
-Chooser.styles.mainText = {
-  -- color = colors.darkgrey,
+styles.mainText = {
   font = {
     size = 18,
   }
 }
 
 ---@type HS.TextStyles
-Chooser.styles.subText = {
-  -- color = colors.lightgrey,
+styles.subText = {
   font = {
     size = 12,
   }
 }
 
 ---@type HS.TextStyles
-Chooser.styles.subTextMono = tables.merge(Chooser.styles.subText, text.styles.monoText)
-
-Chooser.styles.foreground = colors.black
+styles.subTextMono = tables.merge(styles.subText, text.styles.monoText)
 
 
----@param val string
+---@param val hs.anytext
 ---@return hs.styledtext
 local function mainText(val)
-  return text.new(val, Chooser.styles.mainText)
+  return text.new(val, tables.merge(styles.mainText, {
+    color = colors.get('text-content')
+  }))
 end
 
 
----@param val string
+---@param val hs.anytext
 ---@return hs.styledtext
 local function subText(val)
-  return text.new(val, Chooser.styles.subText)
+  return text.new(val, tables.merge(styles.subText, {
+    color = colors.get('text-content')
+  }))
 end
 
 
----@param val string
+---@param val hs.anytext
 ---@return hs.styledtext
 local function subTextMono(val)
-  return text.new(val, Chooser.styles.subTextMono)
+  return text.new(val, tables.merge(styles.subTextMono, {
+    color = colors.get('text-content')
+  }))
 end
 
 
+
+---@class ks.chooser
+local Chooser = {}
+
 -- Prepares a chooser item: formats text, fetches images
----@param conf ks.chooser.item.config
----@return HS.Chooser.Item
+---@param conf ks.chooser.option
+---@return hs.chooser.option
 function Chooser.newItem(conf)
   return {
     id      = conf.id,
     text    = mainText(conf.text or conf.id),
-    subText = subTextMono(conf.subText),
+    subText = conf.subText and subTextMono(conf.subText) or nil,
     image   = images.from(conf.image or 'not_found', images.sizes.chooser),
-    valid   = conf.valid or true
+    valid   = types.isNil(conf.valid) and true or conf.valid,
   }
 end
 
@@ -124,21 +133,39 @@ end
 ---@param conf ks.chooser.config
 ---@return hs.chooser
 function Chooser.create(conf)
-  log.inspect(conf)
-  local ch = hs.chooser.new(conf.onSelect)
+  log.df('Chooser configuration: %s', inspect(conf))
+
+  local chooser = hs.chooser.new(conf.onSelect)
+    :bgDark(desk.darkMode())
     :choices(conf.choices)
-    :placeholderText(conf.placeholder)
+    :placeholderText(conf.placeholder or 'Select from...')
     :searchSubText(conf.searchSubtext or false)
-    :invalidCallback(conf.onInvalid)
-    :rightClickCallback(conf.onRightClick)
-    -- :bgDark(desk.darkMode())
-    -- :fgColor(Chooser.styles.foreground)
-    -- :subTextColor(colors.red)
-    :width(25)
 
-    log.inspect(ch)
+  if types.isFunc(conf.onInvalid) then
+    chooser:invalidCallback(conf.onInvalid)
+  end
 
-  return ch
+  if types.isFunc(conf.onQuery) then
+    chooser:queryChangedCallback(conf.onQuery)
+  end
+
+  if types.isFunc(conf.onRightClick) then
+    chooser:rightClickCallback(conf.onRightClick)
+  end
+  
+  if conf.defQuery then
+    -- chooser:enableDefaultForQuery(true)
+  end
+
+  -- hs.chooser._defaultGlobalCallback()
+
+  log.df('Chooser created: %s', inspect(chooser))
+  
+  return chooser
+
+  -- :fgColor(Chooser.styles.foreground)
+  -- :subTextColor(colors.red)
+  -- :width(25)
 end
 
 Chooser.mainText = mainText

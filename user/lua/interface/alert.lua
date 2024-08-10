@@ -4,7 +4,6 @@ local func    = require 'user.lua.lib.func'
 local proto   = require 'user.lua.lib.proto'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
-local icons   = require 'user.lua.ui.icons'
 local images  = require 'user.lua.ui.image'
 
 local log = require('user.lua.util.logger').new('Alert', 'info')

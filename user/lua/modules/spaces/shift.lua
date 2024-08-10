@@ -1,6 +1,11 @@
+local desktop  = require 'user.lua.interface.desktop'
 local Option = require 'user.lua.lib.optional' 
 local keys   = require 'user.lua.model.keys'
 local spaces = require 'user.lua.modules.spaces'
+
+local inspect = require 'inspect'
+local logr    = require 'user.lua.util.logger'
+local log = logr.new('--TEMP-- ModSpaces/Shift', 'debug')
 
 local yabai  = KittySupreme:getService('Yabai')
 
@@ -14,19 +19,19 @@ local JUMP_DISTANCE = "80"
 ---@type ks.command.config[]
 mod.cmds = {
   {
-    id    = 'spaces.space.swap_with_next',
+    id    = 'spaces.space.swapWithNext',
     title = "Swap current space neighbor to right",
     flags = spaces.NO_ALERT,
     exec  = spaces.createMessageFn('space --move next', 'Moved space to the right'),
   },
   {
-    id    = 'spaces.space.swap_with_prev',
+    id    = 'spaces.space.swapWithPrev',
     title = "Swap current space neighbor to left",
     flags = spaces.NO_ALERT,
     exec  = spaces.createMessageFn('space --move prev', 'Moved space to the left'),
   },
   {
-    id    = 'windows.arrange.move_to_next_space',
+    id    = 'windows.arrange.toNextSpace',
     title = "Send window to next space",
     icon  = "@/resources/images/next-space.template.png",
     mods  = keys.preset.btms,
@@ -44,7 +49,7 @@ mod.cmds = {
     end
   },
   {
-    id    = 'windows.shift.to_prev_space',
+    id    = 'windows.shift.toPrevSpace',
     title = "Send window to previous space",
     -- icon = "@/resources/images/prev-space.template.png",
     mods  = keys.preset.btms,
@@ -52,6 +57,10 @@ mod.cmds = {
     flags = spaces.NO_ALERT,
     exec  = function(cmd, ctx)
       return Option:ofNil(ctx.activeWindow):map(function(win)
+        local result = yabai.message('yabai -m query --spaces --space prev | jq ".type"')
+
+        log.df('yabai -m query --spaces --space prev | jq ".type"', inspect(result))
+
         yabai.message('window --space prev')
         yabai.message('space mouse --focus prev')
         win:focus()

@@ -11,7 +11,7 @@ local image   = require 'user.lua.ui.image'
 
 local log = logr.new('yabai-cmd', 'debug')
 
-local yabai = KittySupreme.services.yabai
+local yabai = KittySupreme:getService('Yabai')
 
 
 local YabaiCmds = {}
@@ -71,7 +71,7 @@ YabaiCmds.cmds = {
         data = yabai:getRules(),
       }
 
-      webview.file('json.view', vm, vm.title)
+      webview.mainWindow('json.view', vm)
     end,
   },
   {
@@ -86,7 +86,7 @@ YabaiCmds.cmds = {
         data = ok and info or { err = info },
       }
 
-      webview.file('json.view', vm, vm.title)
+      webview.mainWindow('json.view', vm)
     end,
   },
   {
@@ -108,7 +108,7 @@ YabaiCmds.cmds = {
         data = spaceinfo,
       }
 
-      webview.file('json.view', vm, vm.title)
+      webview.mainWindow('json.view', vm)
     end,
   },
 }

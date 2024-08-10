@@ -5,6 +5,13 @@ local paths    = require 'user.lua.lib.path'
 local strings  = require 'user.lua.lib.string'
 local tables   = require 'user.lua.lib.table'
 
+
+---@class ks.viewmodel
+---@field title      string
+---@field [string]   any
+
+
+
 local elems = {
   style_link = '<link rel="stylesheet" href="%s" />',
   style_raw  = '<style type="text/css">%s</style>',

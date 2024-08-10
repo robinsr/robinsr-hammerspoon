@@ -61,9 +61,9 @@ end
 -- Trims whitespace from a string
 --
 ---@param str string Untrimmed input string
----@return string The trimmed string
+---@return String
 function strings.trim(str)
-  return plstring.strip(str)
+  return strings.new(plstring.strip(str))
 end
 
 
@@ -79,16 +79,46 @@ end
 
 
 
-function strings.contains(str, sub)
-    return string.find(str, sub, 1, true) ~= nil
+--
+-- Returns true if string `str` matches pattern `patt`
+--
+---@param str   string
+---@param patt  string
+---@return boolean
+function strings.contains(str, patt)
+  return string.find(str, patt, 1, true) ~= nil
 end
 
-function strings.startswith(str, start)
-    return string.sub(str, 1, #start) == start
+
+--
+-- Returns true if the first N characters of string `str` are identical to `part`
+--
+---@param str   string
+---@param part  string
+---@return boolean
+function strings.startswith(str, part)
+  return string.sub(str, 1, #part) == part
 end
 
-function strings.endswith(str, ending)
-    return ending == "" or string.sub(str, -#ending) == ending
+
+--
+-- Returns true if the last N characters of string `str` are identical to `part`
+--
+---@param str   string
+---@param part  string
+---@return boolean
+function strings.endswith(str, part)
+  return part == "" or string.sub(str, -#part) == part
+end
+
+
+--
+-- Returns true if string `str` is a 0-character, empty string
+--
+---@param str   string
+---@return boolean
+function strings.empty(str)
+  return (str or ""):len() == 0
 end
 
 
@@ -291,8 +321,9 @@ end
 ---@param str string Input string
 ---@param old string String to remove
 ---@param new string String to 
+---@return String
 function strings.replace(str, old, new)
-  return plstring.replace(str, old, new)
+  return strings.new(plstring.replace(str, old, new))
 end
 
 

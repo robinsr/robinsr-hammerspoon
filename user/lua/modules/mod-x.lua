@@ -116,17 +116,12 @@ local allow_applescript = {
   end,
 }
 
-local test_webview_alert = {
-  id = 'ks.test.test_webview_alert',
-  title = 'Tests Webview Alert',
+local test_bad_logging = {
+  id = 'ks.test.test_bad_logging',
+  title = 'test_bad_logging',
   icon = 'info',
   exec = function(cmd, ctx, params)
-    -- return nil, 'Success!'
-    testCallbackFn = function(result) print("Callback Result: " .. result) end
-    testWebviewA = hs.webview.newBrowser(hs.geometry.rect(250, 250, 250, 250)):show()
-    testWebviewB = hs.webview.newBrowser(hs.geometry.rect(450, 450, 450, 450)):show()
-    hs.dialog.webviewAlert(testWebviewA, testCallbackFn, "Message", "Informative Text", "Button One", "Button Two", "warning")
-    hs.dialog.webviewAlert(testWebviewB, testCallbackFn, "Message", "Informative Text", "Single Button")
+    log.f('there are 3 vars here: %s %s %d', 'first string')
   end,
 }
 
@@ -138,6 +133,6 @@ return {
     watchable_experiment,
     return_err_experiment,
     allow_applescript,
-    test_webview_alert,
+    test_bad_logging,
   },
 }
