@@ -10,7 +10,7 @@ mod.cmds = {
   {
     id     = 'window.grid.col_first3rd',
     title  = 'Move window: 1st ⅓',
-    icon   = '@/resources/images/left-column.ios17outlined.template.png',
+    icon   = '@/resources/images/win/col-left.tmpl.png',
     mods   = keys.preset.peace,
     key    = keys.code.BANG,
     flags  = spaces.NO_ALERT,
@@ -21,7 +21,7 @@ mod.cmds = {
   {
     id     = 'window.grid.col_second3rd',
     title  = 'Move window: 2nd ⅓',
-    icon   = '@/resources/images/middle-column.ios17outlined.template.png',
+    icon   = '@/resources/images/win/col-middle.tmpl.png',
     mods   = keys.preset.peace,
     key    = keys.code.AT,
     flags  = spaces.NO_ALERT,
@@ -32,7 +32,7 @@ mod.cmds = {
   {
     id     = 'window.grid.col_third3rd',
     title  = 'Move window: 3rd ⅓',
-    icon   = '@/resources/images/right-column.ios17outlined.template.png',
+    icon   = '@/resources/images/win/col-right.tmpl.png',
     mods   = keys.preset.peace,
     key    = keys.code.HASH,
     flags  = spaces.NO_ALERT,
@@ -65,7 +65,7 @@ mod.cmds = {
   {
     id     = 'window.grid.top_left',
     title  = 'Move Top Left',
-    icon  = 'rectangle.inset.topleft.filled',
+    icon   = 'rectangle.inset.topleft.filled',
     mods   = keys.preset.peace,
     key    = keys.code.AMP,
     flags  = spaces.NO_ALERT,
@@ -76,7 +76,7 @@ mod.cmds = {
   {
     id     = 'window.grid.bottom_left',
     title  = 'Move Bottom Left',
-    icon  = 'rectangle.inset.bottomleft.filled',
+    icon   = 'rectangle.inset.bottomleft.filled',
     mods   = keys.preset.peace,
     key    = keys.code.ASTERISK,
     flags  = spaces.NO_ALERT,
@@ -87,7 +87,7 @@ mod.cmds = {
   {
     id     = 'window.grid.top_right',
     title  = 'Move Top Right',
-    icon  = 'rectangle.inset.topright.filled',
+    icon   = 'rectangle.inset.topright.filled',
     mods   = keys.preset.peace,
     key    = keys.code.OPEN_PAREN,
     flags  = spaces.NO_ALERT,
@@ -98,7 +98,7 @@ mod.cmds = {
   {
     id     = 'window.grid.bottom_right',
     title  = 'Move Bottom Right',
-    icon  = 'rectangle.inset.bottomright.filled',
+    icon   = 'rectangle.inset.bottomright.filled',
     mods   = keys.preset.peace,
     key    = keys.code.CLOSE_PAREN,
     flags  = spaces.NO_ALERT,

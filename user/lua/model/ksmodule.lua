@@ -1,11 +1,12 @@
-
+---@meta
 
 --
 -- Scannable module
 --
----@class KS.Module
----@field cmds ks.command[] - Commands configured in said module
----@field provides string[] - Events supported by said module
+---@class ks.module
+---@field module  string                - Name for the module
+---@field cmds    ks.command.config[]   - Commands configured in module
+---@field emits?  string[]              - Names of events emitted by module
 
 
-return
+return {}

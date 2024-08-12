@@ -1,3 +1,4 @@
+local inspect = require 'hs.inspect'
 local desktop = require 'user.lua.interface.desktop'
 local alert   = require 'user.lua.interface.alert'
 local func    = require 'user.lua.lib.func'
@@ -18,7 +19,7 @@ local symbols = require 'user.lua.ui.symbols'
 local hs      = require 'user.lua.util.hs-objects'
 local logr    = require 'user.lua.util.logger'
 
-local log = logr.new('Command', 'debug')
+local log = logr.new('Command', 'info')
 
 
 ---@class ks.command.config
@@ -80,19 +81,8 @@ local getCurentContext = func.cooldown(1, function()
   }
 
   log.logIf('debug', function()
-
-    log.d('getCurentContext; activeApp:',
-        context.activeApp and context.activeApp:name() or 'none')
-    log.d('getCurentContext; activeWindow:',
-        context.activeWindow and context.activeWindow:title() or 'none')
-    
-    log.d('getCurentContext; activeSpace:', context.activeSpace)
-
-    log.d('getCurentContext; activeScreen:', context.activeScreen)
-
     -- Just curious if it is ever the case that the 'active' screen
     -- is not the same as the active window, for some reason
-
     local _ids = {
       win = context.activeWindow:screen():id(),
       active = context.activeScreen:id(),
@@ -109,12 +99,6 @@ end)
 
 
 
-local validate = function(v, msg, ...)
-  if not v then
-    assert(v, strings.fmt(msg, table.unpack({...})))
-  end
-end
-
 local id_alpha = "[%-%_%w]+"
 local id_pattern =  strings.replace('^X%.X%.X$', 'X', id_alpha)
 
@@ -126,7 +110,7 @@ local valid = {
 }
 
 
----@class ks.command : ks.command.config
+---@class ks.command: ks.command.config
 ---@field context any
 ---@field hotkey? ks.hotkey
 local Command = {}
@@ -142,8 +126,9 @@ function Command:new(config)
   ---@class ks.command
   local this = self ~= Command and self or config or {}
 
-  validate(valid.id.type(this.id), 'id missing from %q', hs.inspect(this))
-  validate(valid.id.match(this.id), 'invalid id pattern %q', this.id)
+  assert(valid.id.type(this.id), ('id missing from %s'):format(hs.inspect(this)))
+  assert(valid.id.match(this.id), ('invalid id pattern %q'):format(this.id))
+
 
   this.flags = this.flags or {}
   this.hotkey = nil
@@ -171,7 +156,7 @@ function Command:new(config)
     this.hotkey = Hotkey:new(this.mods, this.key)
   end
 
-  log.df('Command:new - %s', hs.inspect(this))
+  log.vf('Command:new - %s', hs.inspect(this))
 
   return proto.setProtoOf(this, Command) --[[@as ks.command]]
 end
@@ -288,6 +273,10 @@ end
 ---@return hs.menu.item
 function Command:asMenuItem()
   local title = self.title or self.id
+
+  if self:hasFlag('hidden') or self:getGroup(3):match('onLoad') then
+    return { title = '-' }
+  end
 
   local subtext = Option:ofNil(self.hotkey)
     :map(function(hk) return hk:getLabel('keys') --[[@as string]] end)

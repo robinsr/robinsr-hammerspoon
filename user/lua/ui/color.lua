@@ -74,6 +74,7 @@ local colors = {
 
 colors.black = base.black
 colors.white = base.white
+colors.transparent = base.transparent
 colors.disabled = base.disabled
 
 

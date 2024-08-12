@@ -131,7 +131,7 @@ end
 ---@type ks.command.config
 local register_sub = {
   id = 'user.filetags.onLoad',
-  icon = 'info',
+  icon = 'tag',
   flags = { 'no-alert', 'no-chooser', 'hidden' },
   exec = function(cmd, ctx, params)
     channels.subscribe('ks:service:edit_filename_tags', function(data, channel)

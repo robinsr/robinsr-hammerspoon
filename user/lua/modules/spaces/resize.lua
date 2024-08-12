@@ -3,16 +3,17 @@ local Option = require 'user.lua.lib.optional'
 local keys   = require 'user.lua.model.keys'
 local spaces = require 'user.lua.modules.spaces'
 
+local function file_icon(name)
+  return '@/resources/images/'..name..'.tmpl.png'
+end
 
 local function positive_log_scale(pct)
   assert(pct < 1 and pct > 0, 'Window percentage must be between 0 and 1, found: '..tostring(pct))
   return 2.01 - math.log(pct * 100, 100)
 end
 
-local Resize = {}
-
 ---@type ks.command.execfn
-function Resize.reasonable(cmd, ctx)
+local function reasonable(cmd, ctx)
   return Option:ofNil(ctx.activeWindow):map(function(win)
     ---@cast win hs.window
     local screen = desk.getScreen('active')
@@ -26,7 +27,7 @@ function Resize.reasonable(cmd, ctx)
 end
 
 ---@type ks.command.execfn
-function Resize.center(cmd, ctx)
+local function center(cmd, ctx)
   return Option:ofNil(ctx.activeWindow):map(function(win)
     ---@cast win hs.window
     local frame = win:centerOnScreen()
@@ -35,10 +36,10 @@ function Resize.center(cmd, ctx)
   :orElse('No active window')
 end
 
-
 local mod = {}
 
 mod.module = "Resize Windows"
+
 
 ---@type ks.command.config<any>[]
 mod.cmds = {
@@ -78,7 +79,7 @@ mod.cmds = {
     key    = keys.code.G,
     flags  = spaces.NO_ALERT,
     verify = spaces.HS_MANAGED_WINDOW,
-    exec   = Resize.reasonable,
+    exec   = reasonable,
   },
 
   {
@@ -88,12 +89,13 @@ mod.cmds = {
     key    = keys.code.C,
     flags  = spaces.NO_ALERT,
     verify = spaces.HS_MANAGED_WINDOW,
-    exec   = Resize.center,
+    exec   = center,
   },
 
   {
     id     = 'window.resize.larger',
-    title  = "Make Larger",
+    title  = 'Make Larger',
+    icon   = file_icon 'win/expand',
     mods   = keys.preset.peace,
     key    = keys.code.PLUS,
     flags  = spaces.NO_ALERT,
@@ -105,7 +107,8 @@ mod.cmds = {
 
   {
     id     = 'window.resize.smaller',
-    title  = "Make Smaller",
+    title  = 'Make Smaller',
+    icon   = file_icon 'win/shrink',
     mods   = keys.preset.peace,
     key    = keys.code.MINUS,
     flags  = spaces.NO_ALERT,
@@ -117,7 +120,8 @@ mod.cmds = {
 
   {
     id     = 'window.resize.wider',
-    title  = "Make Wider",
+    title  = 'Make Wider',
+    icon   = file_icon 'win/expand-x',
     mods   = keys.preset.lil,
     key    = keys.code.PLUS,
     flags  = spaces.NO_ALERT,
@@ -129,7 +133,8 @@ mod.cmds = {
 
   {
     id     = 'window.resize.narrower',
-    title  = "Make Narrower",
+    title  = 'Make Narrower',
+    icon   = file_icon 'win/shrink-x',
     mods   = keys.preset.lil,
     key    = keys.code.MINUS,
     flags  = spaces.NO_ALERT,
@@ -141,7 +146,8 @@ mod.cmds = {
 
   {
     id     = 'window.resize.taller',
-    title  = "Make Taller",
+    title  = 'Make Taller',
+    icon   = file_icon 'win/expand-y',
     mods   = keys.preset.shift_ctrl,
     key    = keys.code.PLUS,
     flags  = spaces.NO_ALERT,
@@ -153,7 +159,8 @@ mod.cmds = {
 
   {
     id     = 'window.resize.shorter',
-    title  = "Make Shorter",
+    title  = 'Make Shorter',
+    icon   = file_icon 'win/shrink-y',
     mods   = keys.preset.shift_ctrl,
     key    = keys.code.MINUS,
     flags  = spaces.NO_ALERT,

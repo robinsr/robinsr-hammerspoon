@@ -56,7 +56,7 @@ local log = logr.new('webview', 'debug')
 ---@class ks.webview.typeconfig
 ---@field behaviors      HS.WindowBehavior[]
 ---@field masks          HS.Webview.Mask[]
----@field constraints    ks.window.constraint
+---@field constraints    ks.window.constraints
 ---@field allowText      boolean
 ---@field transparent    boolean
 

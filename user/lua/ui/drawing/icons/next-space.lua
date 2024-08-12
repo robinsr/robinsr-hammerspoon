@@ -52,17 +52,21 @@ local window_bar = tables.merge({},
 )
 
 
-local arrow_img = images.fromPath('@/resources/images/arrow-right-100x100.template.png', { w=100, h=100 })
+-- local arrow_img = images.fromPath('@/resources/images/arrow-right-100x100.template.png', { w=100, h=100 })
+local keypress = images.fromPath('@/resources/images/icons/key-press.tmpl.png', { w=400, h=400 })
 
 local arrow_object = tables.merge({}, 
   window_frame, 
   props.y_pos("22%"),
   {
     imageScaling = "scaleProportionally",
-    imageAlpha = 1.0,
-    image = images.rotate(arrow_img, 180),
-    -- image = arrow_img,
-  }
+    imageAlpha = 0.5,
+    image = images.scale(keypress, 0.95, 0.95),
+    -- image = images.rotate(arrow_img, 180),
+  },
+  border(colors.red),
+  border.width(8),
+  bg(colors.green)
 )
 
 

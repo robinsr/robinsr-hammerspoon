@@ -1,5 +1,7 @@
+{% set theme = dark_mode ? 'dark' : 'light' %}
+
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="{{- theme -}}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,7 +21,7 @@
       {% endfor -%}
     {% endblock -%}
   </head>
-  <body>
+  <body class="{{- theme -}}">
     <div class="container mx-auto h-screen w-[95vw] flex flex-col relative">
 {#   #}
       {% block page_header %}

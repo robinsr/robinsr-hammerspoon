@@ -1,5 +1,12 @@
 local desktop = require 'user.lua.interface.desktop'
 local menubar = require 'user.lua.interface.menubar'
+local keys    = require 'user.lua.model.keys'
+
+
+---@class ks.module
+local mod = {}
+
+mod.name = 'Context Menu'
 
 
 ---@type ks.command.execfn
@@ -16,21 +23,15 @@ end
 
 
 ---@type ks.command.config[]
-local cmds = {
+mod.cmds = {
   {
     id    = 'ks.commands.show_context_menu',
     title = 'Shows the context menu on global hotkey',
-    flags = { 'no-chooser', 'no-alert' },
-    icon  = 'info',
-    key   = 'home',
-    mods  = 'btms',
-    setup = function(cmd) end,
+    flags = { 'hidden', 'no-alert' },
+    key   = keys.code.HOME,
+    mods  = keys.preset.btms,
     exec  = showContextMenu,
   }
 }
 
-
-return {
-  module = "Context Menu",
-  cmds = cmds,
-}
+return mod

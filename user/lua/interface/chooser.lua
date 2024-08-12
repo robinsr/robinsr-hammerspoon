@@ -57,6 +57,7 @@ local log = logr.new('IChooser', 'debug')
 ---@field choices         Supplier<hs.chooser.option[]>
 ---@field placeholder     string
 ---@field onSelect        fun(item: hs.chooser.option): nil
+---@field onSubmit?       fun(text: string):nil
 ---@field onInvalid?      fun(index: number): nil
 ---@field onRightClick?   fun(index: number): nil
 ---@field onQuery?        fun(query: string): nil
@@ -69,6 +70,9 @@ local styles = {}
 
 ---@type HS.TextStyles
 styles.mainText = {
+  paragraphStyle = {
+    lineHeightMultiple = 1.3,
+  },
   font = {
     size = 18,
   }
@@ -78,7 +82,10 @@ styles.mainText = {
 styles.subText = {
   font = {
     size = 12,
-  }
+  },
+  paragraphStyle = {
+    lineHeightMultiple = 1.15,
+  },
 }
 
 ---@type HS.TextStyles
@@ -123,7 +130,7 @@ function Chooser.newItem(conf)
   return {
     id      = conf.id,
     text    = mainText(conf.text or conf.id),
-    subText = conf.subText and subTextMono(conf.subText) or nil,
+    subText = conf.subText and subText(conf.subText) or nil,
     image   = images.from(conf.image or 'not_found', images.sizes.chooser),
     valid   = types.isNil(conf.valid) and true or conf.valid,
   }
@@ -135,7 +142,29 @@ end
 function Chooser.create(conf)
   log.df('Chooser configuration: %s', inspect(conf))
 
-  local chooser = hs.chooser.new(conf.onSelect)
+  ---@type hs.chooser
+  local chooser
+
+  if types.isFunc(conf.onSubmit) then
+
+    chooser = hs.chooser.new(function(item)
+      if item == nil then
+        local q = chooser:query() --[[@as string]]
+        return conf.onSubmit(q)
+      else
+        return conf.onSelect(item)
+      end
+    end)
+
+    ---@diagnostic disable-next-line
+    chooser:enableDefaultForQuery(true)
+
+  else
+    chooser = hs.chooser.new(conf.onSelect)
+
+  end
+
+  chooser
     :bgDark(desk.darkMode())
     :choices(conf.choices)
     :placeholderText(conf.placeholder or 'Select from...')
@@ -151,10 +180,6 @@ function Chooser.create(conf)
 
   if types.isFunc(conf.onRightClick) then
     chooser:rightClickCallback(conf.onRightClick)
-  end
-  
-  if conf.defQuery then
-    -- chooser:enableDefaultForQuery(true)
   end
 
   -- hs.chooser._defaultGlobalCallback()

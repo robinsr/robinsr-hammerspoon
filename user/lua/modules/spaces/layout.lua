@@ -11,6 +11,7 @@ mod.cmds = {
   {
     id    = 'spaces.layout.rotate',
     title = 'Rotate layout clockwise',
+    icon  = '@/resources/images/win/rotate-cw.tmpl.png',
     mods  = keys.preset.peace,
     key   = keys.code.R,
     flags = spaces.NO_ALERT,
@@ -20,6 +21,7 @@ mod.cmds = {
   {
     id    = 'spaces.layout.rebalance',
     title = 'Rebalance windows in space',
+    icon  = '@/resources/images/win/aligned.tmpl.png',
     mods  = keys.preset.peace,
     key   = keys.code.E,
     flags = spaces.NO_ALERT,
@@ -28,8 +30,8 @@ mod.cmds = {
   
   {
     id    = 'spaces.layout.cycle',
-    title = "Cycle current space layout (bsp, float, stack)",
-    icon  = "tag",
+    title = 'Cycle layout (bsp, float, stack)',
+    icon  = '@/resources/images/icons/circular-arrows.tmpl.png',
     mods  = keys.preset.peace,
     key   = keys.code.SPACE,
     flags = spaces.NO_ALERT,

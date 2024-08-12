@@ -11,7 +11,7 @@ local image   = require 'user.lua.ui.image'
 
 local log = logr.new('yabai-cmd', 'debug')
 
-local yabai = KittySupreme:getService('Yabai')
+local yabai_logo = '@/resources/images/logos/yabai-logo.png'
 
 
 local YabaiCmds = {}
@@ -22,50 +22,56 @@ YabaiCmds.module = "Yabai Commands"
 YabaiCmds.cmds = {
   {
     id = 'yabai.service.restart',
-    icon = "@/resources/images/yabai-logo.png",
+    icon = yabai_logo,
     title = 'Restart Yabai',
     exec = function()
-      local code = yabai and yabai:restart()
+      local yabai = KittySupreme:getService('Yabai')
+      local code = yabai:restart()
+
       return code == 0 and 'Restarted yabai' or ("Yabai:restart exit code %q"):format(code)
     end,
   },
-  {
-    id = 'yabai.manage.add',
-    icon = "@/resources/images/yabai-logo.png",
-    title = "Manage app's windows",
-    exec = function(cmd, ctx)
-      return Option:ofNil(ctx.activeApp)
-        :map(function(app) return app:title() end)
-        :map(function(appName)
-          -- yabai:addRule({ app = appName, manage = 'off' })
 
-          return strings.fmt('Managing windows for app %s with yabai...', appName)
-        end)
-        :orElse('No active app')
-    end,
-  },
-  {
-    id = 'yabai.manage.remove',
-    icon = "@/resources/images/yabai-logo.png",
-    title = "Ignore app's windows",
-    exec = function(cmd, ctx)
-      return Option:ofNil(ctx.activeApp)
-        :map(function(app) return app:title() end)
-        :map(function(appName)
-          -- yabai:removeRule()
-          -- yabai:addRule({ app = appName, manage = 'off' })
-          return strings.fmt('Ignore windows for app %s with yabai...', appName)
-        end)
-        :orElse('No active app')
-    end,
-  },
+  -- {
+  --   id = 'yabai.manage.add',
+  --   icon = yabai_logo,
+  --   title = "Manage app's windows",
+  --   exec = function(cmd, ctx)
+  --     return Option:ofNil(ctx.activeApp)
+  --       :map(function(app) return app:title() end)
+  --       :map(function(appName)
+  --         -- yabai:addRule({ app = appName, manage = 'off' })
+
+  --         return strings.fmt('Managing windows for app %s with yabai...', appName)
+  --       end)
+  --       :orElse('No active app')
+  --   end,
+  -- },
+
+  -- {
+  --   id = 'yabai.manage.remove',
+  --   icon = yabai_logo,
+  --   title = "Ignore app's windows",
+  --   exec = function(cmd, ctx)
+  --     return Option:ofNil(ctx.activeApp)
+  --       :map(function(app) return app:title() end)
+  --       :map(function(appName)
+  --         -- yabai:removeRule()
+  --         -- yabai:addRule({ app = appName, manage = 'off' })
+  --         return strings.fmt('Ignore windows for app %s with yabai...', appName)
+  --       end)
+  --       :orElse('No active app')
+  --   end,
+  -- },
+
   {
     id = 'yabai.manage.list',
-    icon = "@/resources/images/yabai-logo.png",
+    icon = yabai_logo,
     title = "Show ignore list",
     mods = "btms",
     key = "/",
     exec = function(cmd, ctx)
+      local yabai = KittySupreme:getService('Yabai')
       local vm = {
         title = 'Yabai Rules!',
         data = yabai:getRules(),
@@ -74,11 +80,13 @@ YabaiCmds.cmds = {
       webview.mainWindow('json.view', vm)
     end,
   },
+
   {
     id = 'yabai.info.window',
-    icon = "@/resources/images/yabai-logo.png",
+    icon = yabai_logo,
     title = "Show info for focused window",
     exec = function()
+      local yabai = KittySupreme:getService('Yabai')
       local ok, info = pcall(yabai.getWindow, '')
 
       local vm = {
@@ -89,11 +97,13 @@ YabaiCmds.cmds = {
       webview.mainWindow('json.view', vm)
     end,
   },
+
   {
     id = 'yabai.info.space',
-    icon = "@/resources/images/yabai-logo.png",
+    icon = yabai_logo,
     title = "Show info current space",
     exec = function(cmd, ctx)
+      local yabai = KittySupreme:getService('Yabai')
       local spaceinfo = yabai:getSpace('mouse')
       
       spaceinfo.windows = lists(spaceinfo.windows)

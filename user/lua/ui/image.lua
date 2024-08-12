@@ -133,7 +133,7 @@ function imgm.fromPath(path, size)
   size = size or imgm.sizes.sm
   
   local expath = paths.expand(path)
-  local isTmpl = paths.matches(path, '%.template%.')
+  local isTmpl = paths.matches(path, '%.tmpl%.')
 
   if not paths.exists(expath) then
     return imgm.fromIcon('not_found', minDimension(size), colors.gray)
@@ -311,7 +311,51 @@ function imgm.rotate(image, deg)
   canvas:appendElements({
     type = "image",
     image = image,
-    transformation = matrix.translate(w2, h2):rotate(180):translate(-w2, -h2),
+    transformation = matrix.translate(w2, h2):rotate(deg):translate(-w2, -h2),
+    imageAlpha = 1.0,
+  })
+
+  return canvas:imageFromCanvas() --[[@as hs.image]]
+end
+
+
+--
+-- Add rotation function
+--
+---@param image     hs.image
+---@param direction 'x'|'y'|'xy'
+---@return hs.image
+function imgm.flip(image, direction)
+  local x = direction:match('[xX]') and -1 or 1
+  local y = direction:match('[yY]') and -1 or 1
+
+  return imgm.scale(image, x, y)
+end
+
+
+--
+-- Add rotation function
+--
+---@param image  hs.image
+---@param x      number
+---@param y      number
+---@return hs.image
+function imgm.scale(image, x, y)
+  local dim = image:size() --[[@as hs.geometry]]
+
+  local w2 = dim.w/2
+  local h2 = dim.h/2
+
+  local canvas = hs.canvas.new(hs.geometry.rect(0, 0, dim.w, dim.h)) --[[@as hs.canvas]]
+  local matrix = hs.canvas.matrix --[[@as HS.Canvas.Matrix]]
+
+  -- image:copy():template(false)
+
+  canvas:appendElements({
+    type = "image",
+    image = image,
+    transformation = matrix.translate(w2, h2):scale(x, y):translate(-w2, -h2),
+    --transformation = matrix.translate(w2, h2):scale(-1, 1):translate(-w2, -h2),
     imageAlpha = 1.0,
   })
 

@@ -15,6 +15,12 @@ mod.module = "Arrange Windows"
 
 local JUMP_DISTANCE = "80"
 
+local function file_icon(name)
+  return '@/resources/images/'..name..'.tmpl.png'
+end
+
+
+
 
 ---@type ks.command.config[]
 mod.cmds = {
@@ -33,7 +39,7 @@ mod.cmds = {
   {
     id    = 'windows.arrange.toNextSpace',
     title = "Send window to next space",
-    icon  = "@/resources/images/next-space.template.png",
+    icon  = file_icon 'win/space-right',
     mods  = keys.preset.btms,
     key   = keys.code.RIGHT,
     flags = spaces.NO_ALERT,
@@ -51,7 +57,7 @@ mod.cmds = {
   {
     id    = 'windows.shift.toPrevSpace',
     title = "Send window to previous space",
-    -- icon = "@/resources/images/prev-space.template.png",
+    icon  = file_icon 'win/space-left',
     mods  = keys.preset.btms,
     key   = keys.code.LEFT,
     flags = spaces.NO_ALERT,
@@ -73,6 +79,7 @@ mod.cmds = {
   {
     id    = 'windows.shift.to_next_display',
     title = "Send window to next display",
+    icon  = file_icon 'win/screen-right',
     mods  = keys.preset.btms,
     key   = keys.code.CLOSE_BRACKET,
     flags = spaces.NO_ALERT,
@@ -89,6 +96,7 @@ mod.cmds = {
   {
     id    = 'windows.shift.to_prev_display',
     title = "Send window to previous display",
+    icon  = file_icon 'win/screen-left',
     mods  = keys.preset.btms,
     key   = keys.code.OPEN_BRACKET,
     flags = spaces.NO_ALERT,
@@ -105,6 +113,7 @@ mod.cmds = {
   {
     id    = 'windows.swap.to_north',
     title = 'Swap with window above',
+    icon  = file_icon 'win/win-up',
     mods  = keys.preset.claw,
     key   = keys.code.UP,
     flags = { 'no-chooser', 'no-alert' },
@@ -113,6 +122,7 @@ mod.cmds = {
   {
     id    = 'windows.swap.to_south',
     title = 'Swap with window below',
+    icon  = file_icon 'win/win-down',
     mods  = keys.preset.claw,
     key   = keys.code.DOWN,
     flags = { 'no-chooser', 'no-alert' },
@@ -121,6 +131,7 @@ mod.cmds = {
   {
     id    = 'windows.swap.to_east',
     title = 'Swap with window right',
+    icon  = file_icon 'win/win-right',
     mods  = keys.preset.claw,
     key   = keys.code.RIGHT,
     flags = { 'no-chooser', 'no-alert' },
@@ -129,6 +140,7 @@ mod.cmds = {
   {
     id    = 'windows.swap.to_west',
     title = 'Swap with window left',
+    icon  = file_icon 'win/win-left',
     mods  = keys.preset.claw,
     key   = keys.code.LEFT,
     flags = { 'no-chooser', 'no-alert' },
@@ -137,6 +149,7 @@ mod.cmds = {
     {
     id    = 'windows.warp.to_north',
     title = 'Warp to window above',
+    icon  = file_icon 'win/win-up',
     mods  = keys.preset.peace,
     key   = keys.code.UP,
     flags = { 'no-chooser', 'no-alert' },
@@ -145,6 +158,7 @@ mod.cmds = {
   {
     id    = 'windows.warp.to_south',
     title = 'Warp to window below',
+    icon  = file_icon 'win/win-down',
     mods  = keys.preset.peace,
     key   = keys.code.DOWN,
     flags = { 'no-chooser', 'no-alert' },
@@ -153,6 +167,7 @@ mod.cmds = {
   {
     id    = 'windows.warp.to_east',
     title = 'Warp to window right',
+    icon  = file_icon 'win/win-right',
     mods  = keys.preset.peace,
     key   = keys.code.RIGHT,
     flags = { 'no-chooser', 'no-alert' },
@@ -161,6 +176,7 @@ mod.cmds = {
   {
     id    = 'windows.warp.to_west',
     title = 'Warp to window left',
+    icon  = file_icon 'win/win-left',
     mods  = keys.preset.peace,
     key   = keys.code.LEFT,
     flags = { 'no-chooser', 'no-alert' },

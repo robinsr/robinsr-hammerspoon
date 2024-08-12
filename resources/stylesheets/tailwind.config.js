@@ -55,6 +55,7 @@ module.exports = {
     require('tailwindcss-bg-patterns'),
     require('@tailwindcss/forms'),
   ],
+  darkMode: ['selector', '[data-theme="dark"]'],
   daisyui: {
     themes: [
       {

@@ -10,7 +10,7 @@ local insert    = table.insert
 
 
 
----@class Table
+---@class Table : table
 ---@operator call:Table
 
 

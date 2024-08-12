@@ -125,23 +125,20 @@ end)
 
 ---@type ks.command.config
 local start_dev_server = {
-  id = 'ks.server.start',
+  id    = 'ks.server.start',
   title = 'Starts/Restarts a HS server on port 3000',
-  icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
-  module = 'Dev Server',
-  exec = function(cmd, ctx, params)
+  icon  = '@/resources/images/icons/server.tmpl.png',
+  exec  = function(cmd, ctx, params)
     get_server():start()
   end,
 }
 
 ---@type ks.command.config
 local stop_dev_server = {
-  id = 'ks.server.stop',
+  id    = 'ks.server.stop',
   title = 'Stops the HS server',
-  icon = '@/resources/images/server-shutdown.ios17outlined.template.png',
-  module = 'Dev Server',
-  setup = function(cmd) end,
-  exec = function(cmd, ctx, params)
+  icon  = '@/resources/images/icons/server.tmpl.png',
+  exec  = function(cmd, ctx, params)
     get_server():stop()
   end,
 }
@@ -149,11 +146,10 @@ local stop_dev_server = {
 
 ---@type ks.command.config
 local onload = {
-  id = 'ks.server.onLoad',
+  id    = 'ks.server.onLoad',
   title = 'Onload handler for Dev Server module',
-  icon = 'info',
-  flags = { 'no-chooser' },
-  exec = function(cmd, ctx, params)
+  flags = { 'hidden' },
+  exec  = function(cmd, ctx, params)
     get_server():start()
   end,
 }

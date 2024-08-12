@@ -120,8 +120,8 @@ function ProxyLogger:new(log_name, level)
     if (log:getLogLevel() < levels.debug) then
       return
     end
-    local inspect_conf = { depth = 1 }
 
+    local inspect_conf = { depth = 4 }
     local args = {...}
     local lastarg = args[#args]
     local depth = types.isTable(lastarg) and lastarg.depth

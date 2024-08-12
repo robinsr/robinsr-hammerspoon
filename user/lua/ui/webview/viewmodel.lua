@@ -1,5 +1,6 @@
 local pltabl   = require 'pl.tablex'
 local plfile   = require 'pl.file'
+local desktop  = require 'user.lua.interface.desktop'
 local params   = require 'user.lua.lib.params'
 local paths    = require 'user.lua.lib.path'
 local strings  = require 'user.lua.lib.string'
@@ -28,6 +29,7 @@ end
 local function base_model()
   return {
     title = 'KittySupreme dialog window',
+    dark_mode = desktop.darkMode(),
     style_blocks = {
       -- content here NOT wrapped in style tags
       file_contents('@/resources/stylesheets/output.css'),
@@ -37,7 +39,7 @@ local function base_model()
       -- elems.style_raw:format(file_contents('@/resources/stylesheets/pico-adjust.css')),
       -- elems.style_raw:format(file_contents('@/resources/stylesheets/output.css')),
     },
-    footer_tags = {}, 
+    footer_tags = {},
   }
 end
 

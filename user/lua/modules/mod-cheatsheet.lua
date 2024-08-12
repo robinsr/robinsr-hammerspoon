@@ -88,6 +88,7 @@ local cmds = {
   {
     id    = "cheatsheet.show.active",
     title = "Show Hotkeys for current app",
+    icon  = "@/resources/images/icons/key-press.tmpl.png",
     key   = keys.code.K,
     mods  = keys.preset.btms,
     flags = { 'no-alert' },

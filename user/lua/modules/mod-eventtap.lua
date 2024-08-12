@@ -22,21 +22,21 @@ end)
 
 
 local start_dev_server = {
-  id = 'ks.eventtap.start',
+  id    = 'ks.eventtap.start',
   title = 'Starts HS event listener and logs events',
-  icon = 'info',
+  icon  = '@/resources/images/icons/server.tmpl.png',
   setup = function(cmd) end,
-  exec = function(cmd, ctx, params)
+  exec  = function(cmd, ctx, params)
     tap_other_mouse_down:start()
   end,
 }
 
 local stop_dev_server = {
-  id = 'ks.eventtap.stop',
+  id    = 'ks.eventtap.stop',
   title = 'Stops the HS server',
-  icon = 'info',
+  icon  = '@/resources/images/icons/server.tmpl.png',
   setup = function(cmd) end,
-  exec = function(cmd, ctx, params)
+  exec  = function(cmd, ctx, params)
     tap_other_mouse_down:stop()
   end,
 }

@@ -21,7 +21,7 @@ Apps.cmds = {
   {
     id = 'apps.current.window',
     title = 'Copy JSON for current window',
-    icon = '@/resources/images/json-download.ios17outlined.template.png',
+    icon = '@/resources/images/icons/json-download.tmpl.png',
     module = 'Apps',
     exec = function(cmd, ctx, params)
       local result = Option:ofNil(ctx.activeApp)
@@ -39,7 +39,7 @@ Apps.cmds = {
   {
     id = 'apps.current.app',
     title = 'Copy JSON for current app',
-    icon = '@/resources/images/json-download.ios17outlined.template.png',
+    icon = '@/resources/images/icons/json-download.tmpl.png',
     module = 'Apps',
     exec = function(cmd, ctx, params)
       local result = Option:ofNil(ctx.activeApp)

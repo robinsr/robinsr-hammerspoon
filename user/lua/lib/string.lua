@@ -154,56 +154,6 @@ end
 
 
 --
--- Compiles a template string
---
----@param tmplstr string
----@param vars? table Fallback table of template variables
-function strings.tmpl(tmplstr, vars)
-  params.assert.string(tmplstr)
-
-  vars = vars or {}
-
-  local repl_pat = '((%s*)%{([%-%+]?)([%.%w]+)([%-%+]?)%}(%s*))'
-
-  local function searchtable(target, key)
-    local path = strings.split(key, '.')
-    local current = target
-
-    for key in plseq.list(strings.split(key, '.')) do
-      if types.isTable(current[key]) then
-        current = current[key]
-      end
-
-      if current[key] then
-        return current[key]
-      end
-    end
-  end
-
-  return function(tabl)
-    return tmplstr:gsub(repl_pat, function(match, pre, preop, var, postop, tail)
-      -- require('zzz_dump')({ match, pre, preop, var, postop, tail, tabl })
-
-      local repl = ''
-
-      if types.isCallable(tabl) then
-        repl = tabl(var) or ''
-      else
-        repl = searchtable(tabl, var) or searchtable(vars, var) or ''
-      end
-
-      if repl == '' and preop == '-' then pre = '' end
-      if repl == '' and postop == '-' then tail = '' end
-      if repl ~= '' and preop == '+' then pre = ' ' end
-      if repl ~= '' and postop == '+' then tail = ' ' end
-
-      return pre..repl..tail
-    end)
-  end
-end
-
-
---
 -- Creates a string of joined list elements
 --
 ---@param tabl table List to join
@@ -333,6 +283,56 @@ end
 --
 function strings.expand(pattern)
   local matches = {}
+end
+
+
+--
+-- Compiles a template string
+--
+---@param tmplstr string
+---@param vars? table Fallback table of template variables
+function strings.tmpl(tmplstr, vars)
+  params.assert.string(tmplstr)
+
+  vars = vars or {}
+
+  local repl_pat = '((%s*)[$]?%{([%-%+]?)([%w%d%.%-%_]+)([%-%+]?)%}(%s*))'
+
+  local function searchtable(target, key)
+    local path = strings.split(key, '.')
+    local current = target
+
+    for key in plseq.list(strings.split(key, '.')) do
+      if types.isTable(current[key]) then
+        current = current[key]
+      end
+
+      if current[key] then
+        return current[key]
+      end
+    end
+  end
+
+  return function(tabl)
+    return tmplstr:gsub(repl_pat, function(match, pre, preop, var, postop, tail)
+      -- require('zzz_dump')({ match, pre, preop, var, postop, tail, tabl })
+
+      local repl = ''
+
+      if types.isCallable(tabl) then
+        repl = tabl(var) or ''
+      else
+        repl = searchtable(tabl, var) or searchtable(vars, var) or ''
+      end
+
+      if repl == '' and preop == '-' then pre = '' end
+      if repl == '' and postop == '-' then tail = '' end
+      if repl ~= '' and preop == '+' then pre = ' ' end
+      if repl ~= '' and postop == '+' then tail = ' ' end
+
+      return pre..repl..tail
+    end)
+  end
 end
 
 

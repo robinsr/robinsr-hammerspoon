@@ -22,6 +22,7 @@
 
 
 ---@class Array<T>: { [int]: T }
+---@class array<T>: { [int]: T }
 
 ---@class Dict<T>: { [string]: T }
 

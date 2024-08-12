@@ -39,29 +39,31 @@ end
 --
 -- Valid item handler
 --
+---@param selected ks.chooser.option
 local onItemChosen = function(selected)
-   log.f("Chosen item: %s", hs.inspect(selected))
+  local cmd = KittySupreme.commands:find(selected.id)
 
-  if types.isNil(selected) then
-    error('No selection passed to chooser handler')
+  if cmd then
+    return cmd:invoke('chooser', {})
+  else
+    log.ef('Could not find command with id %s', selected.id)
   end
+end
 
-  local chosen_id = selected.id
 
-  local cmd = KittySupreme.commands:first(function(cmd) return cmd.id == chosen_id end)
+--
+--
+local onSubmit = function(text)
+  log.f('Default Chooser Action for Query: [%s]', text)
 
-  if types.isNil(cmd) then
-    error(('Could not find command with id %q'):format(chosen_id))
-  end
 
-  ---@cast cmd ks.command
-  cmd:invoke('chooser', {})
 end
 
 
 --
 --
 --
+---@param selected ks.chooser.option
 local onInvalidChosen = function(selected)
   log.f("Chosen (invalid) item: %s", hs.inspect(selected))
 
@@ -69,12 +71,10 @@ local onInvalidChosen = function(selected)
     error('No selection passed to chooser handler')
   end
 
-  local chosen_id = selected.id
-
-  local cmd = KittySupreme.commands:first(function(cmd) return cmd.id == chosen_id end)
+  local cmd = KittySupreme.commands:find(selected.id)
 
   if types.isNil(cmd) then
-    error(('Could not find command with id %q'):format(chosen_id))
+    error(('Could not find command with id %s'):format(selected.id))
   end
 end
 
@@ -103,32 +103,28 @@ end
 
 
 local ChooserModule = {
-  
-  -- ---@type ks.command.setupfn<{ chooser: hs.chooser }>
-  -- setup = function (cmd)
-  --   return { chooser = ichooser.create(cmd_chooser) }
-  -- end,
 
-  ---@type ks.command.execfn<{ chooser: hs.chooser }>
+  ---@type ks.command.execfn<{}>
   exec = function (cmd, ctx, params)
     local isDark = desktop.darkMode()
 
-    ctx.chooser = ichooser.create({
+    local command_chooser = ichooser.create({
       placeholder   = 'Search KittySupreme commands',
       choices       = getChoices,
       onSelect      = onItemChosen,
       onInvalid     = onInvalidChosen,
       onRightClick  = onRightClick,
+      onSubmit      = onSubmit,
       searchSubtext = true,
     })
     
 
-    ctx.chooser:bgDark(isDark)
+    command_chooser:bgDark(isDark)
 
     -- not necessary to call refresh unless chooser's options have changed
-    ctx.chooser:refreshChoicesCallback()
+    command_chooser:refreshChoicesCallback()
     
-    ctx.chooser:show()
+    command_chooser:show()
   end,
 }
 
@@ -159,4 +155,3 @@ return {
     show_command_chooser
   }
 }
-

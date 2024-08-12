@@ -36,9 +36,9 @@
 
               <div class="odd:bg-base-100 p-1 even:bg-none">
                 <div class="flex flex-row items-center justify-between gap-x-4">
-                  <div class="h-[30px] w-[30px] flex-none">
+                  <div class="h-[30px] w-[30px] flex-none dark:invert">
                     <img
-                      class="no-invert"
+                      class="transform:rotateY(180deg)"
                       src="{{ modelfn(modelfn(cmd, 'getMenuIcon', [icon_size]), 'encodeAsURLString') }}"
                       width="{{ icon_size }}"
                       height="{{ icon_size }}" />
