@@ -1,6 +1,7 @@
 local hjson   = require 'hjson'
 local sh      = require 'user.lua.adapters.shell'
 local fs      = require 'user.lua.lib.fs'
+local json    = require 'user.lua.lib.json'
 local lists   = require 'user.lua.lib.list'
 local tables  = require 'user.lua.lib.table'
 local paths   = require 'user.lua.lib.path'
@@ -8,7 +9,6 @@ local params  = require 'user.lua.lib.params'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local images  = require 'user.lua.ui.image'
-local json    = require 'user.lua.util.json'
 
 local basename = paths.basename
 local dirname  = paths.dirname

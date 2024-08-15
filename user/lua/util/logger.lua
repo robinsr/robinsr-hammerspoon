@@ -4,23 +4,34 @@ local types   = require 'user.lua.lib.typecheck'
 local lists   = require 'user.lua.lib.list'
 local colors  = require 'user.lua.ui.theme.mariana'
 
-
 local VIOLET = { color = colors.violet }
 local RED    = { color = colors.red }
 local ORANGE = { color = colors.orange }
 local BLUE   = { color = colors.blue }
 local GREEN  = { color = colors.green }
 
-
 local is, notNil = types.is, types.notNil
 
----@alias LogFn fun(...): nil
----@alias TraceFn fun(err: any, pattern: string, ...: any): nil 
 
----@class ProxyLogger : hs.logger
----@field inspect LogFn    - Prints the result oh hs.inspect
----@field trace TraceFn    - Prints stack strace
----@field logIf LogFn      - Logs conditionally (prevent unnecessary calls to inspect)
+---@class ks.log.logger : hs.logger
+---@field inspect    ks.log.logfn     - Prints the result oh hs.inspect
+---@field critical   ks.log.logfn     - Logs important messages at a higher level than info
+---@field trace      ks.log.errfn          - Prints stack strace
+---@field logIf      ks.log.logfn     - Logs conditionally (prevent unnecessary calls to inspect)
+
+
+---@alias ks.log.level
+---|'off'
+---|'error'
+---|'warning'
+---|'info'
+---|'debug'
+---|'verbose'
+
+
+---@alias ks.log.logfn fun(...: any): nil
+
+---@alias ks.log.errfn fun(err: any, pattern: string, ...: any): nil
 
 
 local levels_config = {
@@ -29,6 +40,8 @@ local levels_config = {
   -- ['menu.lua'] = 'debug',
 }
 
+
+---@type { [integer|ks.log.level]: integer|ks.log.level }
 local levels = {
   "error", "warning", "info", "debug", "verbose",
   error = 1,
@@ -38,9 +51,15 @@ local levels = {
   verbose = 5,
 }
 
-
+---@class ks.log.logger
 local ProxyLogger = {}
 
+
+--
+-- Creates a new logger instance with its own namespace
+--
+---@param log_name string
+---@param level    ks.log.level
 function ProxyLogger:new(log_name, level)
 
   level = level or 'error'
@@ -106,6 +125,8 @@ function ProxyLogger:new(log_name, level)
   log.v  = l(levels.verbose,  "[verbose] ", GREEN)
   log.vf = lf(levels.verbose, "[verbose] ", GREEN)
 
+  log.critical = lf(levels.warning, "[critical] ", ORANGE)
+
   log.trace = function(err, pattern, ...)
     local msg = string.format(pattern, table.unpack({...}))
     local trace = debug.traceback(err, 2)
@@ -114,9 +135,9 @@ function ProxyLogger:new(log_name, level)
     console.print(trace, { color = colors.red })
   end
 
+  log.inspect = function(...)
+    ---@cast log ks.log.logger
 
-  ---@cast log ProxyLogger
-  log.inspect = function (...)
     if (log:getLogLevel() < levels.debug) then
       return
     end
@@ -151,6 +172,10 @@ function ProxyLogger:new(log_name, level)
   return log
 end
 
+
+-- Creates a new logger with default level
+---@param log_name string
+---@param level?   ks.log.level
 local function newLogger(log_name, level)
   local levelactual = levels_config[log_name] or level or 'warning'
   return ProxyLogger:new(log_name, levelactual)

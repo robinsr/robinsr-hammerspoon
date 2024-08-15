@@ -1,12 +1,15 @@
 local inspect = require 'inspect'
 local desk   = require 'user.lua.interface.desktop'
 local func   = require 'user.lua.lib.func'
+local params = require 'user.lua.lib.params'
 local tables = require 'user.lua.lib.table'
 local types  = require 'user.lua.lib.typecheck'
 local colors = require 'user.lua.ui.color'
 local images = require 'user.lua.ui.image'
 local text   = require 'user.lua.ui.text'
 local logr   = require 'user.lua.util.logger' 
+
+local isString = types.isString
 
 local log = logr.new('IChooser', 'debug')
 
@@ -127,13 +130,22 @@ local Chooser = {}
 ---@param conf ks.chooser.option
 ---@return hs.chooser.option
 function Chooser.newItem(conf)
-  return {
-    id      = conf.id,
-    text    = mainText(conf.text or conf.id),
-    subText = conf.subText and subText(conf.subText) or nil,
-    image   = images.from(conf.image or 'not_found', images.sizes.chooser),
-    valid   = types.isNil(conf.valid) and true or conf.valid,
+  params.assert.notNil(conf.id, 1)
+  params.assert.notNil(conf.text, 2)
+
+  local item = {
+    id = conf.id
   }
+
+  item.text = isString(conf.text) and mainText(conf.text) or conf.text
+
+  item.subText = isString(conf.subText) and subText(conf.subText) or conf.subText
+
+  item.image = images.from(conf.image or 'not_found', images.sizes.chooser)
+
+  item.valid = types.isNil(conf.valid) and true or conf.valid
+
+  return item
 end
 
 -- Creates a chooser with reasonable defaults

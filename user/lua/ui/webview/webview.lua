@@ -2,12 +2,12 @@ local inspect = require 'inspect'
 local nanoid  = require 'nanoid'
 local desk    = require 'user.lua.interface.desktop'
 local func    = require 'user.lua.lib.func'
+local json    = require 'user.lua.lib.json'
 local params  = require 'user.lua.lib.params'
 local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local vm      = require 'user.lua.ui.webview.viewmodel'
 local render  = require 'user.lua.ui.webview.renderer'
-local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('webview', 'debug')
@@ -127,7 +127,7 @@ function Webview.close(id)
       -- Refocuses the previously focused window
       -- Are these getting garbage collected?
       func.delay(0.5, function()
-        desk.getTopWindow():focus()
+        desk.topWindow():focus()
       end)
     end
   end

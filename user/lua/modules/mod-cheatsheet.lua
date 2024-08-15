@@ -1,4 +1,5 @@
 local desktop = require 'user.lua.interface.desktop'
+local json    = require 'user.lua.lib.json'
 local lists   = require 'user.lua.lib.list'
 local Option  = require 'user.lua.lib.optional'
 local strings = require 'user.lua.lib.string'
@@ -7,7 +8,6 @@ local hotkey  = require 'user.lua.model.hotkey'
 local keys    = require 'user.lua.model.keys'
 local webview = require 'user.lua.ui.webview.webview'
 local logr    = require 'user.lua.util.logger'
-local json    = require 'user.lua.util.json'
 
 local log = logr.new('mod/cheatsheet', 'debug')
 

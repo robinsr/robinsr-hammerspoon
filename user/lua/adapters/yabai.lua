@@ -13,6 +13,7 @@ local regex       = require 'user.lua.lib.regex'
 local strings     = require 'user.lua.lib.string'
 local types       = require 'user.lua.lib.typecheck'
 local tables      = require 'user.lua.lib.table'
+local layouts     = require 'user.lua.model.layout'
 local logr        = require 'user.lua.util.logger'
 local unpk        = table.unpack
 local pk          = table.pack
@@ -47,12 +48,16 @@ function Yabai:new()
 
 
   chan.subscribe('ks:space:rename', function(data)
-    self:setSpaceLabel(data.space, data.label)
+    this:setSpaceLabel(data.space, data.label)
+  end)
+
+  chan.subscribe('ks:space:layout-changed', function(data)
+    this:setLayout(data.space, data.layout)
   end)
 
   watch.listen.onPathChange('root.screenCount', function(update)
     ---@cast update hs.watch.update<integer>
-    log.df('onPathChange screenCount: %s', update.value)
+    log.f('onPathChange screenCount: %s', update.value)
 
     local pad, gap = '2','2'
 
@@ -149,13 +154,11 @@ function Yabai:addSignal(label, event, vars)
 
   vars = vars or {}
 
-
   local string_vars = lists(tables.list(vars))
     :map(function(v)
       return ("%s = '\\$%s'"):format(v[1], v[2])
     end)
     :join(', ')
-
 
   local args = lists({
     'yabai', '-m', 'signal', '--add',
@@ -167,7 +170,6 @@ function Yabai:addSignal(label, event, vars)
   log.f("add signal args: %s", args)
 
   sh.run(args)
-
 end
 
 
@@ -322,7 +324,7 @@ end
 --
 ---@param selector? Yabai.Selector.Window
 function Yabai:scratchWindow(selector)
-  selector = selector or desktop.activeWindowId()
+  selector = selector or desktop.activeWindow():id()
 
   if selector ~= nil then
     sh.result({ 'yabai', '-m', 'window', selector, '--scratchpad', 'hs-scratch' })
@@ -336,7 +338,7 @@ end
 --
 ---@param selector? Yabai.Selector.Window
 function Yabai:descratchWindow(selector)
-  selector = selector or desktop.activeWindowId()
+  selector = selector or desktop.activeWindow():id()
 
   if selector ~= nil then
     sh.result({ 'yabai', '-m', 'window', selector, '--scratchpad' })
@@ -424,7 +426,7 @@ end
 -- Sets the layout value for a specific Yabai space
 --
 ---@param selector? Yabai.Selector.Space
----@param layout string
+---@param layout    ks.layout.type
 function Yabai:setLayout(selector, layout)
   selector = selector or 'mouse'
 
@@ -435,6 +437,24 @@ function Yabai:setLayout(selector, layout)
   if not result:ok() then
     error(result:error_msg())
   end
+
+  -- if layout=="float", set sub-layer="normal" for windows in the space
+  local windows = self:getSpace(selector).windows
+  local win_layer = layout == 'float' and 'normal' or 'auto'
+
+  log.critical('Windows to set to normal: %s', hs.inspect(windows))
+
+  lists(windows)
+    :map(function(id)
+      log.f("Setting 'sub-layer' to '%s' for window [%q]", win_layer, id)
+
+      return sh.result({ 'yabai', '-m', 'window', id, '--sub-layer', win_layer })
+    end)
+    :filter(function(r) return not r:ok() end)
+    :forEach(function(r)
+      ---@cast r ShellResult
+      log.e(r:error_msg())
+    end)
 end
 
 

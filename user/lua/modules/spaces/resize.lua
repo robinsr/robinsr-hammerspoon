@@ -46,7 +46,7 @@ mod.cmds = {
   {
     id     = 'window.resize.largest',
     title  = 'XLarge-sized Window',
-    icon   = 'rectangle.expand.vertical',
+    icon   = file_icon 'win/maximize',
     mods   = keys.preset.peace,
     key    = keys.code.M,
     flags  = spaces.NO_ALERT,

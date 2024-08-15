@@ -1,10 +1,10 @@
 local inspect  = require 'inspect'
+local sh       = require 'user.lua.adapters.shell'
 local alert    = require 'user.lua.interface.alert'
 local desktop  = require 'user.lua.interface.desktop'
 local dialog   = require 'user.lua.interface.dialog'
-local sh       = require 'user.lua.adapters.shell'
-local sub      = require 'user.lua.lib.channels'.subscribe
-local pub      = require 'user.lua.lib.channels'.publish
+local channel  = require 'user.lua.lib.channels'
+local func     = require 'user.lua.lib.func'
 local lists    = require 'user.lua.lib.list'
 local Option   = require 'user.lua.lib.optional' 
 local params   = require 'user.lua.lib.params'
@@ -117,7 +117,7 @@ function Spaces.rename()
   log.f("RenameSpace - Clicked %s; Value: %s", clicked, input)
 
   if clicked then
-    pub('ks:space:rename', {
+    channel.publish('ks:space:rename', {
       space = space.index,
       label = input,
     })
@@ -137,6 +137,8 @@ end
 ---@param ctx ks.command.context The event context
 ---@param params SpaceChangeParams to/from index of change
 function Spaces.onSpaceChange(cmd, ctx, params)
+
+  ---@type [string, number, string]
   local disp = { 'Irratic space change...', alert.timing.NORMAL, 'tornado' }
 
   local screen = desktop.getScreen('active')
@@ -175,9 +177,10 @@ function Spaces.cycleLayout(cmd, ctx)
 
   local layouts = { "bsp", "float", "stack" }
 
-  local space = yabai:getSpace()
-  local layout = space.type or 'stack'
-  local index = space.index
+  local index = desktop.getIndexOfSpace(ctx.activeSpace)
+  local windows = desktop.getWindowsForSpace(ctx.activeSpace)
+  local layout = yabai:getLayout(index)
+
 
   local nextlayout
   for i, nl in ipairs(layouts) do
@@ -187,7 +190,7 @@ function Spaces.cycleLayout(cmd, ctx)
   end
 
   yabai:setLayout(index, nextlayout)
-  sbar:setSpaceIcon(index, nextlayout, #space.windows)
+  sbar:setSpaceIcon(index, nextlayout, #windows)
 
   return ("Changed layout to %s"):format(nextlayout)
 end

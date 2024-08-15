@@ -93,6 +93,8 @@ local getCurentContext = func.cooldown(1, function()
     end
   end)
 
+  log.inspect(context)
+
 
   return context
 end)
@@ -169,6 +171,8 @@ end
 ---@param params? table
 ---@return nil
 function Command:invoke(trigger, params)
+  log.critical('Initiating command invocation [%s]', self.id)
+
   if types.is_not.func(self.exec) then
     error(('No exec function on command [%s]'):format(self.id or 'none'))
   end
@@ -304,8 +308,6 @@ end
 ---@return hs.image
 function Command:getMenuIcon(size)
   size = size or 12
-  
-  log.df("icon type %s for command %s", type(self.icon), self.id)
 
   return images.from(self.icon, { w=size, h=size })
 end

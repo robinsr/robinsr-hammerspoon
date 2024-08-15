@@ -1,8 +1,8 @@
 local fs_loader = require 'aspect.loader.filesystem'
 local config    = require 'aspect.config'
 local template  = require 'aspect.template'
+local json      = require 'user.lua.lib.json'
 local paths     = require 'user.lua.lib.path'
-local json      = require 'user.lua.util.json'
 
 
 config.json.encode = function(data, ...)

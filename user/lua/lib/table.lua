@@ -118,7 +118,7 @@ Table.vals = Table.values
 -- Returns a single table composed of the combined key-values of all table parameters
 --
 ---@param ... table[] Tables to merge
----@return table The merged table
+---@return table
 function Table.merge(...)
   local tables = pk(...)
   params.assert.tabl(tables)

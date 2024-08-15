@@ -1,15 +1,16 @@
+local inspect = require 'hs.inspect'
 local App     = require 'user.lua.model.application'
-local fns     = require 'user.lua.lib.func'
+local func    = require 'user.lua.lib.func'
+local json    = require 'user.lua.lib.json'
 local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
 local paths   = require 'user.lua.lib.path'
 local strings = require 'user.lua.lib.string'
 local types   = require 'user.lua.lib.typecheck'
 local tables  = require 'user.lua.lib.table'
-local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
-local log = logr.new('Desktop', 'debug')
+local log = logr.new('Desktop', 'verbose')
 
 ---@class ks.app
 ---@field name string
@@ -46,6 +47,7 @@ local log = logr.new('Desktop', 'debug')
 ---@alias hs.screen.pos table<hs.screen, Coord>
 
 
+
 ---@type { [ks.screen.type]: fun(): hs.screen }
 local selectors = {
   main    = hs.screen.mainScreen,
@@ -57,24 +59,52 @@ local selectors = {
 local SBAR_HEIGHT = 40
 
 
-local query_dark_mode = fns.cooldown(10, function()
-  log.d('Querying "System Events" for current dark mode')
-
-  local ok, darkModeState = hs.osascript.javascript(
-    'Application("System Events").appearancePreferences.darkMode()'
-  )
-
-  if not ok then
-    error('Error executing osascript (js):')
-  end
-
-  return types.tobool(darkModeState) --[[@as boolean]]
-end)
-
-
 
 ---@class ks.desktop
 local desktop = {}
+
+
+local filters = {
+  currentSpace = true,
+  allowRoles = { 'AXStandardWindow' },
+}
+
+local space_filter = hs.window.filter.new({ default = filters })
+
+local allscreens = lists(hs.screen.allScreens())
+
+log.critical('All Screens: %s', inspect(allscreens:values()))
+
+---@type { [hs.screen]: hs.window.filter }
+local screen_filters = allscreens:reduce({}, function(m, screen)
+  local filters = {
+    visible = true,
+    currentSpace = true,
+    allowRoles = { 'AXStandardWindow' },
+    allowScreens = { screen }
+  }
+
+  local screen_filter = hs.window.filter.new({
+    default = filters,
+    override = filters,
+  })
+
+  screen_filter:subscribe({
+    hs.window.filter.windowFocused
+  }, function(window)
+    ---@cast window hs.window
+    log.critical('New window focused on screen [%s] - "%s"', screen:name(), window:title())
+  end)
+
+
+  m[screen] = screen_filter
+  m[screen:id()] = screen_filter
+
+  log.inspect(m)
+
+  return m
+end)
+
 
 
 --
@@ -108,6 +138,15 @@ end
 
 
 --
+--
+--
+---@return hs.screen.pos
+function desktop.screenPositions()
+  return hs.screen.screenPositions() --[[@as hs.screen.pos]]
+end
+
+
+--
 -- Returns a `hs.geometry` object representing the space on the active screen that
 -- windows can be moved within. Accounts for Sketchybar and preference for window
 -- padding
@@ -133,8 +172,6 @@ function desktop.getAvailableSpace(sel)
   end
 
   return screen:copy():scale(scale)
-    -- :move(offset)
-    -- :scale(scale)
 end
 
 
@@ -177,19 +214,7 @@ function desktop.getReasonableSpace(sel, prefs)
   log.d('max_pixels = ', hs.inspect(max_pixels.table))
   log.d('max_unit = ', hs.inspect(max_unit.table))
 
-
   return max_unit:intersect(max_pixels)
-
-  -- return max_frame:inside(max_cent) and max_frame or max_cent
-end
-
-
---
--- Returns the numerical ID of the currently active window, or nil if none exists
---
----@return integer
-function desktop.activeWindowId()
-  return hs.window.focusedWindow():id() or 0
 end
 
 
@@ -199,6 +224,22 @@ end
 ---@return hs.window|nil
 function desktop.activeWindow()
   return hs.window.focusedWindow()
+end
+
+
+--
+-- Gets the top window on screen
+--
+---@return hs.window
+function desktop.topWindow()
+  local screen = desktop.getScreen('mouse')
+
+  return lists(hs.window.orderedWindows())
+    :filter(function(win)
+      ---@cast win hs.window
+      return win:screen():id() == screen:id()
+    end)
+    :first(function(win) return win ~= nil end) --[[@as hs.window]]
 end
 
 
@@ -224,15 +265,6 @@ end
 
 
 --
--- According to the HS docs:
---   "Returns the 'main' screen, i.e. the one containing the currently focused window"
---
-function desktop.activeScreen()
-  hs.screen.mainScreen()
-end
-
-
---
 -- Returns a table of int IDs of the spaces for the specified screen in their current order.
 --
 ---@param sel ks.screen.selector
@@ -242,14 +274,26 @@ function desktop.spacesForScreen(sel)
 end
 
 
+--
+-- Returns a integer index for the space specified with `spaceId` relative to other
+-- spaces on the same screen. Defaults to "main" screen (see `desktop.activeScreen`)
+--
+-- (This is helpful in translating between Yabai's mission-control-index-based screen
+-- selectors and Hammerspoon's use of space ID numbers)
+--
+---@return int[]
+desktop.getAllSpaces = func.cooldown(3, function()
+  local screen_pos = tables.invert(desktop.screenPositions())
 
---
---
---
----@return hs.screen.pos
-function desktop.screenPositions()
-  return hs.screen.screenPositions() --[[@as hs.screen.pos]]
-end
+  local all_spaces = lists(tables.keys(screen_pos))
+    :sort(function(a, b) return a.x > b.x end)
+    :map(function(coord) return hs.spaces.spacesForScreen(screen_pos[coord]) end)
+    :flatten()
+
+  log.d('All spaces:', hs.inspect(all_spaces:values()))
+
+  return all_spaces
+end)
 
 
 --
@@ -264,16 +308,35 @@ end
 function desktop.getIndexOfSpace(spaceId)
   params.assert.number(spaceId, 1)
 
-  local screen_pos = tables.invert(desktop.screenPositions())
+  return lists(desktop.getAllSpaces()):indexOf(spaceId)
+end
 
-  local all_spaces = lists(tables.keys(screen_pos))
-    :sort(function(a, b) return a.x > b.x end)
-    :map(function(coord) return hs.spaces.spacesForScreen(screen_pos[coord]) end)
-    :flatten()
 
-  log.d('All spaces:', hs.inspect(all_spaces:values()))
-  
-  return lists(all_spaces):indexOf(spaceId)
+--
+-- Returns a table containing the window IDs of all windows on the specified space
+--
+---@param spaceId int
+---@return array<hs.window>
+function desktop.getWindowsForSpace(spaceId)
+  local windows = space_filter:getWindows() --[[@as array<hs.window>]]
+
+  ---@type hs.screen
+  local screen = lists(desktop.screens())
+    :first(function(s)
+      return lists(hs.spaces.spacesForScreen(s)):includes(spaceId)
+    end)
+
+  log.critical('spaceId: %q', spaceId)
+  log.critical('screen: %q', screen:id())
+  log.critical('filters: %s', lists(tables.keys(screen_filters)))
+
+  if screen and screen_filters[screen:id()] then
+    windows = screen_filters[screen:id()]:getWindows() --[[@as array<hs.window>]]
+  end
+
+  log.df('windowsForSpace [%s]: %s', spaceId, lists(windows):map(desktop.windowInfo))
+
+  return windows
 end
 
 
@@ -341,10 +404,19 @@ end
 --
 -- Returns the current state of dark mode
 --
----@return boolean
-function desktop.darkMode()
-  return query_dark_mode()
-end
+desktop.darkMode = func.cooldown(10, function()
+  log.d('Querying "System Events" for current dark mode')
+
+  local ok, darkModeState = hs.osascript.javascript(
+    'Application("System Events").appearancePreferences.darkMode()'
+  )
+
+  if not ok then
+    error('Error executing osascript (js):')
+  end
+
+  return types.tobool(darkModeState) --[[@as boolean]]
+end)
 
 
 --
@@ -361,25 +433,6 @@ end
 ---@param val string
 function desktop.setPasteBoard(val)
   hs.pasteboard.setContents(val)
-end
-
-
-
---
--- Gets the top window on screen
---
----@return hs.window
-function desktop.getTopWindow()
-  local screen = desktop.getScreen('mouse')
-
-  return lists(hs.window.orderedWindows())
-    :filter(function(win)
-      ---@cast win hs.window
-      return win:screen():id() == screen:id()
-    end)
-    :first(function(win) return win ~= nil end) --[[@as hs.window]]
-
-  -- return hs.window:frontmostWindow()
 end
 
 

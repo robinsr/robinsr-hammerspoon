@@ -12,6 +12,9 @@ local desktop = require 'user.lua.interface.desktop'
 local log = loggr.new('mod-cmd-chooser', 'debug')
 
 
+local subtext_tmpl = strings.tmpl '{desc+}({id} - {module})'
+
+
 --
 ---@return hs.chooser.option[]
 local getChoices = function()
@@ -26,8 +29,8 @@ local getChoices = function()
       ---@cast cmd ks.command
       return ichooser.newItem{
         id      = cmd.id,
-        text    = cmd.title or cmd.id,
-        subText = cmd.desc or ("%s - %s"):format(cmd.id, cmd.module),
+        text    = cmd.title,
+        subText = subtext_tmpl(cmd),
         image   = cmd:getMenuIcon(256),
         valid   = cmd:hasFlag('invalid') == false
       }

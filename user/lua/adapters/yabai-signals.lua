@@ -65,10 +65,17 @@ local yabai_signal = {
 ---|'system_woke'
 
 
+
+-- A table of variable names populated by Yabai on a signal event. The table's
+-- values should match the expected shell environment variable name, while the keys
+-- can be anything
+---@alias yabai.signal.variables table<string, string>
+
+
 ---@class yabai.signal.config
----@field channel ks.signal.channel
----@field event   yabai.signal.event
----@field vars    { [string]: string }
+---@field channel ks.signal.channel       - The internal, namespaced identifier for a signal
+---@field event   yabai.signal.event      - One of the signal types accepted by Yabai
+---@field vars    yabai.signal.variables  - see `yabai.signal.variables`
 
 
 ---@type yabai.signal.config[]

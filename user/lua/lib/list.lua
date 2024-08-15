@@ -1,4 +1,5 @@
 local pretty   = require 'pl.pretty'
+local inspect  = require 'hs.inspect'
 local params   = require 'user.lua.lib.params'
 local proto    = require 'user.lua.lib.proto'
 local types    = require 'user.lua.lib.typecheck'
@@ -77,7 +78,8 @@ ListMeta.__call = function(list, init) return create({}, init) end
 
 ListMeta.__len = function(list) return #list.items end
 
-ListMeta.__tostring = function(list) return pretty.write(list.items) end
+-- ListMeta.__tostring = function(list) return pretty.write(list.items) end
+ListMeta.__tostring = function(list) return inspect(list.items) end
 
 ListMeta.ident = function(list)
   return getmetatable(list) == ListMeta

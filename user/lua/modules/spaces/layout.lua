@@ -31,7 +31,7 @@ mod.cmds = {
   {
     id    = 'spaces.layout.cycle',
     title = 'Cycle layout (bsp, float, stack)',
-    icon  = '@/resources/images/icons/circular-arrows.tmpl.png',
+    icon  = '@/resources/images/win/change-theme.tmpl.png',
     mods  = keys.preset.peace,
     key   = keys.code.SPACE,
     flags = spaces.NO_ALERT,
@@ -41,7 +41,7 @@ mod.cmds = {
   {
     id    = 'spaces.space.rename',
     title = "Label current space",
-    icon  = "tag",
+    icon  = '@/resources/images/win/rename.tmpl.png',
     mods  = keys.preset.btms,
     key   = keys.code.L,
     flags = spaces.NO_ALERT,

@@ -22,7 +22,7 @@ function dialog.prompt(title, info, placeholder)
   local result = table.pack(
     hs.dialog.textPrompt(title, info, placeholder, ACCEPT, DECLINE)) --[[@as ks.prompt.result]]
 
-  return result[1], result[2] or ''
+  return result[1] == ACCEPT, result[2] or ''
 end
 
 

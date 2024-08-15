@@ -1,4 +1,5 @@
 local fn      = require 'user.lua.lib.func'
+local json    = require 'user.lua.lib.json'
 local lists   = require 'user.lua.lib.list'
 local params  = require 'user.lua.lib.params'
 local proto   = require 'user.lua.lib.proto'
@@ -7,7 +8,6 @@ local tables  = require 'user.lua.lib.table'
 local types   = require 'user.lua.lib.typecheck'
 local valua   = require 'user.lua.lib.valua'
 local keys    = require 'user.lua.model.keys'
-local json    = require 'user.lua.util.json'
 local logr    = require 'user.lua.util.logger'
 
 local log = logr.new('HotKey', 'info')
